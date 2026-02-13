@@ -15,6 +15,7 @@ import AdminDashboard from '../views/admin/Dashboard.vue'
 import ManageSellers from '../views/admin/ManageSellers.vue'
 import InputSales from '../views/admin/InputSales.vue' // <--- NEW IMPORT
 import OwnerReports from '../views/owner/OwnerReports.vue'
+import TrashAdmins from '../views/owner/TrashAdmins.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -72,6 +73,11 @@ const router = createRouter({
           name: 'owner-reports',
           component: OwnerReports
         },
+        {
+  path: 'owner/trash',
+  name: 'trash-admins',
+  component: TrashAdmins
+},
       ]
     }
   ]

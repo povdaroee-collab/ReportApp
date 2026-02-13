@@ -400,10 +400,12 @@ onMounted(() => {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
        try {
-          // 1. Fetch ALL Admins (for the Owner view)
+          // 1. Fetch ALL Admins (for the Owner view), filtering out soft-deleted
           const adminQ = query(collection(db, 'users'), where('role', '==', 'admin'));
           const adminSnap = await getDocs(adminQ);
-          adminsList.value = adminSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          adminsList.value = adminSnap.docs
+             .map(doc => ({ id: doc.id, ...doc.data() }))
+             .filter(a => a.isDeleted === false || a.isDeleted === "false" || !a.isDeleted);
 
           // 2. Fetch ALL Sales across the entire system
           const salesSnap = await getDocs(collection(db, 'sales_reports'));

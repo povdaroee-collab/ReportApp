@@ -61,8 +61,8 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { db } from '../../firebaseConfig'; 
-import { collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { db } from '@/firebaseConfig'; 
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 // Only tracking Admins now
 const stats = ref({ admins: 0 });
@@ -75,11 +75,16 @@ const currentDate = computed(() => {
 
 onMounted(async () => {
   try {
-    // Correct Logic: Count ONLY Users where role == 'admin'
+    // 1. Query all users with role 'admin'
     const adminsQuery = query(collection(db, "users"), where("role", "==", "admin"));
-    const adminsSnap = await getCountFromServer(adminsQuery);
+    const adminsSnap = await getDocs(adminsQuery);
     
-    stats.value.admins = adminsSnap.data().count;
+    // 2. Filter out deleted admins exactly how ManageAdmins.vue does it
+    const activeAdmins = adminsSnap.docs
+        .map(doc => doc.data())
+        .filter(a => a.isDeleted === false || a.isDeleted === "false" || !a.isDeleted);
+    
+    stats.value.admins = activeAdmins.length;
   } catch (error) {
     console.error("Error loading stats", error);
   } finally {
@@ -87,3 +92,8 @@ onMounted(async () => {
   }
 });
 </script>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&family=Kantumruy+Pro:wght@400;700&display=swap');
+.font-khmer { font-family: 'Kantumruy Pro', 'Battambong', sans-serif; }
+</style>

@@ -287,7 +287,7 @@ const triggerAlert = (type, title, message) => {
 };
 
 // Reactive User State
-const currentUserData = ref({}); // Stores the raw firestore doc
+const currentUserData = ref({}); 
 const userName = ref('Loading...');
 const userRole = ref('');
 const rawRole = ref(''); 
@@ -318,6 +318,7 @@ const menuItems = computed(() => {
       { label: 'ផ្ទាំងគ្រប់គ្រង (Dashboard)', path: '/app/owner/dashboard', key: 'dashboard', icon: '📊', glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
       { label: 'គ្រប់គ្រង Admin', path: '/app/owner/admins', key: 'admins', icon: '🛡️', glowClass: 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.6)]' },
       { label: 'របាយការណ៍រួម (Master Reports)', path: '/app/owner/reports', key: 'reports', icon: '📈', glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
+      { label: 'ធុងសម្រាម (Trash)', path: '/app/owner/trash', key: 'trash', icon: '🗑️', glowClass: 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.6)]' },
     ];
   } else {
     return [
@@ -342,7 +343,7 @@ onMounted(() => {
 
         if (docSnap.exists()) {
           const data = docSnap.data();
-          currentUserData.value = data; // Store full doc
+          currentUserData.value = data;
           
           userName.value = data.fullName || 'User';
           rawRole.value = data.role || 'user'; 
@@ -364,7 +365,6 @@ onMounted(() => {
 
 // --- PROFILE LOGIC ---
 const openProfileModal = () => {
-   // Populate form with current user data
    profileForm.fullName = currentUserData.value.fullName || '';
    profileForm.username = currentUserData.value.username || '';
    profileForm.telegram = currentUserData.value.telegram || '';
@@ -403,7 +403,6 @@ const submitProfileUpdate = async () => {
          formData.append('profileImage', profileForm.profileFile);
       }
 
-      // Reuse the existing update-admin API since it works for updating any user document by UID
       const res = await axios.put(`https://reportapp-81vf.onrender.com/api/update-admin/${auth.currentUser.uid}`, formData, {
          headers: {
             'Authorization': `Bearer ${token}`,
@@ -414,13 +413,11 @@ const submitProfileUpdate = async () => {
       if (res.data.success) {
          triggerAlert('success', 'ជោគជ័យ', 'ព័ត៌មានគណនីត្រូវបានកែប្រែ');
          
-         // Update Live UI
          userName.value = profileForm.fullName;
          if (profileForm.profileFile) {
              userPhoto.value = profilePreview.value; 
          }
          
-         // Update Background Data
          currentUserData.value.fullName = profileForm.fullName;
          currentUserData.value.username = profileForm.username;
          currentUserData.value.telegram = profileForm.telegram;

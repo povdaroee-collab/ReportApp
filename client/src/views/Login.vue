@@ -61,7 +61,7 @@
       </div>
 
       <p class="text-center text-slate-500 text-xs mt-6 font-medium">
-        &copy; 2024 Report System. All rights reserved.
+        &copy; 2026 Report System. All rights reserved.
       </p>
 
     </div>
@@ -74,9 +74,9 @@ import { useRouter } from 'vue-router';
 import CustomAlert from '../components/shared/CustomAlert.vue';
 
 // --- FIREBASE IMPORTS ---
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth'; // Ensure signOut is imported
 import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/firebaseConfig'; // Ensure this points to your firebaseConfig.js
+import { auth, db } from '@/firebaseConfig';
 
 const username = ref('');
 const password = ref('');
@@ -108,28 +108,38 @@ const handleLogin = async () => {
   isLoading.value = true;
 
   try {
-    // 1. Convert Username to Fake Email (Since Firebase uses Email)
+    // 1. Convert Username to Fake Email
     const email = `${username.value}@report-system.com`;
 
-    // 2. Authenticate with Firebase Auth (Checks Password)
+    // 2. Authenticate with Firebase Auth
     const userCredential = await signInWithEmailAndPassword(auth, email, password.value);
     const user = userCredential.user;
 
-    // 3. Query Firestore to get User Data (Checks Role)
+    // 3. Query Firestore to get User Data
     const userDocRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userDocRef);
 
     if (userSnap.exists()) {
       const userData = userSnap.data();
 
-      // A. Check if user is blocked
+      // A. Check if user is soft-deleted (In Trash)
+      // We check for true boolean or "true" string to handle legacy data safely
+      if (userData.isDeleted === true || userData.isDeleted === "true") {
+        await signOut(auth); // Immediately log them back out
+        triggerAlert('error', 'គណនីមិនមានសុពលភាព', 'គណនីនេះត្រូវបានលុបចេញពីប្រព័ន្ធហើយ។');
+        isLoading.value = false;
+        return;
+      }
+
+      // B. Check if user is blocked
       if (userData.isBlocked) {
+        await signOut(auth); // Immediately log them back out
         triggerAlert('error', 'គណនីត្រូវបានបិទ', 'សូមទាក់ទងទៅកាន់ម្ចាស់ប្រព័ន្ធ');
         isLoading.value = false;
         return;
       }
 
-      // B. Check Role and Redirect
+      // C. Check Role and Redirect
       if (userData.role === 'owner') {
         triggerAlert('success', 'ជោគជ័យ', `ស្វាគមន៍ម្ចាស់ប្រព័ន្ធ ${userData.fullName}`);
         setTimeout(() => router.push('/app/owner/dashboard'), 1500);
@@ -139,10 +149,12 @@ const handleLogin = async () => {
         setTimeout(() => router.push('/app/admin/dashboard'), 1500);
       } 
       else {
+         await signOut(auth);
          triggerAlert('error', 'គ្មានសិទ្ធិ', 'តួនាទីរបស់អ្នកមិនត្រឹមត្រូវ!');
       }
 
     } else {
+      await signOut(auth);
       triggerAlert('error', 'រកមិនឃើញ', 'មិនមានទិន្នន័យនៅក្នុងប្រព័ន្ធ');
     }
 

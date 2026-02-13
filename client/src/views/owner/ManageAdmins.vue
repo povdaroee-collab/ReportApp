@@ -63,7 +63,7 @@
                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active
              </span>
              
-             <button @click="confirmDelete(admin)" class="bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition shadow-sm border border-slate-100">
+             <button @click="confirmDelete(admin)" class="bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition shadow-sm border border-slate-100" title="Move to Trash">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
              </button>
           </div>
@@ -203,7 +203,7 @@
         <div class="fixed inset-0 overflow-y-auto">
           <div class="flex min-h-full items-center justify-center p-4">
              <DialogPanel class="w-full max-w-sm transform overflow-hidden rounded-3xl bg-white p-6 shadow-2xl transition-all text-center">
-                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4" :class="confirmModal.type === 'delete' ? 'bg-red-100 text-red-600' : (confirmModal.isBlockAction ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600')">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full mb-4" :class="confirmModal.type === 'delete' ? 'bg-red-100 text-red-600' : (confirmModal.isBlockAction ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600')">
                    <svg v-if="confirmModal.type === 'delete'" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                    <svg v-else-if="confirmModal.isBlockAction" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                    <svg v-else class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
@@ -255,9 +255,13 @@ const confirmModal = reactive({ show: false, title: '', message: '', targetAdmin
 
 const form = reactive({ fullName: '', username: '', password: '', telegram: '', file: null });
 
-// Fetch Data
+// Fetch Data (Filter out Soft-Deleted Admins)
 onMounted(() => {
- const q = query(collection(db, "users"), where("role", "==", "admin"));
+ const q = query(
+     collection(db, "users"), 
+     where("role", "==", "admin"),
+     where("isDeleted", "==", false) // ONLY SHOW ACTIVE ADMINS
+ );
  onSnapshot(q, (snapshot) => {
   admins.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   isLoading.value = false;
@@ -316,13 +320,12 @@ const handleFile = (e) => {
 };
 
 const submitAdmin = async () => {
- // Check for User Auth
  if (!auth.currentUser) {
   return triggerAlert('error', 'Authentication Error', 'You must be logged in to perform this action.');
  }
 
  if (!form.fullName || !form.username || (!isEditing.value && (!form.file || !form.password))) {
-   return triggerAlert('error', 'បរាជ័យ', 'សូមបំពេញព័ត៌មានអោយបានគ្រប់គ្រាន់!');
+   return triggerAlert('error', 'បរាជ័យ', 'សូមបំពេញព័ត៌មានអោយបានគ្រប់គ្រាន់!');
  }
 
  isSubmitting.value = true;
@@ -334,7 +337,7 @@ const submitAdmin = async () => {
  if(form.file) formData.append('profileImage', form.file);
 
  try {
-  const token = await auth.currentUser.getIdToken(true); // Force Refresh Token
+  const token = await auth.currentUser.getIdToken(true); 
   const url = isEditing.value 
     ? `https://reportapp-81vf.onrender.com/api/update-admin/${currentAdminId.value}`
     : 'https://reportapp-81vf.onrender.com/api/create-admin';
@@ -352,8 +355,8 @@ const submitAdmin = async () => {
   });
 
   if(res.data.success) {
-    triggerAlert('success', 'ជោគជ័យ', isEditing.value ? 'បានកែប្រែព័ត៌មាន Admin!' : 'បានបង្កើត Admin ថ្មី!');
-    closeModal();
+    triggerAlert('success', 'ជោគជ័យ', isEditing.value ? 'បានកែប្រែព័ត៌មាន Admin!' : 'បានបង្កើត Admin ថ្មី!');
+    closeModal();
   }
  } catch (e) {
   triggerAlert('error', 'បរាជ័យ', e.response?.data?.error || e.message);
@@ -374,8 +377,8 @@ const confirmToggleBlock = (admin) => {
 const confirmDelete = (admin) => {
   confirmModal.targetAdmin = admin;
   confirmModal.type = 'delete';
-  confirmModal.title = 'លុបគណនី?';
-  confirmModal.message = `តើអ្នកពិតជាចង់លុបគណនី ${admin.fullName} ចោលមែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានទេ។`;
+  confirmModal.title = 'បោះចូលធុងសម្រាម?';
+  confirmModal.message = `តើអ្នកពិតជាចង់បោះគណនី ${admin.fullName} ចូលធុងសម្រាមមែនទេ? អ្នកអាចស្តារវាមកវិញបាននៅពេលក្រោយ។`;
   confirmModal.show = true;
 };
 
@@ -388,12 +391,13 @@ const executeConfirmation = async () => {
         isBlocked: !confirmModal.targetAdmin.isBlocked 
       });
       triggerAlert('success', 'ជោគជ័យ', `គណនីត្រូវបាន ${confirmModal.isBlockAction ? 'បិទ' : 'បើក'}!`);
-    } else if (confirmModal.type === 'delete') {
-      const token = await auth.currentUser.getIdToken();
-      await axios.delete(`https://reportapp-81vf.onrender.com/api/delete-admin/${confirmModal.targetAdmin.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+    } 
+    // SOFT DELETE: Move to Trash
+    else if (confirmModal.type === 'delete') {
+      await updateDoc(doc(db, "users", confirmModal.targetAdmin.id), { 
+        isDeleted: true 
       });
-      triggerAlert('success', 'ជោគជ័យ', 'គណនីត្រូវបានលុបចេញពីប្រព័ន្ធ!');
+      triggerAlert('success', 'ជោគជ័យ', 'គណនីត្រូវបានបោះចូលធុងសម្រាម!');
     }
   } catch (e) {
     triggerAlert('error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការអនុវត្តសកម្មភាព');

@@ -82,6 +82,7 @@ app.post('/api/create-admin', verifyToken, upload.single('profileImage'), async 
       role: 'admin',
       vipStatus: true,
       isBlocked: false,
+      isDeleted: false,
       photoUrl: imageUrl,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
@@ -137,11 +138,46 @@ app.put('/api/update-admin/:uid', verifyToken, upload.single('profileImage'), as
 app.delete('/api/delete-admin/:uid', verifyToken, async (req, res) => {
     try {
         const { uid } = req.params;
+        
+        // 1. Delete user from Firebase Auth
         await admin.auth().deleteUser(uid);
-        await db.collection('users').doc(uid).delete();
-        res.json({ success: true, message: "Admin deleted successfully" });
+
+        // 2. Prepare Firestore Batch
+        const batch = db.batch();
+
+        // 3. Queue Admin Document for deletion
+        const adminDocRef = db.collection('users').doc(uid);
+        batch.delete(adminDocRef);
+
+        // 4. Find and Queue ALL Sellers created by this Admin
+        const sellersSnapshot = await db.collection('users')
+            .where('role', '==', 'seller')
+            .where('createdBy', '==', uid)
+            .get();
+        
+        sellersSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        // 5. Find and Queue ALL Sales Reports created by this Admin
+        const salesSnapshot = await db.collection('sales_reports')
+            .where('createdBy', '==', uid)
+            .get();
+        
+        salesSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        // 6. Commit the Batch (Execute all deletions at once)
+        await batch.commit();
+
+        res.json({ 
+            success: true, 
+            message: "Admin and all related data (Sellers & Sales) deleted successfully" 
+        });
+
     } catch (error) {
-        console.error("Delete Error:", error);
+        console.error("Delete Admin Error:", error);
         res.status(500).json({ error: error.message });
     }
 });
