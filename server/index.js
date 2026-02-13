@@ -5,6 +5,7 @@ const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const verifyToken = require('./middleware/authMiddleware');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
@@ -148,53 +149,64 @@ app.delete('/api/delete-admin/:uid', verifyToken, async (req, res) => {
 // 4. CREATE SELLER
 app.post('/api/create-seller', verifyToken, upload.fields([{ name: 'profileImage' }, { name: 'idCardImage' }]), async (req, res) => {
   try {
-    const { fullName, username, password, address, telegram, idNumber, phoneNumber } = req.body; 
-    
-    if (!req.files || !req.files.profileImage) {
-        return res.status(400).json({ error: "Profile image is required!" });
+    const { fullName, address, username, telegram, phoneNumber, idNumber, password } = req.body;
+
+    // 🔴 1. CHECK IF ID NUMBER ALREADY EXISTS
+    if (idNumber) {
+        const idCheckQuery = await db.collection('users').where('idNumber', '==', idNumber).get();
+        if (!idCheckQuery.empty) {
+            // NOTE: We removed fs.unlinkSync because memoryStorage doesn't create physical files.
+            return res.status(400).json({ 
+                success: false, 
+                error: "ID_EXISTS", 
+                message: "លេខអត្តសញ្ញាណប័ណ្ណនេះមានក្នុងប្រព័ន្ធរួចហើយ! (ID Card already exists)" 
+            });
+        }
     }
 
-    // Upload Profile
-    const profileResult = await uploadToCloudinary(req.files.profileImage[0].buffer, "report_project/sellers");
-    const profileUrl = profileResult.secure_url;
+    // 2. Create Firebase Auth User
+    const userRecord = await admin.auth().createUser({
+      email: username + "@seller.com",
+      password: password,
+      displayName: fullName,
+    });
 
-    // Upload ID
+    let photoUrl = "";
     let idCardUrl = "";
-    if (req.files.idCardImage) {
+
+    // 3. Upload Profile Image to Cloudinary (using buffer)
+    if (req.files && req.files.profileImage) {
+        const profileResult = await uploadToCloudinary(req.files.profileImage[0].buffer, "report_project/sellers");
+        photoUrl = profileResult.secure_url;
+    }
+
+    // 4. Upload ID Card Image to Cloudinary (using buffer)
+    if (req.files && req.files.idCardImage) {
         const idResult = await uploadToCloudinary(req.files.idCardImage[0].buffer, "report_project/sellers_id");
         idCardUrl = idResult.secure_url;
     }
 
-    const email = `${username}@report-system.com`; 
-    const userRecord = await admin.auth().createUser({
-      email: email,
-      password: password,
-      displayName: fullName,
-      photoURL: profileUrl
-    });
-
+    // 5. Save to Firestore
     await db.collection('users').doc(userRecord.uid).set({
-      uid: userRecord.uid,
-      username: username,
-      fullName: fullName,
-      role: 'seller', 
-      address: address || "",
-      telegram: telegram || "",
-      phoneNumber: phoneNumber || "",
-      idNumber: idNumber || "", 
-      photoUrl: profileUrl,
-      idCardUrl: idCardUrl,
-      isBlocked: false,
+      uid: userRecord.uid, // Good practice to include UID in the doc
+      fullName,
+      address,
+      username,
+      telegram,
+      phoneNumber,
+      idNumber, 
+      role: 'seller',
+      photoUrl,
+      idCardUrl,
       createdBy: req.user.uid,
-      joinedDate: new Date().toISOString().split('T')[0], 
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    res.json({ success: true, message: "Seller created successfully!" });
+    res.json({ success: true, message: "Seller created successfully" });
 
   } catch (error) {
     console.error("Create Seller Error:", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -265,8 +277,34 @@ app.delete('/api/delete-seller/:uid', verifyToken, async (req, res) => {
 // 7. CREATE SALES REPORT
 app.post('/api/sales/create', verifyToken, async (req, res) => {
   try {
-    const { sellerId, sellerName, sellerIdNumber, date, totalClients, totalSold, unit, totalPrice, currency } = req.body;
+    const { 
+      sellerId, 
+      sellerName, 
+      sellerIdNumber,
+      date, 
+      totalClients, 
+      totalSold, 
+      unit, 
+      totalPrice, 
+      currency 
+    } = req.body;
 
+    // 1. CHECK FOR DUPLICATES
+    // Query: Does a report exist for this Seller + This Date?
+    const existingReport = await db.collection('sales_reports')
+      .where('sellerId', '==', sellerId)
+      .where('date', '==', date)
+      .get();
+
+    if (!existingReport.empty) {
+        return res.status(400).json({ 
+            success: false, 
+            error: "DUPLICATE_ENTRY", // Special code for frontend to catch
+            message: "This seller already has a report for this date." 
+        });
+    }
+
+    // 2. Add Data if no duplicate
     await db.collection('sales_reports').add({
       sellerId,
       sellerName,
@@ -277,7 +315,7 @@ app.post('/api/sales/create', verifyToken, async (req, res) => {
       unit,
       totalPrice,
       currency,
-      createdBy: req.user.uid,
+      createdBy: req.user.uid, 
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
@@ -292,4 +330,4 @@ app.post('/api/sales/create', verifyToken, async (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-});
+}); 

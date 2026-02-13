@@ -52,7 +52,7 @@
 
                   <div v-if="showDropdown" class="absolute top-full left-0 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 max-h-60 overflow-y-auto z-50 animate-fadeIn">
                     <div v-if="loadingSellers" class="p-4 text-center text-slate-400 text-sm">កំពុងផ្ទុក...</div>
-                    <div v-else-if="filteredSellers.length === 0" class="p-4 text-center text-slate-400 text-sm">រកមិនឃើញទិន្នន័យ</div>
+                    <div v-else-if="filteredSellers.length === 0" class="p-4 text-center text-slate-400 text-sm">រកមិនឃើញទិន្នន័យ (No Data)</div>
                     
                     <ul v-else>
                       <li 
@@ -189,7 +189,7 @@
                  <svg class="w-5 h-5 text-blue-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                  <div>
                     <p class="text-xs font-bold text-blue-800">ចំណាំ (Note)</p>
-                    <p class="text-xs text-blue-600 mt-1">ទិន្នន័យនេះនឹងត្រូវកត់ត្រាទុកថាបញ្ចូលដោយគណនីរបស់អ្នក។ សូមពិនិត្យព័ត៌មានឱ្យបានត្រឹមត្រូវមុននឹងរក្សាទុក។</p>
+                    <p class="text-xs text-blue-600 mt-1">ទិន្នន័យនេះនឹងត្រូវកត់ត្រាទុកថាបញ្ចូលដោយគណនីរបស់អ្នក។ តំណាងលក់ម្នាក់ អាចមានទិន្នន័យលក់តែមួយដងប៉ុណ្ណោះក្នុងមួយថ្ងៃ។</p>
                  </div>
               </div>
 
@@ -227,13 +227,14 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { db, auth } from '@/firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth'; // Import this
 import axios from 'axios';
 import CustomAlert from '../../components/shared/CustomAlert.vue';
 
 const sellers = ref([]);
 const loadingSellers = ref(true);
 const isSubmitting = ref(false);
-const sellerSearch = ref(''); // Text input for search
+const sellerSearch = ref('');
 const showDropdown = ref(false);
 
 const alert = reactive({ show: false, title: '', message: '', type: 'success' });
@@ -244,31 +245,39 @@ const triggerAlert = (type, title, message) => {
 
 const form = reactive({
   sellerId: '',
-  sellerName: '', // To store selected name
-  sellerIdNumber: '', // To store selected ID Number
+  sellerName: '',
+  sellerIdNumber: '',
   date: new Date().toISOString().substr(0, 10),
   totalClients: '',
   totalSold: '',
-  unit: 'bottle', // 'bottle' or 'pack'
+  unit: 'bottle',
   totalPrice: '',
-  currency: 'USD' // 'USD' or 'KHR'
+  currency: 'USD'
 });
 
-// 1. Fetch Sellers
-onMounted(async () => {
-  try {
-    const q = query(collection(db, "users"), where("role", "==", "seller"));
-    const snapshot = await getDocs(q);
-    sellers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  } catch (e) {
-    console.error("Error fetching sellers:", e);
-    triggerAlert('error', 'Error', 'Failed to load sellers');
-  } finally {
-    loadingSellers.value = false;
-  }
+// 1. Fetch Sellers (FILTERED BY CURRENT ADMIN)
+onMounted(() => {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        // Only fetch sellers created by THIS user (Admin)
+        const q = query(
+            collection(db, "users"), 
+            where("role", "==", "seller"),
+            where("createdBy", "==", user.uid) 
+        );
+        const snapshot = await getDocs(q);
+        sellers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (e) {
+        console.error("Error fetching sellers:", e);
+        triggerAlert('error', 'Error', 'Failed to load sellers');
+      } finally {
+        loadingSellers.value = false;
+      }
+    }
+  });
 });
 
-// 2. Computed Search Logic
 const filteredSellers = computed(() => {
   if (!sellerSearch.value) return sellers.value;
   const lowerSearch = sellerSearch.value.toLowerCase();
@@ -283,8 +292,6 @@ const selectSeller = (seller) => {
   form.sellerId = seller.id;
   form.sellerName = seller.fullName;
   form.sellerIdNumber = seller.idNumber;
-  
-  // Set display text
   sellerSearch.value = `${seller.fullName} - ${seller.idNumber || 'No ID'}`;
   showDropdown.value = false;
 };
@@ -296,9 +303,7 @@ const clearSellerSelection = () => {
   sellerSearch.value = '';
 };
 
-// Close dropdown when clicking outside
 const handleClickOutside = (e) => {
-  // Simple check: if click target is not an input, close
   if(e.target.tagName !== 'INPUT') {
     showDropdown.value = false;
   }
@@ -314,7 +319,7 @@ const resetForm = () => {
   form.date = new Date().toISOString().substr(0, 10);
 };
 
-// 4. Submit Data
+// 4. Submit Data with Error Handling for Duplicate
 const submitSale = async () => {
   if (!form.sellerId || !form.totalClients || !form.totalSold || !form.totalPrice) {
     return triggerAlert('error', 'បរាជ័យ', 'សូមបំពេញព័ត៌មានអោយបានគ្រប់គ្រាន់!');
@@ -330,13 +335,13 @@ const submitSale = async () => {
       date: form.date,
       totalClients: parseInt(form.totalClients),
       totalSold: parseInt(form.totalSold),
-      unit: form.unit, // 'bottle' or 'pack'
+      unit: form.unit,
       totalPrice: parseFloat(form.totalPrice),
-      currency: form.currency // 'USD' or 'KHR'
+      currency: form.currency
     };
 
     const token = await auth.currentUser.getIdToken();
-    const res = await axios.post('http://localhost:5000/api/sales/create', payload, {
+    const res = await axios.post('https://reportapp-81vf.onrender.com/api/sales/create', payload, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -347,7 +352,13 @@ const submitSale = async () => {
 
   } catch (error) {
     console.error(error);
-    triggerAlert('error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ');
+    
+    // CHECK FOR DUPLICATE ERROR FROM BACKEND
+    if (error.response && error.response.data && error.response.data.error === "DUPLICATE_ENTRY") {
+        triggerAlert('warning', 'បរាជ័យ', 'តំណាងលក់នេះមានទិន្នន័យសម្រាប់ថ្ងៃនេះរួចហើយ!');
+    } else {
+        triggerAlert('error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ');
+    }
   } finally {
     isSubmitting.value = false;
   }
@@ -355,7 +366,9 @@ const submitSale = async () => {
 </script>
 
 <style scoped>
-/* Keyframe for Dropdown Animation */
+@import url('https://fonts.googleapis.com/css2?family=Battambong:wght@400;700&display=swap');
+.font-khmer { font-family: 'Battambong', sans-serif; }
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }

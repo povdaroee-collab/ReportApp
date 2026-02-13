@@ -390,7 +390,7 @@ const executeConfirmation = async () => {
       triggerAlert('success', 'ជោគជ័យ', `គណនីត្រូវបាន ${confirmModal.isBlockAction ? 'បិទ' : 'បើក'}!`);
     } else if (confirmModal.type === 'delete') {
       const token = await auth.currentUser.getIdToken();
-      await axios.delete(`http://localhost:5000/api/delete-admin/${confirmModal.targetAdmin.id}`, {
+      await axios.delete(`https://reportapp-81vf.onrender.com/api/delete-admin/${confirmModal.targetAdmin.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       triggerAlert('success', 'ជោគជ័យ', 'គណនីត្រូវបានលុបចេញពីប្រព័ន្ធ!');

@@ -1,6 +1,59 @@
 <template>
   <div class="flex h-screen bg-[#F0F2F5] font-khmer overflow-hidden relative selection:bg-indigo-500 selection:text-white">
     
+    <Teleport to="body">
+      <div class="fixed top-4 right-4 z-[9999] w-full max-w-sm pointer-events-none flex flex-col gap-2">
+        <div class="pointer-events-auto">
+           <CustomAlert 
+             :show="alert.show" 
+             :type="alert.type" 
+             :title="alert.title" 
+             :message="alert.message" 
+             @close="alert.show = false"
+           />
+        </div>
+      </div>
+    </Teleport>
+
+    <TransitionRoot appear :show="isLogoutModalOpen" as="template">
+      <Dialog as="div" @close="isLogoutModalOpen = false" class="relative z-[100] font-khmer">
+        <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
+          <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0 scale-95 translate-y-4" enter-to="opacity-100 scale-100 translate-y-0" leave="duration-200 ease-in" leave-from="opacity-100 scale-100 translate-y-0" leave-to="opacity-0 scale-95 translate-y-4">
+              <DialogPanel class="w-full max-w-sm transform overflow-hidden rounded-[2rem] bg-white p-6 text-left align-middle shadow-2xl transition-all">
+                <div class="flex flex-col items-center text-center mt-4">
+                   <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4 text-red-500 shadow-sm border border-red-100">
+                      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                   </div>
+                   <DialogTitle as="h3" class="text-xl font-bold leading-6 text-slate-800">
+                     ចាកចេញពីប្រព័ន្ធ?
+                   </DialogTitle>
+                   <div class="mt-2 mb-6">
+                     <p class="text-sm text-slate-500">
+                       តើអ្នកពិតជាចង់ចាកចេញពីគណនីនេះមែនទេ?
+                     </p>
+                   </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                  <button type="button" class="w-full justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-800 focus:outline-none transition-colors" @click="isLogoutModalOpen = false">
+                    ទេ (No)
+                  </button>
+                  <button type="button" class="w-full justify-center rounded-xl border border-transparent bg-red-500 px-4 py-3 text-sm font-bold text-white hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-500/20 shadow-lg shadow-red-500/30 transition-all active:scale-95" @click="confirmLogout">
+                    បាទ/ចាស (Yes)
+                  </button>
+                </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+
     <div 
       v-if="isSidebarOpen" 
       @click="isSidebarOpen = false"
@@ -32,26 +85,40 @@
       <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar relative z-10">
         <p class="px-4 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Main Menu</p>
 
-        <router-link 
-          v-for="item in menuItems" 
-          :key="item.path"
-          :to="item.path"
-          @click="isSidebarOpen = false"
-          class="group relative flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 overflow-hidden"
-          active-class="bg-white/10 text-white shadow-lg backdrop-blur-md border border-white/5"
-          :class="$route.path.includes(item.key) ? '' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
-        >
-          <div v-if="$route.path.includes(item.key)" class="absolute left-0 top-0 bottom-0 w-1" :class="item.glowClass"></div>
-          
-          <span class="text-xl relative z-10 transition-transform group-hover:scale-110 duration-300">{{ item.icon }}</span>
-          <span class="font-medium relative z-10">{{ item.label }}</span>
-          
-          <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-        </router-link>
+        <div v-if="isAuthLoading" class="space-y-3">
+           <div v-for="n in 3" :key="n" class="h-12 w-full bg-white/5 rounded-xl animate-pulse border border-white/5"></div>
+        </div>
+
+        <div v-else>
+            <router-link 
+              v-for="item in menuItems" 
+              :key="item.path"
+              :to="item.path"
+              @click="isSidebarOpen = false"
+              class="group relative flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 overflow-hidden mb-2"
+              active-class="bg-white/10 text-white shadow-lg backdrop-blur-md border border-white/5"
+              :class="$route.path.includes(item.key) ? '' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
+            >
+              <div v-if="$route.path.includes(item.key)" class="absolute left-0 top-0 bottom-0 w-1" :class="item.glowClass"></div>
+              
+              <span class="text-xl relative z-10 transition-transform group-hover:scale-110 duration-300">{{ item.icon }}</span>
+              <span class="font-medium relative z-10">{{ item.label }}</span>
+              
+              <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+            </router-link>
+        </div>
       </nav>
 
       <div class="p-4 border-t border-white/5 bg-black/20 backdrop-blur-md z-10">
-        <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-all cursor-pointer group">
+        <div v-if="isAuthLoading" class="flex items-center gap-3 p-3 rounded-xl bg-white/5 animate-pulse">
+            <div class="w-10 h-10 rounded-full bg-white/10"></div>
+            <div class="flex-1 space-y-2">
+                <div class="h-3 w-20 bg-white/10 rounded"></div>
+                <div class="h-2 w-12 bg-white/10 rounded"></div>
+            </div>
+        </div>
+
+        <div v-else class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-all cursor-pointer group">
           <div class="relative">
             <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 p-[2px]">
                <img 
@@ -68,7 +135,7 @@
             <p class="text-[10px] text-slate-400 uppercase">{{ userRole }}</p>
           </div>
 
-          <button @click="logout" class="p-2 rounded-lg text-slate-500 hover:bg-red-500/20 hover:text-red-400 transition-colors" title="Logout">
+          <button @click="isLogoutModalOpen = true" class="p-2 rounded-lg text-slate-500 hover:bg-red-500/20 hover:text-red-400 transition-colors" title="Logout">
              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
           </button>
         </div>
@@ -123,38 +190,52 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import Swal from 'sweetalert2';
+import { TransitionRoot, TransitionChild, Dialog, DialogPanel, DialogTitle } from '@headlessui/vue';
+import CustomAlert from '../components/shared/CustomAlert.vue'; 
 import { auth, db } from '@/firebaseConfig'; 
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
 const router = useRouter();
 const isSidebarOpen = ref(false);
+const isAuthLoading = ref(true);
+const isLogoutModalOpen = ref(false);
 
-// Reactive State
+// Alert State
+const alert = reactive({ show: false, type: 'success', title: '', message: '' });
+
+const triggerAlert = (type, title, message) => {
+    alert.type = type;
+    alert.title = title;
+    alert.message = message;
+    alert.show = true;
+    setTimeout(() => alert.show = false, 3000);
+};
+
+// Reactive User State
 const userName = ref('Loading...');
 const userRole = ref('');
-const rawRole = ref(''); // Raw role for logic (lowercase)
+const rawRole = ref(''); 
 const userPhoto = ref(null);
 
 // DYNAMIC MENU ITEMS
 const menuItems = computed(() => {
+  if (isAuthLoading.value) return [];
+
   const commonItems = [
     { label: 'បញ្ចូលទិន្នន័យលក់ (Input Sales)', path: '/app/admin/sales', key: 'sales', icon: '📝', glowClass: 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.6)]' }, 
     { label: 'តំណាង​លក់ (Sellers)', path: '/app/admin/sellers', key: 'sellers', icon: '👥', glowClass: 'bg-teal-500 shadow-[0_0_15px_rgba(20,184,166,0.6)]' },
+    { label: 'របាយការណ៍លក់ (Reports)', path: '/app/admin/seller-reports', key: 'reports', icon: '📈', glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
   ];
 
   if (rawRole.value === 'owner') {
-    // Owner sees everything + Manage Admin
     return [
       { label: 'ផ្ទាំងគ្រប់គ្រង (Dashboard)', path: '/app/owner/dashboard', key: 'dashboard', icon: '📊', glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
       { label: 'គ្រប់គ្រង Admin', path: '/app/owner/admins', key: 'admins', icon: '🛡️', glowClass: 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.6)]' },
-      ...commonItems
     ];
   } else {
-    // Admin sees Admin Dashboard + Common (NO Manage Admin)
     return [
       { label: 'ផ្ទាំងគ្រប់គ្រង (Dashboard)', path: '/app/admin/dashboard', key: 'dashboard', icon: '📊', glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
       ...commonItems
@@ -178,41 +259,35 @@ onMounted(() => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           userName.value = data.fullName || 'User';
-          rawRole.value = data.role || 'user'; // Store raw role
+          rawRole.value = data.role || 'user'; 
           userRole.value = data.role ? data.role.toUpperCase() + ' ROLE' : 'USER';
           userPhoto.value = data.photoUrl || user.photoURL;
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
         userName.value = "Guest";
+      } finally {
+        isAuthLoading.value = false;
       }
     } else {
       router.push('/');
+      isAuthLoading.value = false;
     }
   });
 });
 
-const logout = async () => {
-    const result = await Swal.fire({
-        title: 'ចាកចេញ?',
-        text: "តើអ្នកចង់ចាកចេញពីប្រព័ន្ធមែនទេ?",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'បាទ/ចាស (Yes)',
-        cancelButtonText: 'ទេ (No)',
-        confirmButtonColor: '#F43F5E',
-        cancelButtonColor: '#64748B',
-        background: '#fff',
-        customClass: {
-          popup: 'rounded-2xl shadow-2xl border border-gray-100',
-          title: 'font-khmer font-bold text-gray-800',
-          content: 'font-khmer text-gray-500'
-        }
-    });
-
-    if (result.isConfirmed) {
+// CONFIRM LOGOUT
+const confirmLogout = async () => {
+    isLogoutModalOpen.value = false;
+    try {
         await signOut(auth);
-        router.push('/');
+        triggerAlert('success', 'ជោគជ័យ', 'អ្នកបានចាកចេញដោយជោគជ័យ');
+        // Wait a brief moment to show the alert before redirecting
+        setTimeout(() => {
+            router.push('/');
+        }, 800);
+    } catch (error) {
+        triggerAlert('error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការចាកចេញ');
     }
 };
 </script>

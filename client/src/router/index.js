@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 
 // 1. Import Login
 import Login from '../views/Login.vue'
@@ -16,7 +16,7 @@ import ManageSellers from '../views/admin/ManageSellers.vue'
 import InputSales from '../views/admin/InputSales.vue' // <--- NEW IMPORT
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
@@ -56,7 +56,16 @@ const router = createRouter({
           path: 'admin/sales',
           name: 'input-sales',
           component: InputSales
-        }
+        },
+        { 
+      path: 'admin/seller-sales/:id', 
+      component: () => import('../views/admin/SellerSalesHistory.vue'),
+      props: true 
+    },
+    { 
+    path: 'admin/seller-reports', 
+    component: () => import('../views/admin/SellerReports.vue') 
+  }
       ]
     }
   ]

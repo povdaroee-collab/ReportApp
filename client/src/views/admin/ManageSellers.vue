@@ -62,7 +62,6 @@
          @dblclick="openDetailModal(seller)"
          class="group bg-white rounded-3xl p-6 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden border border-slate-100 cursor-pointer"
        >
-          
           <div class="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-teal-400 to-emerald-500"></div>
           
           <div class="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -76,9 +75,6 @@
                <div class="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-teal-400 to-emerald-500 shadow-md">
                   <img :src="seller.photoUrl || 'https://ui-avatars.com/api/?background=random&name='+seller.fullName" class="w-full h-full object-cover rounded-full border-2 border-white bg-white" alt="Profile">
                </div>
-               <span class="absolute bottom-1 right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center">
-                  <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-               </span>
              </div>
 
              <h3 class="font-bold text-lg text-slate-800 mt-4">{{ seller.fullName }}</h3>
@@ -181,7 +177,7 @@
                            <img v-if="previews.id" :src="previews.id" class="w-full h-full object-cover">
                            <div v-else class="text-center p-4 group-hover:scale-105 transition-transform">
                               <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2 text-slate-400 group-hover:bg-teal-100 group-hover:text-teal-600 transition-colors">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .884-.5 2-2 2h4c-1.5 0-2-1.116-2-2z"></path></svg>
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .884-.5 2-2 2h4c-1.5 0-2-1.116-2-2z"></path></svg>
                               </div>
                               <p class="text-xs text-slate-500 font-medium">រូបភាពអត្តសញ្ញាណប័ណ្ណ</p>
                            </div>
@@ -241,7 +237,6 @@
                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div class="space-y-6">
                          <h4 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2">ព័ត៌មានផ្ទាល់ខ្លួន</h4>
-                         
                          <div class="grid grid-cols-1 gap-4">
                             <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
@@ -252,7 +247,6 @@
                                   <p class="font-bold text-slate-700">{{ selectedSeller?.phoneNumber || 'N/A' }}</p>
                                </div>
                             </div>
-
                             <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
                                <div class="w-10 h-10 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center">
                                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.48-.94-2.4-1.54-1.06-.7-.37-1.09.23-1.72.16-.16 2.87-2.63 2.92-2.85.01-.03.01-.14-.06-.2-.06-.06-.17-.04-.25-.02-.11.02-1.91 1.2-5.39 3.55-.5.34-.95.51-1.35.5-.44-.01-1.29-.25-1.92-.42-.77-.21-1.37-.32-1.31-.68.03-.18.28-.37.76-.56 3.03-1.32 5.06-2.19 6.09-2.62 2.93-1.21 3.53-1.43 3.93-1.43.09 0 .28.01.4.04.1.03.24.1.33.25.08.16.07.32.07.33z"/></svg>
@@ -262,7 +256,6 @@
                                   <a :href="'https://t.me/'+selectedSeller?.telegram" target="_blank" class="font-bold text-sky-600 hover:underline">{{ selectedSeller?.telegram || 'N/A' }}</a>
                                </div>
                             </div>
-
                             <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
                                <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center">
                                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -272,7 +265,6 @@
                                   <p class="font-bold text-slate-700 text-sm">{{ selectedSeller?.address || 'N/A' }}</p>
                                </div>
                             </div>
-
                             <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
                                <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
                                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .884-.5 2-2 2h4c-1.5 0-2-1.116-2-2z"/></svg>
@@ -294,7 +286,6 @@
                                <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                <span>មិនមានរូបភាព</span>
                             </div>
-                            
                             <div v-if="selectedSeller?.idCardUrl" class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                <a :href="selectedSeller.idCardUrl" target="_blank" class="px-4 py-2 bg-white rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform">
                                   មើលរូបភាពពេញ
@@ -302,7 +293,15 @@
                             </div>
                          </div>
 
-                         <div class="pt-4 flex gap-3">
+                         <button 
+                            @click="navigateToSalesHistory(selectedSeller)" 
+                            class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+                         >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            មើលប្រវត្តិលក់ (Sales History)
+                         </button>
+
+                         <div class="flex gap-3">
                             <button @click="openEditModal(selectedSeller); closeDetailModal()" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl font-bold hover:bg-blue-100 transition">
                                កែប្រែព័ត៌មាន
                             </button>
@@ -322,7 +321,7 @@
     </TransitionRoot>
 
     <TransitionRoot appear :show="confirmModal.show" as="template">
-      <Dialog as="div" @close="confirmModal.show = false" class="relative z-50">
+      <Dialog as="div" @close="confirmModal.show = false" class="relative z-[70]">
         <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
           <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" />
         </TransitionChild>
@@ -349,6 +348,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed, nextTick } from 'vue';
+import { useRouter } from 'vue-router'; // Import Router
 import { TransitionRoot, TransitionChild, Dialog, DialogPanel } from '@headlessui/vue';
 import { db, auth } from '@/firebaseConfig';
 import { collection, query, where, onSnapshot, doc, getDoc, deleteDoc } from 'firebase/firestore';
@@ -356,11 +356,13 @@ import { onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
 import CustomAlert from '../../components/shared/CustomAlert.vue';
 
+const router = useRouter(); // Use Router
+
 const sellers = ref([]);
 const isLoading = ref(true);
 const showModal = ref(false);
-const showDetailModal = ref(false); // New State
-const selectedSeller = ref(null); // Data for Detail Modal
+const showDetailModal = ref(false); 
+const selectedSeller = ref(null); 
 const isSubmitting = ref(false);
 const searchQuery = ref('');
 const isOwner = ref(false);
@@ -408,17 +410,23 @@ const filteredSellers = computed(() => {
   return sellers.value.filter(s => s.fullName.toLowerCase().includes(lowerSearch) || (s.telegram && s.telegram.toLowerCase().includes(lowerSearch)));
 });
 
-// DETAIL MODAL LOGIC
+// --- NAVIGATION LOGIC (NEW) ---
+const navigateToSalesHistory = (seller) => {
+    closeDetailModal();
+    router.push(`/app/admin/seller-sales/${seller.id}`);
+};
+
+// --- DETAIL MODAL LOGIC ---
 const openDetailModal = (seller) => {
     selectedSeller.value = seller;
     showDetailModal.value = true;
 };
 const closeDetailModal = () => {
     showDetailModal.value = false;
-    selectedSeller.value = null;
+    selectedSeller.value = null; 
 };
 
-// CREATE/EDIT CONTROLS
+// --- CREATE/EDIT CONTROLS ---
 const openCreateModal = () => {
   isEditing.value = false;
   currentSellerId.value = null;
@@ -452,11 +460,18 @@ const handleFile = (e, type) => {
   else { form.idCardFile = file; previews.id = URL.createObjectURL(file); }
 };
 
-// SUBMIT
+// --- SUBMIT ---
 const submitSeller = async () => {
   if (!auth.currentUser) return;
+  
+  // Validation
   if (!form.fullName || !form.telegram || (!isEditing.value && !form.profileFile)) {
-     return triggerAlert('error', 'បរាជ័យ', 'សូមបំពេញព័ត៌មាន និងរូបភាព');
+     return triggerAlert('error', 'បរាជ័យ', 'សូមបំពេញព័ត៌មាន និងរូបភាព (Please fill required info)');
+  }
+  
+  // Enforce ID Number (Optional, but good practice if you are strictly checking it)
+  if (!form.idNumber) {
+     return triggerAlert('error', 'បរាជ័យ', 'សូមបញ្ចូលលេខអត្តសញ្ញាណប័ណ្ណ (Please input ID Number)');
   }
 
   isSubmitting.value = true;
@@ -475,8 +490,8 @@ const submitSeller = async () => {
   try {
      const token = await auth.currentUser.getIdToken(true);
      const url = isEditing.value 
-        ? `http://localhost:5000/api/update-seller/${currentSellerId.value}`
-        : 'http://localhost:5000/api/create-seller';
+        ? `https://reportapp-81vf.onrender.com/api/update-seller/${currentSellerId.value}`
+        : 'https://reportapp-81vf.onrender.com/api/create-seller';
      const method = isEditing.value ? 'put' : 'post';
 
      const res = await axios({
@@ -495,7 +510,14 @@ const submitSeller = async () => {
      }
   } catch (error) {
      console.error(error);
-     triggerAlert('error', 'បរាជ័យ', error.response?.data?.error || 'មានបញ្ហា');
+     
+     // 🔴 NEW LOGIC: CATCH THE SPECIFIC ID_EXISTS ERROR
+     if (error.response && error.response.data && error.response.data.error === "ID_EXISTS") {
+         triggerAlert('error', 'បដិសេធ (Rejected)', 'លេខអត្តសញ្ញាណប័ណ្ណនេះមានក្នុងប្រព័ន្ធរួចហើយ!');
+     } else {
+         // Fallback generic error
+         triggerAlert('error', 'បរាជ័យ (Failed)', error.response?.data?.message || 'មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ');
+     }
   } finally {
      isSubmitting.value = false;
   }
@@ -510,7 +532,7 @@ const executeDelete = async () => {
     if (!confirmModal.targetSeller) return;
     try {
         const token = await auth.currentUser.getIdToken(true);
-        await axios.delete(`http://localhost:5000/api/delete-seller/${confirmModal.targetSeller.id}`, {
+        await axios.delete(`https://reportapp-81vf.onrender.com/api/delete-seller/${confirmModal.targetSeller.id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         triggerAlert('success', 'ជោគជ័យ', 'គណនីត្រូវបានលុប');

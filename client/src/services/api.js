@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getAuth } from 'firebase/auth';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Your Node.js URL
+  baseURL: 'https://reportapp-81vf.onrender.com/api', // Your Node.js URL
 });
 
 // Interceptor: Runs before every request
