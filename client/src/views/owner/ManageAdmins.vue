@@ -336,8 +336,8 @@ const submitAdmin = async () => {
  try {
   const token = await auth.currentUser.getIdToken(true); // Force Refresh Token
   const url = isEditing.value 
-    ? `http://localhost:5000/api/update-admin/${currentAdminId.value}`
-    : 'http://localhost:5000/api/create-admin';
+    ? `https://reportapp-81vf.onrender.com/api/update-admin/${currentAdminId.value}`
+    : 'https://reportapp-81vf.onrender.com/api/create-admin';
   
   const method = isEditing.value ? 'put' : 'post';
 

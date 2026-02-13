@@ -15,6 +15,72 @@
       </div>
     </Teleport>
 
+    <TransitionRoot appear :show="isProfileModalOpen" as="template">
+      <Dialog as="div" @close="isProfileModalOpen = false" class="relative z-[100] font-khmer">
+        <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
+          <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0 scale-95 translate-y-4" enter-to="opacity-100 scale-100 translate-y-0" leave="duration-200 ease-in" leave-from="opacity-100 scale-100 translate-y-0" leave-to="opacity-0 scale-95 translate-y-4">
+              <DialogPanel class="w-full max-w-md transform overflow-hidden rounded-[2rem] bg-white text-left align-middle shadow-2xl transition-all relative">
+                
+                <div class="h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative">
+                   <button @click="isProfileModalOpen = false" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 text-white rounded-full p-2 transition-colors">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                   </button>
+                </div>
+
+                <form @submit.prevent="submitProfileUpdate" class="px-8 pb-8">
+                   <div class="flex justify-center -mt-16 mb-6 relative">
+                      <div class="relative group cursor-pointer" @click="$refs.profileInput.click()">
+                         <div class="w-32 h-32 rounded-full p-1 bg-white shadow-lg">
+                            <img :src="profilePreview || `https://ui-avatars.com/api/?name=${profileForm.fullName}&background=random`" class="w-full h-full object-cover rounded-full bg-slate-100">
+                         </div>
+                         <div class="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity m-1">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                         </div>
+                         <input ref="profileInput" type="file" accept="image/*" class="hidden" @change="handleProfileImage">
+                      </div>
+                   </div>
+
+                   <div class="space-y-4">
+                      <div>
+                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">ឈ្មោះពេញ (Full Name)</label>
+                         <input v-model="profileForm.fullName" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all">
+                      </div>
+                      
+                      <div class="grid grid-cols-2 gap-4">
+                         <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">ឈ្មោះគណនី (Username)</label>
+                            <input v-model="profileForm.username" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all">
+                         </div>
+                         <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">តេឡេក្រាម (Telegram)</label>
+                            <input v-model="profileForm.telegram" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" placeholder="@username">
+                         </div>
+                      </div>
+
+                      <div>
+                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">លេខសម្ងាត់ថ្មី (New Password)</label>
+                         <input v-model="profileForm.password" type="password" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:font-normal placeholder:text-slate-400" placeholder="ទុកទទេប្រសិនបើមិនចង់ប្តូរ (Leave blank to keep)">
+                      </div>
+                   </div>
+
+                   <button type="submit" :disabled="isUpdatingProfile" class="mt-8 w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-4 py-3.5 rounded-xl font-bold shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed">
+                      <svg v-if="isUpdatingProfile" class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                      <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                      <span>{{ isUpdatingProfile ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកព័ត៌មាន (Save Changes)' }}</span>
+                   </button>
+                </form>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+
     <TransitionRoot appear :show="isLogoutModalOpen" as="template">
       <Dialog as="div" @close="isLogoutModalOpen = false" class="relative z-[100] font-khmer">
         <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
@@ -33,9 +99,7 @@
                      ចាកចេញពីប្រព័ន្ធ?
                    </DialogTitle>
                    <div class="mt-2 mb-6">
-                     <p class="text-sm text-slate-500">
-                       តើអ្នកពិតជាចង់ចាកចេញពីគណនីនេះមែនទេ?
-                     </p>
+                     <p class="text-sm text-slate-500">តើអ្នកពិតជាចង់ចាកចេញពីគណនីនេះមែនទេ?</p>
                    </div>
                 </div>
 
@@ -118,24 +182,27 @@
             </div>
         </div>
 
-        <div v-else class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-all cursor-pointer group">
-          <div class="relative">
-            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 p-[2px]">
-               <img 
-                 :src="userPhoto || `https://ui-avatars.com/api/?name=${userName}&background=random`" 
-                 class="rounded-full w-full h-full object-cover border-2 border-[#0F172A]" 
-                 alt="Profile"
-               >
-            </div>
-            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-[#0F172A] rounded-full"></span>
-          </div>
+        <div v-else class="flex items-center p-2 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-all group">
           
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-white truncate group-hover:text-indigo-300 transition-colors">{{ userName }}</p>
-            <p class="text-[10px] text-slate-400 uppercase">{{ userRole }}</p>
+          <div @click="openProfileModal" class="flex-1 flex items-center gap-3 cursor-pointer min-w-0 px-2 py-1 rounded-lg hover:bg-white/5 transition-colors">
+             <div class="relative shrink-0">
+               <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 p-[2px]">
+                  <img 
+                    :src="userPhoto || `https://ui-avatars.com/api/?name=${userName}&background=random`" 
+                    class="rounded-full w-full h-full object-cover border-2 border-[#0F172A]" 
+                    alt="Profile"
+                  >
+               </div>
+               <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-[#0F172A] rounded-full"></span>
+             </div>
+             
+             <div class="flex-1 min-w-0">
+               <p class="text-sm font-bold text-white truncate group-hover:text-indigo-300 transition-colors">{{ userName }}</p>
+               <p class="text-[10px] text-slate-400 uppercase">{{ userRole }}</p>
+             </div>
           </div>
 
-          <button @click="isLogoutModalOpen = true" class="p-2 rounded-lg text-slate-500 hover:bg-red-500/20 hover:text-red-400 transition-colors" title="Logout">
+          <button @click.stop="isLogoutModalOpen = true" class="p-2.5 shrink-0 rounded-xl text-slate-400 hover:bg-red-500/20 hover:text-red-400 transition-colors" title="Logout">
              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
           </button>
         </div>
@@ -197,11 +264,16 @@ import CustomAlert from '../components/shared/CustomAlert.vue';
 import { auth, db } from '@/firebaseConfig'; 
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import axios from 'axios';
 
 const router = useRouter();
 const isSidebarOpen = ref(false);
 const isAuthLoading = ref(true);
+
+// Modals
 const isLogoutModalOpen = ref(false);
+const isProfileModalOpen = ref(false);
+const isUpdatingProfile = ref(false);
 
 // Alert State
 const alert = reactive({ show: false, type: 'success', title: '', message: '' });
@@ -215,10 +287,21 @@ const triggerAlert = (type, title, message) => {
 };
 
 // Reactive User State
+const currentUserData = ref({}); // Stores the raw firestore doc
 const userName = ref('Loading...');
 const userRole = ref('');
 const rawRole = ref(''); 
 const userPhoto = ref(null);
+
+// Profile Form State
+const profileForm = reactive({
+   fullName: '',
+   username: '',
+   telegram: '',
+   password: '',
+   profileFile: null
+});
+const profilePreview = ref(null);
 
 // DYNAMIC MENU ITEMS
 const menuItems = computed(() => {
@@ -227,13 +310,14 @@ const menuItems = computed(() => {
   const commonItems = [
     { label: 'បញ្ចូលទិន្នន័យលក់ (Input Sales)', path: '/app/admin/sales', key: 'sales', icon: '📝', glowClass: 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.6)]' }, 
     { label: 'តំណាង​លក់ (Sellers)', path: '/app/admin/sellers', key: 'sellers', icon: '👥', glowClass: 'bg-teal-500 shadow-[0_0_15px_rgba(20,184,166,0.6)]' },
-    { label: 'របាយការណ៍លក់ (Reports)', path: '/app/admin/seller-reports', key: 'reports', icon: '📈', glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
+    { label: 'របាយការណ៍លក់ (Reports)', path: '/app/admin/seller-reports', key: 'seller-reports', icon: '📈', glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
   ];
 
   if (rawRole.value === 'owner') {
     return [
       { label: 'ផ្ទាំងគ្រប់គ្រង (Dashboard)', path: '/app/owner/dashboard', key: 'dashboard', icon: '📊', glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
       { label: 'គ្រប់គ្រង Admin', path: '/app/owner/admins', key: 'admins', icon: '🛡️', glowClass: 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.6)]' },
+      { label: 'របាយការណ៍រួម (Master Reports)', path: '/app/owner/reports', key: 'reports', icon: '📈', glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
     ];
   } else {
     return [
@@ -258,6 +342,8 @@ onMounted(() => {
 
         if (docSnap.exists()) {
           const data = docSnap.data();
+          currentUserData.value = data; // Store full doc
+          
           userName.value = data.fullName || 'User';
           rawRole.value = data.role || 'user'; 
           userRole.value = data.role ? data.role.toUpperCase() + ' ROLE' : 'USER';
@@ -276,13 +362,86 @@ onMounted(() => {
   });
 });
 
+// --- PROFILE LOGIC ---
+const openProfileModal = () => {
+   // Populate form with current user data
+   profileForm.fullName = currentUserData.value.fullName || '';
+   profileForm.username = currentUserData.value.username || '';
+   profileForm.telegram = currentUserData.value.telegram || '';
+   profileForm.password = '';
+   profileForm.profileFile = null;
+   profilePreview.value = currentUserData.value.photoUrl || userPhoto.value;
+   
+   isProfileModalOpen.value = true;
+};
+
+const handleProfileImage = (e) => {
+   const file = e.target.files[0];
+   if (!file) return;
+   profileForm.profileFile = file;
+   profilePreview.value = URL.createObjectURL(file);
+};
+
+const submitProfileUpdate = async () => {
+   if (!profileForm.fullName || !profileForm.username) {
+      return triggerAlert('warning', 'សូមបំពេញព័ត៌មាន', 'ឈ្មោះពេញ និងឈ្មោះគណនីមិនអាចទទេបានទេ');
+   }
+
+   isUpdatingProfile.value = true;
+   try {
+      const token = await auth.currentUser.getIdToken();
+      const formData = new FormData();
+      
+      formData.append('fullName', profileForm.fullName);
+      formData.append('username', profileForm.username);
+      formData.append('telegram', profileForm.telegram);
+      
+      if (profileForm.password && profileForm.password.length >= 6) {
+         formData.append('password', profileForm.password);
+      }
+      if (profileForm.profileFile) {
+         formData.append('profileImage', profileForm.profileFile);
+      }
+
+      // Reuse the existing update-admin API since it works for updating any user document by UID
+      const res = await axios.put(`https://reportapp-81vf.onrender.com/api/update-admin/${auth.currentUser.uid}`, formData, {
+         headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+         }
+      });
+
+      if (res.data.success) {
+         triggerAlert('success', 'ជោគជ័យ', 'ព័ត៌មានគណនីត្រូវបានកែប្រែ');
+         
+         // Update Live UI
+         userName.value = profileForm.fullName;
+         if (profileForm.profileFile) {
+             userPhoto.value = profilePreview.value; 
+         }
+         
+         // Update Background Data
+         currentUserData.value.fullName = profileForm.fullName;
+         currentUserData.value.username = profileForm.username;
+         currentUserData.value.telegram = profileForm.telegram;
+         if (profileForm.profileFile) currentUserData.value.photoUrl = profilePreview.value;
+
+         isProfileModalOpen.value = false;
+      }
+   } catch (error) {
+      console.error("Profile Update Error:", error);
+      triggerAlert('error', 'បរាជ័យ', error.response?.data?.error || 'មានបញ្ហាក្នុងការកែប្រែព័ត៌មាន');
+   } finally {
+      isUpdatingProfile.value = false;
+   }
+};
+
 // CONFIRM LOGOUT
 const confirmLogout = async () => {
     isLogoutModalOpen.value = false;
     try {
         await signOut(auth);
         triggerAlert('success', 'ជោគជ័យ', 'អ្នកបានចាកចេញដោយជោគជ័យ');
-        // Wait a brief moment to show the alert before redirecting
         setTimeout(() => {
             router.push('/');
         }, 800);
@@ -293,7 +452,8 @@ const confirmLogout = async () => {
 </script>
 
 <style scoped>
-.font-khmer { font-family: 'Kantumruy Pro', sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Battambong:wght@400;700&family=Kantumruy+Pro:wght@400;700&display=swap');
+.font-khmer { font-family: 'Kantumruy Pro', 'Battambong', sans-serif; }
 
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }

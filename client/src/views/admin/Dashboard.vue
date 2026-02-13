@@ -26,7 +26,7 @@
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
           </div>
           
-          <p class="text-slate-500 text-sm font-medium mb-1">តំណាងលក់សរុប (Total Sellers)</p>
+          <p class="text-slate-500 text-sm font-medium mb-1">តំណាងលក់សរុប (Your Sellers)</p>
           <div class="flex items-end gap-3">
             <h3 class="text-4xl font-bold text-slate-800">{{ loading ? '...' : stats.sellerCount }}</h3>
             <span class="text-xs text-teal-500 font-bold bg-teal-50 px-2 py-1 rounded-lg mb-1">Active</span>
@@ -42,7 +42,7 @@
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
           </div>
           
-          <p class="text-slate-500 text-sm font-medium mb-1">របាយការណ៍លក់សរុប (Reports)</p>
+          <p class="text-slate-500 text-sm font-medium mb-1">របាយការណ៍លក់សរុប (Your Reports)</p>
           <div class="flex items-end gap-3">
             <h3 class="text-4xl font-bold text-slate-800">{{ loading ? '...' : stats.salesCount }}</h3>
             <span class="text-xs text-blue-500 font-bold bg-blue-50 px-2 py-1 rounded-lg mb-1">Total</span>
@@ -107,13 +107,21 @@ onMounted(() => {
             adminName.value = userDoc.data().fullName || 'Admin';
         }
 
-        // 2. Count Sellers (Correct Logic: Users collection where role is seller)
-        const sellerQuery = query(collection(db, "users"), where("role", "==", "seller"));
+        // 2. Count Sellers (ADDED BY THIS ADMIN ONLY)
+        const sellerQuery = query(
+            collection(db, "users"), 
+            where("role", "==", "seller"),
+            where("createdBy", "==", user.uid) // <-- NEW FILTER
+        );
         const sellerSnap = await getCountFromServer(sellerQuery);
         stats.value.sellerCount = sellerSnap.data().count;
 
-        // 3. Count Total Sales Reports
-        const salesSnap = await getCountFromServer(collection(db, "sales_reports"));
+        // 3. Count Total Sales Reports (CREATED BY THIS ADMIN ONLY)
+        const salesQuery = query(
+            collection(db, "sales_reports"),
+            where("createdBy", "==", user.uid) // <-- NEW FILTER
+        );
+        const salesSnap = await getCountFromServer(salesQuery);
         stats.value.salesCount = salesSnap.data().count;
 
       } catch (error) {
@@ -125,3 +133,8 @@ onMounted(() => {
   });
 });
 </script>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Battambong:wght@400;700&family=Kantumruy+Pro:wght@400;700&display=swap');
+.font-khmer { font-family: 'Kantumruy Pro', 'Battambong', sans-serif; }
+</style>
