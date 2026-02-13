@@ -1,5 +1,5 @@
 <template>
-  <div class="font-khmer h-full flex flex-col relative">
+  <div class="font-khmer h-full flex flex-col relative bg-[#F4F7FE]">
     
     <div class="fixed top-4 right-4 z-[100] w-full max-w-sm pointer-events-none">
       <div class="pointer-events-auto">
@@ -63,7 +63,7 @@
                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active
              </span>
              
-             <button @click="confirmDelete(admin)" class="bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition shadow-sm border border-slate-100" title="Move to Trash">
+             <button @click="confirmDelete(admin)" class="bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition shadow-sm border border-slate-100">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
              </button>
           </div>
@@ -152,7 +152,7 @@
                         <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 pointer-events-none">
                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </span>
-                        <input v-model="form.username" type="text" placeholder="Login Username (For Sign In)" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-12 py-3.5 text-slate-700 font-medium focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all duration-200 ease-in-out placeholder-slate-400">
+                        <input v-model="form.username" type="text" placeholder="Login Username" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-12 py-3.5 text-slate-700 font-medium focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all duration-200 ease-in-out placeholder-slate-400">
                      </div>
 
                      <div class="relative group">
@@ -255,15 +255,21 @@ const confirmModal = reactive({ show: false, title: '', message: '', targetAdmin
 
 const form = reactive({ fullName: '', username: '', password: '', telegram: '', file: null });
 
-// Fetch Data (Filter out Soft-Deleted Admins)
+// Fetch Data
 onMounted(() => {
+ // Update the query to filter out Soft-Deleted admins
  const q = query(
-     collection(db, "users"), 
-     where("role", "==", "admin"),
-     where("isDeleted", "==", false) // ONLY SHOW ACTIVE ADMINS
+   collection(db, "users"), 
+   where("role", "==", "admin"),
+   // Assuming "isDeleted" is not present or is false for active admins
  );
+ 
  onSnapshot(q, (snapshot) => {
-  admins.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  // Map and filter out the deleted admins manually to be safe with older data
+  admins.value = snapshot.docs
+    .map(doc => ({ id: doc.id, ...doc.data() }))
+    .filter(a => a.isDeleted === false || a.isDeleted === "false" || !a.isDeleted);
+  
   isLoading.value = false;
  });
 });
@@ -320,6 +326,7 @@ const handleFile = (e) => {
 };
 
 const submitAdmin = async () => {
+ // Check for User Auth
  if (!auth.currentUser) {
   return triggerAlert('error', 'Authentication Error', 'You must be logged in to perform this action.');
  }
@@ -337,7 +344,7 @@ const submitAdmin = async () => {
  if(form.file) formData.append('profileImage', form.file);
 
  try {
-  const token = await auth.currentUser.getIdToken(true); 
+  const token = await auth.currentUser.getIdToken(true); // Force Refresh Token
   const url = isEditing.value 
     ? `https://reportapp-81vf.onrender.com/api/update-admin/${currentAdminId.value}`
     : 'https://reportapp-81vf.onrender.com/api/create-admin';
@@ -386,15 +393,17 @@ const executeConfirmation = async () => {
   if(!confirmModal.targetAdmin) return;
   
   try {
+    const adminDocRef = doc(db, "users", confirmModal.targetAdmin.id);
+
     if (confirmModal.type === 'block') {
-      await updateDoc(doc(db, "users", confirmModal.targetAdmin.id), { 
+      await updateDoc(adminDocRef, { 
         isBlocked: !confirmModal.targetAdmin.isBlocked 
       });
       triggerAlert('success', 'ជោគជ័យ', `គណនីត្រូវបាន ${confirmModal.isBlockAction ? 'បិទ' : 'បើក'}!`);
     } 
     // SOFT DELETE: Move to Trash
     else if (confirmModal.type === 'delete') {
-      await updateDoc(doc(db, "users", confirmModal.targetAdmin.id), { 
+      await updateDoc(adminDocRef, { 
         isDeleted: true 
       });
       triggerAlert('success', 'ជោគជ័យ', 'គណនីត្រូវបានបោះចូលធុងសម្រាម!');
@@ -407,3 +416,8 @@ const executeConfirmation = async () => {
   }
 };
 </script>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&family=Kantumruy+Pro:wght@400;700&display=swap');
+.font-khmer { font-family: 'Kantumruy Pro', 'Battambong', sans-serif; }
+</style>
