@@ -218,7 +218,7 @@
         </button>
 
         <h2 class="hidden md:block text-lg font-bold text-gray-700 bg-clip-text text-transparent bg-gradient-to-r from-slate-700 to-slate-500">
-           Dashboard Overview
+            Dashboard Overview
         </h2>
 
         <div class="flex items-center gap-3 md:gap-5 ml-auto">
@@ -318,6 +318,7 @@ const menuItems = computed(() => {
       { label: 'ផ្ទាំងគ្រប់គ្រង (Dashboard)', path: '/app/owner/dashboard', key: 'dashboard', icon: '📊', glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
       { label: 'គ្រប់គ្រង Admin', path: '/app/owner/admins', key: 'admins', icon: '🛡️', glowClass: 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.6)]' },
       { label: 'របាយការណ៍រួម (Master Reports)', path: '/app/owner/reports', key: 'reports', icon: '📈', glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
+      { label: 'ការកំណត់ (Settings)', path: '/app/owner/settings', key: 'settings', icon: '⚙️', glowClass: 'bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.6)]' },
       { label: 'ធុងសម្រាម (Trash)', path: '/app/owner/trash', key: 'trash', icon: '🗑️', glowClass: 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.6)]' },
     ];
   } else {

@@ -52,7 +52,7 @@
                 <div>
                    <p class="text-sm font-black text-amber-800">របៀបកែប្រែទិន្នន័យ (Edit Mode)</p>
                    <p class="text-[11px] font-bold text-amber-600 mt-1 leading-relaxed">
-                      តំណាងលក់នេះមានទិន្នន័យរួចហើយសម្រាប់ថ្ងៃនេះ។ ការរក្សាទុកនឹងធ្វើការ <strong class="text-amber-800">កែប្រែទិន្នន័យចាស់ជាន់ពីលើ</strong>។
+                      តំណាងលក់នេះមានទិន្នន័យរួចហើយសម្រាប់ <strong class="text-rose-500">ប្រភេទឯកតានេះ</strong> នៅថ្ងៃនេះ។ ការរក្សាទុកនឹងធ្វើការ <strong class="text-amber-800">កែប្រែទិន្នន័យចាស់ជាន់ពីលើ</strong>។
                    </p>
                 </div>
             </div>
@@ -178,26 +178,21 @@
                       >
                     </div>
                     
-                    <div class="bg-slate-100 p-1.5 rounded-xl flex items-center sm:w-48 shrink-0 shadow-inner border border-slate-200/60">
-                      <button 
-                        type="button"
-                        @click="form.unit = 'bottle'"
-                        class="flex-1 py-2 text-sm font-bold rounded-lg transition-all"
-                        :class="form.unit === 'bottle' ? 'bg-white text-cyan-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-400 hover:text-slate-600'"
-                      >
-                        ដប
-                      </button>
-                      <button 
-                        type="button"
-                        @click="form.unit = 'pack'"
-                        class="flex-1 py-2 text-sm font-bold rounded-lg transition-all"
-                        :class="form.unit === 'pack' ? 'bg-white text-purple-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-400 hover:text-slate-600'"
-                      >
-                        កញ្ចប់
-                      </button>
+                    <div class="relative group sm:w-48 shrink-0">
+                       <select 
+                         v-model="form.unit" 
+                         class="w-full h-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-3.5 text-slate-700 font-bold text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all appearance-none cursor-pointer"
+                       >
+                          <option value="" disabled>-- ជ្រើសរើសឯកតា --</option>
+                          <option v-for="unit in availableUnits" :key="unit.value" :value="unit.value">
+                             {{ unit.label }}
+                          </option>
+                       </select>
+                       <svg class="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
+
                   </div>
-                  <div v-if="form.totalSold" class="px-2 mt-1 animate-fade-in">
+                  <div v-if="form.totalSold && form.unit" class="px-2 mt-1 animate-fade-in">
                      <span class="text-[11px] font-bold text-slate-500 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded shadow-sm inline-flex items-center gap-1">
                         <span class="text-indigo-600">{{ Number(form.totalSold).toLocaleString() }}</span> {{ translateUnit(form.unit) }}
                      </span>
@@ -292,6 +287,7 @@ import CustomAlert from '../../components/shared/CustomAlert.vue';
 
 // State
 const sellers = ref([]);
+const availableUnits = ref([]); // Store dynamic units here
 const loadingSellers = ref(true);
 const isSubmitting = ref(false);
 const isCheckingData = ref(false);
@@ -316,26 +312,37 @@ const form = reactive({
   date: new Date().toISOString().substr(0, 10),
   totalClients: '',
   totalSold: '',
-  unit: 'bottle',
+  unit: '', // Starts empty so user has to select
   totalPrice: '',
   currency: 'USD'
 });
 
-// 1. Fetch Sellers based on Admin UID
+// Fetch Sellers & Units
 onMounted(() => {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       try {
-        const q = query(
+        // Fetch Sellers
+        const qSellers = query(
             collection(db, "users"), 
             where("role", "==", "seller"),
             where("createdBy", "==", user.uid) 
         );
-        const snapshot = await getDocs(q);
-        sellers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const snapshotSellers = await getDocs(qSellers);
+        sellers.value = snapshotSellers.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Fetch Dynamic Settings Units
+        const snapUnits = await getDocs(collection(db, 'settings_units'));
+        availableUnits.value = snapUnits.docs.map(doc => doc.data());
+        
+        // Auto-select first unit if available
+        if(availableUnits.value.length > 0) {
+            form.unit = availableUnits.value[0].value;
+        }
+
       } catch (e) {
-        console.error("Error fetching sellers:", e);
-        triggerAlert('error', 'Error', 'Failed to load sellers');
+        console.error("Error fetching initial data:", e);
+        triggerAlert('error', 'Error', 'Failed to load system data');
       } finally {
         loadingSellers.value = false;
       }
@@ -343,38 +350,40 @@ onMounted(() => {
   });
 });
 
-// 2. Watcher: Check if Date + Seller already has data
-watch([() => form.sellerId, () => form.date], async ([newId, newDate]) => {
-  if (newId && newDate) {
+// 🚀 WATCHER: NOW CHECKS SELLER + DATE + UNIT
+watch([() => form.sellerId, () => form.date, () => form.unit], async ([newId, newDate, newUnit]) => {
+  // Only run the query if ALL THREE variables have values
+  if (newId && newDate && newUnit) {
     isCheckingData.value = true;
     try {
       const q = query(
         collection(db, 'sales_reports'), 
         where('sellerId', '==', newId), 
-        where('date', '==', newDate)
+        where('date', '==', newDate),
+        where('unit', '==', newUnit) // <--- CRITICAL NEW CHECK
       );
       const snap = await getDocs(q);
       
       if (!snap.empty) {
-        // Data exists! Populate form and set Edit Mode
+        // Data exists for this specific Seller + Date + Unit combination! Set Edit Mode.
         const data = snap.docs[0].data();
         existingSaleId.value = snap.docs[0].id;
         
         form.totalClients = data.totalClients;
         form.totalSold = data.totalSold;
-        form.unit = data.unit || 'bottle';
         form.totalPrice = data.totalPrice;
         form.currency = data.currency || 'USD';
         
-        triggerAlert('info', 'រកឃើញទិន្នន័យចាស់', 'អ្នកកំពុងស្ថិតក្នុងរបៀបកែប្រែទិន្នន័យដែលមានស្រាប់។');
+        triggerAlert('info', 'រកឃើញទិន្នន័យចាស់', `អ្នកកំពុងស្ថិតក្នុងរបៀបកែប្រែទិន្នន័យ [${translateUnit(newUnit)}] ដែលមានស្រាប់។`);
       } else {
-        // No data, clear form if we were just editing
+        // No data found for this combination. Prepare for NEW entry.
         if (existingSaleId.value) {
+            // Clear out numbers so the user doesn't accidentally save the old numbers to the new unit
             form.totalClients = '';
             form.totalSold = '';
             form.totalPrice = '';
         }
-        existingSaleId.value = null;
+        existingSaleId.value = null; // Turns off Edit Mode
       }
     } catch (error) {
       console.error("Check Error:", error);
@@ -382,6 +391,7 @@ watch([() => form.sellerId, () => form.date], async ([newId, newDate]) => {
       isCheckingData.value = false;
     }
   } else {
+    // If any of the 3 fields are empty, reset edit mode
     existingSaleId.value = null;
   }
 });
@@ -395,7 +405,6 @@ const filteredSellers = computed(() => {
   );
 });
 
-// Dropdown Logic
 const selectSeller = (seller) => {
   form.sellerId = seller.id;
   form.sellerName = seller.fullName;
@@ -422,32 +431,34 @@ const resetForm = () => {
   form.totalClients = '';
   form.totalSold = '';
   form.totalPrice = '';
-  form.unit = 'bottle';
+  form.unit = availableUnits.value.length > 0 ? availableUnits.value[0].value : '';
   form.currency = 'USD';
   form.date = new Date().toISOString().substr(0, 10);
   existingSaleId.value = null;
 };
 
-// Translations
-const translateUnit = (unit) => {
-    if (!unit) return '';
-    const u = unit.toLowerCase().trim();
+// Dynamic Translation from Settings
+const translateUnit = (unitVal) => {
+    if (!unitVal) return '';
+    const found = availableUnits.value.find(u => u.value === unitVal);
+    if (found) return found.label;
+    
+    // Fallbacks just in case
+    const u = unitVal.toLowerCase().trim();
     if (u === 'bottle' || u === 'bottles') return 'ដប';
     if (u === 'pack' || u === 'packs') return 'កញ្ចប់';
-    return unit; 
+    return unitVal; 
 };
 
 // Submit Logic
 const submitSale = async () => {
-  if (!form.sellerId || !form.totalClients || !form.totalSold || !form.totalPrice) {
+  if (!form.sellerId || !form.totalClients || !form.totalSold || !form.totalPrice || !form.unit) {
     return triggerAlert('warning', 'សូមត្រួតពិនិត្យ', 'សូមបំពេញព័ត៌មានដែលមានសញ្ញាផ្កាយ (*) អោយបានគ្រប់គ្រាន់!');
   }
 
   isSubmitting.value = true;
 
   try {
-    
-    // EDIT EXISTING
     if (isEditing.value && existingSaleId.value) {
        await updateDoc(doc(db, 'sales_reports', existingSaleId.value), {
           totalClients: parseInt(form.totalClients),
@@ -458,9 +469,7 @@ const submitSale = async () => {
        });
        triggerAlert('success', 'ជោគជ័យ', 'ទិន្នន័យលក់ត្រូវបានកែប្រែដោយជោគជ័យ!');
        resetForm();
-    } 
-    // CREATE NEW
-    else {
+    } else {
       const payload = {
         sellerId: form.sellerId,
         sellerName: form.sellerName,
@@ -483,11 +492,10 @@ const submitSale = async () => {
         resetForm();
       }
     }
-
   } catch (error) {
     console.error(error);
     if (error.response && error.response.data && error.response.data.error === "DUPLICATE_ENTRY") {
-        triggerAlert('error', 'ទិន្នន័យជាន់គ្នា', 'តំណាងលក់នេះមានទិន្នន័យសម្រាប់ថ្ងៃនេះរួចហើយ!');
+        triggerAlert('error', 'ទិន្នន័យជាន់គ្នា', 'តំណាងលក់នេះមានទិន្នន័យសម្រាប់ថ្ងៃ និងឯកតានេះរួចហើយ!');
     } else {
         triggerAlert('error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ');
     }

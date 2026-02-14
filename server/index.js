@@ -311,6 +311,7 @@ app.delete('/api/delete-seller/:uid', verifyToken, async (req, res) => {
 });
 
 // 7. CREATE SALES REPORT
+// 7. CREATE SALES REPORT
 app.post('/api/sales/create', verifyToken, async (req, res) => {
   try {
     const { 
@@ -326,17 +327,18 @@ app.post('/api/sales/create', verifyToken, async (req, res) => {
     } = req.body;
 
     // 1. CHECK FOR DUPLICATES
-    // Query: Does a report exist for this Seller + This Date?
+    // Query: Does a report exist for this Seller + This Date + This UNIT?
     const existingReport = await db.collection('sales_reports')
       .where('sellerId', '==', sellerId)
       .where('date', '==', date)
+      .where('unit', '==', unit) // <--- CRITICAL FIX HERE
       .get();
 
     if (!existingReport.empty) {
         return res.status(400).json({ 
             success: false, 
-            error: "DUPLICATE_ENTRY", // Special code for frontend to catch
-            message: "This seller already has a report for this date." 
+            error: "DUPLICATE_ENTRY", 
+            message: "This seller already has a report for this date and unit." 
         });
     }
 
@@ -362,7 +364,6 @@ app.post('/api/sales/create', verifyToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
