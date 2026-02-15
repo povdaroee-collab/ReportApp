@@ -12,7 +12,7 @@
                </div>
                <div>
                  <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-tight">របាយការណ៍រួម</h1>
-                 <p class="text-slate-500 text-[11px] md:text-xs font-bold mt-0.5">ទិន្នន័យការលក់របស់អ្នកគ្រប់គ្រង</p>
+                 <p class="text-slate-500 text-[11px] md:text-xs font-bold mt-0.5 uppercase tracking-wider">ទិន្នន័យការលក់របស់អ្នកគ្រប់គ្រង</p>
                </div>
             </div>
 
@@ -46,13 +46,13 @@
                         <select v-model="selectedMonth" class="w-full appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm cursor-pointer min-w-[140px] hover:border-indigo-300 transition-all">
                            <option v-for="m in availableMonths" :key="m.index" :value="m.index">{{ m.name }}</option>
                         </select>
-                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                      </div>
                      <div class="relative group flex-1 sm:flex-none">
                         <select v-model="selectedYear" class="w-full appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm cursor-pointer hover:border-indigo-300 transition-all">
                            <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
                         </select>
-                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                      </div>
                   </div>
 
@@ -60,7 +60,7 @@
                      <select v-model="selectedYear" class="w-full appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm cursor-pointer min-w-[120px] hover:border-indigo-300 transition-all">
                         <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
                      </select>
-                     <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                     <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                   </div>
 
                    <div v-if="dateFilterType === 'custom'" class="flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300 transition-colors focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 w-full sm:w-auto">
@@ -107,12 +107,28 @@
                      </div>
                   </div>
                   <div class="relative z-10 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                     <p class="text-slate-400 text-[10px] font-black uppercase">បរិមាណលក់សរុប </p>
-                     <div class="flex flex-wrap gap-1.5">
+                     <p class="text-slate-400 text-[10px] font-black uppercase">បរិមាណលក់សរុប</p>
+                     
+                     <div class="flex flex-wrap gap-1.5 items-center">
                         <template v-if="Object.keys(grandTotals.units).length > 0">
-                            <span v-for="(count, unit) in grandTotals.units" :key="unit" class="text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1" :class="getAppBadgeClass(unit)">
-                               {{ count.toLocaleString() }} {{ translateUnit(unit) }}
-                            </span>
+                            <template v-for="(entry, idx) in Object.entries(grandTotals.units)" :key="entry[0]">
+                                <span v-if="idx < 3 || expandedRowIds.has('mainGrandTotal')" class="text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 bg-white border shadow-sm" :class="getAppBadgeClass(entry[0])">
+                                    {{ entry[1].toLocaleString() }} {{ translateUnit(entry[0]) }}
+                                </span>
+                            </template>
+                            
+                            <button 
+                                v-if="Object.keys(grandTotals.units).length > 3" 
+                                @click.stop="toggleRowExpand('mainGrandTotal')" 
+                                class="text-[11px] font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-md transition-colors flex items-center gap-1 border border-indigo-100"
+                            >
+                                <span v-if="!expandedRowIds.has('mainGrandTotal')">+{{ Object.keys(grandTotals.units).length - 3 }} ទៀត</span>
+                                <span v-else>បង្រួម</span>
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path v-if="!expandedRowIds.has('mainGrandTotal')" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                                </svg>
+                            </button>
                         </template>
                         <span v-else class="text-xs font-bold text-slate-300">០</span>
                      </div>
@@ -120,18 +136,18 @@
               </div>
 
               <div class="bg-white rounded-[24px] p-6 border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col justify-center group hover:border-emerald-300 transition-colors">
-                  <p class="text-slate-400 text-[11px] font-black uppercase mb-4">ស្ថិតិអ្នកគ្រប់គ្រង </p>
+                  <p class="text-slate-400 text-[11px] font-black uppercase mb-4">ស្ថិតិអ្នកគ្រប់គ្រង</p>
                   <div class="space-y-3">
                      <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                        <span class="text-xs font-bold text-slate-600">អ្នកគ្រប់គ្រងសរុប </span>
+                        <span class="text-xs font-bold text-slate-600">អ្នកគ្រប់គ្រងសរុប</span>
                         <span class="font-black text-slate-800">{{ baseCalculatedData.length }}</span>
                      </div>
                      <div class="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-100">
-                        <span class="text-xs font-bold text-emerald-700">មានការលក់ </span>
+                        <span class="text-xs font-bold text-emerald-700">មានការលក់</span>
                         <span class="font-black text-emerald-700">{{ activeAdminsCount }}</span>
                      </div>
                      <div class="flex items-center justify-between p-2.5 rounded-xl bg-rose-50 border border-rose-100">
-                        <span class="text-xs font-bold text-rose-700">គ្មានការលក់ </span>
+                        <span class="text-xs font-bold text-rose-700">គ្មានការលក់</span>
                         <span class="font-black text-rose-700">{{ inactiveAdminsCount }}</span>
                      </div>
                   </div>
@@ -178,22 +194,39 @@
            <div v-if="isLoading" class="flex flex-col items-center justify-center py-24 opacity-60">
               <div class="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-indigo-600 mb-4"></div>
            </div>
-
            <div v-else-if="displayedData.length === 0" class="flex flex-col items-center justify-center py-20 bg-white/50 backdrop-blur-sm rounded-[2rem] border-2 border-dashed border-slate-200">
               <p class="text-slate-600 font-bold text-lg">មិនមានទិន្នន័យទេ</p>
            </div>
 
            <div v-else>
               <div class="md:hidden flex flex-col gap-4">
-                 <div v-for="(item, index) in displayedData" :key="item.id" class="bg-white p-5 rounded-[20px] shadow-sm border relative overflow-hidden transition-all" :class="item.hasSales ? 'border-slate-100' : 'border-rose-100/50 bg-slate-50/50'">
+                 <div 
+                    v-for="(item, index) in displayedData" 
+                    :key="item.id" 
+                    @click="openAdminModal(item)"
+                    class="bg-white p-5 rounded-[20px] shadow-sm border relative overflow-hidden transition-all cursor-pointer" 
+                    :class="item.hasSales ? 'border-slate-100 hover:border-indigo-300' : 'border-rose-100/50 bg-slate-50/50 hover:border-rose-300'"
+                 >
                     <div class="absolute top-0 right-0 px-3 py-1.5 rounded-bl-xl border-b border-l text-[10px] font-black" :class="item.hasSales ? 'bg-slate-50 text-slate-400 border-slate-100' : 'bg-rose-50 text-rose-400 border-rose-100'">#{{ index + 1 }}</div>
                     <div class="flex items-center gap-4 mb-4">
                        <div class="relative shrink-0">
-                          <img :src="item.photoUrl || `https://ui-avatars.com/api/?name=${item.fullName}`" class="w-14 h-14 rounded-2xl object-cover shadow-sm" :class="!item.hasSales ? 'grayscale-[40%] opacity-70' : ''">
+                          <img :src="item.photoUrl || `https://ui-avatars.com/api/?name=${item.fullName}`" class="w-14 h-14 rounded-2xl object-cover shadow-sm border border-slate-100" :class="!item.hasSales ? 'grayscale-[40%] opacity-70' : ''">
                        </div>
                        <div class="flex-1 min-w-0 pr-6">
                           <h3 class="font-bold text-lg leading-tight truncate" :class="item.hasSales ? 'text-slate-800' : 'text-slate-500'">{{ item.fullName }}</h3>
+                          <div class="flex items-center gap-2 mt-1">
+                             <p class="text-[11px] text-indigo-500 font-mono font-bold">@{{ item.username }}</p>
+                          </div>
                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
+                        <div class="flex gap-2">
+                           <a v-if="item.telegram" @click.stop :href="'https://t.me/' + item.telegram.replace('@', '')" target="_blank" class="w-8 h-8 rounded-full bg-sky-50 text-sky-500 flex items-center justify-center hover:bg-sky-500 hover:text-white transition-colors">
+                               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.48-.94-2.4-1.54-1.06-.7-.37-1.09.23-1.72.16-.16 2.87-2.63 2.92-2.85.01-.03.01-.14-.06-.2-.06-.06-.17-.04-.25-.02-.11.02-1.91 1.2-5.39 3.55-.5.34-.95.51-1.35.5-.44-.01-1.29-.25-1.92-.42-.77-.21-1.37-.32-1.31-.68.03-.18.28-.37.76-.56 3.03-1.32 5.06-2.19 6.09-2.62 2.93-1.21 3.53-1.43 3.93-1.43.09 0 .28.01.4.04.1.03.24.1.33.25.08.16.07.32.07.33z"/></svg>
+                           </a>
+                        </div>
+                        <span class="text-xs font-bold text-slate-500">មើលបញ្ជីតំណាងលក់ &rarr;</span>
                     </div>
                  </div>
               </div>
@@ -203,39 +236,74 @@
                     <thead class="bg-slate-50/80 text-slate-500 text-[11px] uppercase font-black tracking-widest border-b border-slate-200">
                        <tr>
                           <th class="px-6 py-5 w-16 text-center">#</th>
-                          <th class="px-6 py-5">អ្នកគ្រប់គ្រង </th>
-                          <th class="px-6 py-5 text-center">តំណាងលក់</th>
-                          <th class="px-6 py-5">ចំនួនលក់ </th>
+                          <th class="px-6 py-5">អ្នកគ្រប់គ្រង</th>
+                          <th class="px-6 py-5 text-center">តំណាងលក់សរុប</th>
+                          <th class="px-6 py-5">ចំនួនលក់ (Units)</th>
                           <th class="px-6 py-5 text-center">អតិថិជនសរុប</th>
-                          <th class="px-6 py-5 text-right">ចំណូល </th>
+                          <th class="px-6 py-5 text-center">តេឡេក្រាម</th>
+                          <th class="px-6 py-5 text-right">ចំណូល</th>
                        </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                       <tr v-for="(item, index) in displayedData" :key="item.id" class="transition-colors group" :class="item.hasSales ? 'hover:bg-indigo-50/30' : 'bg-slate-50/30'">
+                       <tr 
+                         v-for="(item, index) in displayedData" 
+                         :key="item.id" 
+                         @click="openAdminModal(item)"
+                         class="transition-colors group cursor-pointer" 
+                         :class="item.hasSales ? 'hover:bg-indigo-50/50' : 'bg-slate-50/30 hover:bg-slate-100/50'"
+                       >
                           <td class="px-6 py-5 text-center"><span class="text-xs font-black" :class="item.hasSales ? 'text-slate-500' : 'text-slate-300'">{{ index + 1 }}</span></td>
+                          
                           <td class="px-6 py-5">
                              <div class="flex items-center gap-4">
-                                <img :src="item.photoUrl || `https://ui-avatars.com/api/?name=${item.fullName}`" class="w-11 h-11 rounded-2xl object-cover shadow-sm" :class="!item.hasSales ? 'grayscale-[40%] opacity-70' : ''">
+                                <img :src="item.photoUrl || `https://ui-avatars.com/api/?name=${item.fullName}`" class="w-11 h-11 rounded-2xl object-cover shadow-sm group-hover:scale-105 transition-transform" :class="!item.hasSales ? 'grayscale-[40%] opacity-70' : ''">
                                 <div>
-                                   <p class="font-bold text-sm mb-0.5" :class="item.hasSales ? 'text-slate-800' : 'text-slate-500'">{{ item.fullName }}</p>
+                                   <p class="font-bold text-sm mb-0.5 group-hover:text-indigo-600 transition-colors" :class="item.hasSales ? 'text-slate-800' : 'text-slate-500'">{{ item.fullName }}</p>
+                                   <p class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 font-mono font-bold inline-block">@{{ item.username }}</p>
                                 </div>
                              </div>
                           </td>
+                          
                           <td class="px-6 py-5 text-center">
                              <span class="inline-flex items-center px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold border border-slate-200 shadow-sm">{{ item.totalSellersCount }} នាក់</span>
                           </td>
+                          
                           <td class="px-6 py-5">
-                             <div v-if="item.hasSales" class="flex flex-wrap gap-2">
-                                <span v-for="(count, unit) in item.unitCounts" :key="unit" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold cursor-default shadow-sm" :class="getAppBadgeClass(unit)">
-                                   {{ count.toLocaleString() }} {{ translateUnit(unit) }}
-                                </span>
+                             <div v-if="item.hasSales" class="flex flex-wrap gap-2 items-center">
+                                <template v-for="(entry, idx) in Object.entries(item.unitCounts)" :key="entry[0]">
+                                   <span v-if="idx < 3 || expandedRowIds.has(item.id)" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold shadow-sm border" :class="getAppBadgeClass(entry[0])">
+                                      {{ entry[1].toLocaleString() }} {{ translateUnit(entry[0]) }}
+                                   </span>
+                                </template>
+                                
+                                <button 
+                                   v-if="Object.keys(item.unitCounts).length > 3" 
+                                   @click.stop="toggleRowExpand(item.id)" 
+                                   class="text-[11px] font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 border border-indigo-100"
+                                >
+                                   <span v-if="!expandedRowIds.has(item.id)">+{{ Object.keys(item.unitCounts).length - 3 }} ទៀត</span>
+                                   <span v-else>បង្រួម</span>
+                                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path v-if="!expandedRowIds.has(item.id)" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                      <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                                   </svg>
+                                </button>
                              </div>
                              <div v-else><span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 text-slate-400">គ្មានការលក់</span></div>
                           </td>
+                          
                           <td class="px-6 py-5 text-center">
                              <span v-if="item.hasSales" class="inline-flex items-center px-3 py-1 bg-amber-50 text-amber-600 rounded-lg text-sm font-bold border border-amber-100">{{ item.totalClients.toLocaleString() }} នាក់</span>
                              <span v-else class="text-slate-300 font-bold">-</span>
                           </td>
+
+                          <td class="px-6 py-5 text-center" @click.stop>
+                              <a v-if="item.telegram" :href="'https://t.me/' + item.telegram.replace('@', '')" target="_blank" class="text-sky-500 hover:text-white hover:bg-sky-500 w-9 h-9 rounded-xl inline-flex items-center justify-center transition-all bg-sky-50 shadow-sm hover:shadow-md mx-auto" title="ផ្ញើសារ Telegram">
+                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.48-.94-2.4-1.54-1.06-.7-.37-1.09.23-1.72.16-.16 2.87-2.63 2.92-2.85.01-.03.01-.14-.06-.2-.06-.06-.17-.04-.25-.02-.11.02-1.91 1.2-5.39 3.55-.5.34-.95.51-1.35.5-.44-.01-1.29-.25-1.92-.42-.77-.21-1.37-.32-1.31-.68.03-.18.28-.37.76-.56 3.03-1.32 5.06-2.19 6.09-2.62 2.93-1.21 3.53-1.43 3.93-1.43.09 0 .28.01.4.04.1.03.24.1.33.25.08.16.07.32.07.33z"/></svg>
+                              </a>
+                              <span v-else class="text-slate-300 font-bold">-</span>
+                          </td>
+                          
                           <td class="px-6 py-5 text-right">
                              <div v-if="item.hasSales" class="flex flex-col items-end gap-1">
                                 <span class="text-emerald-700 font-black text-sm bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-100/60 min-w-[90px] text-right shadow-sm">{{ item.revenueUSD.toLocaleString() }} $</span>
@@ -264,12 +332,27 @@
             </div>
             <div class="flex-1 flex justify-between md:justify-end items-center gap-6 w-full overflow-x-auto no-scrollbar">
                <div class="flex items-center gap-2">
-                  <template v-if="Object.keys(grandTotals.units).length > 0">
-                      <span v-for="(count, unit) in grandTotals.units" :key="unit" class="text-xs font-black text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm whitespace-nowrap">
-                         {{ count.toLocaleString() }} {{ translateUnit(unit) }}
-                      </span>
-                  </template>
-               </div>
+                    <template v-if="Object.keys(grandTotals.units).length > 0">
+                        <template v-for="(entry, idx) in Object.entries(grandTotals.units)" :key="entry[0]">
+                            <span v-if="idx < 3 || expandedRowIds.has('mainGrandTotalFooter')" class="text-xs font-black text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm whitespace-nowrap">
+                                {{ entry[1].toLocaleString() }} {{ translateUnit(entry[0]) }}
+                            </span>
+                        </template>
+
+                        <button 
+                            v-if="Object.keys(grandTotals.units).length > 3" 
+                            @click.stop="toggleRowExpand('mainGrandTotalFooter')" 
+                            class="text-[11px] font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-1 border border-indigo-100 whitespace-nowrap"
+                        >
+                            <span v-if="!expandedRowIds.has('mainGrandTotalFooter')">+{{ Object.keys(grandTotals.units).length - 3 }} ទៀត</span>
+                            <span v-else>បង្រួម</span>
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path v-if="!expandedRowIds.has('mainGrandTotalFooter')" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                            </svg>
+                        </button>
+                    </template>
+                </div>
                <div class="h-10 w-px bg-slate-200 hidden md:block"></div>
                <div class="text-right shrink-0">
                   <p class="text-xl md:text-2xl font-black text-emerald-600 leading-none">{{ grandTotals.usd.toLocaleString() }} <span class="text-sm opacity-80">$</span></p>
@@ -280,8 +363,17 @@
       </div>
     </div>
 
+    <AdminReportModal
+      :is-open="isAdminModalOpen"
+      :admin="selectedAdmin"
+      :sellers="selectedAdminSellers"
+      :unit-settings="unitSettings"
+      @close="isAdminModalOpen = false"
+      @error="(title, msg) => triggerAlert('error', title, msg)"
+    />
+
     <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
-        <div v-if="processing.active" class="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+        <div v-if="processing.active" class="fixed inset-0 z-[99999] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
             <div class="w-full max-w-sm bg-[#18181b] border border-white/10 rounded-3xl p-10 shadow-2xl relative flex flex-col items-center text-center animate-fade-in-up">
                 <div class="relative w-20 h-20 mb-8">
                     <div class="absolute inset-0 rounded-full border-4 border-white/5"></div>
@@ -298,21 +390,33 @@
 
     <div ref="printStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1]"></div>
 
+    <CustomAlert 
+       v-if="alert.show" 
+       :type="alert.type" 
+       :title="alert.title" 
+       :message="alert.message" 
+       @close="alert.show = false" 
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, computed, watch, nextTick, reactive } from 'vue';
 import { db, auth } from '@/firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import CustomAlert from '../../components/shared/CustomAlert.vue';
+
+// IMPORT NEW MODAL
+import AdminReportModal from '../../components/AdminReportModal.vue';
 
 const isLoading = ref(true);
 const adminsList = ref([]);
 const allSales = ref([]); 
 const allSellers = ref([]); 
+const unitSettings = ref([]); 
 
 const dateFilterType = ref('monthly'); 
 const activityFilter = ref('all'); 
@@ -334,6 +438,16 @@ const filterTabs = [
 
 const monthNames = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
 
+const isAdminModalOpen = ref(false);
+const selectedAdmin = ref(null);
+const expandedRowIds = ref(new Set()); 
+
+const alert = reactive({ show: false, title: '', message: '', type: 'success' });
+const triggerAlert = (type, title, message) => {
+  alert.type = type; alert.title = title; alert.message = message; alert.show = true;
+  setTimeout(() => alert.show = false, 3000);
+};
+
 onMounted(() => {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -341,8 +455,8 @@ onMounted(() => {
           const adminQ = query(collection(db, 'users'), where('role', '==', 'admin'));
           const adminSnap = await getDocs(adminQ);
           adminsList.value = adminSnap.docs
-             .map(doc => ({ id: doc.id, ...doc.data() }))
-             .filter(a => a.isDeleted === false || a.isDeleted === "false" || !a.isDeleted);
+              .map(doc => ({ id: doc.id, ...doc.data() }))
+              .filter(a => a.isDeleted === false || a.isDeleted === "false" || !a.isDeleted);
 
           const salesSnap = await getDocs(collection(db, 'sales_reports'));
           allSales.value = salesSnap.docs.map(doc => doc.data());
@@ -350,6 +464,9 @@ onMounted(() => {
           const sellerQ = query(collection(db, 'users'), where('role', '==', 'seller'));
           const sellerSnap = await getDocs(sellerQ);
           allSellers.value = sellerSnap.docs.map(doc => doc.data());
+
+          const unitSettingsSnap = await getDocs(collection(db, 'settings_units'));
+          unitSettings.value = unitSettingsSnap.docs.map(doc => doc.data());
 
           if (allSales.value.length > 0) {
              const latestDate = allSales.value.map(s => new Date(s.date)).sort((a,b) => b - a)[0];
@@ -398,10 +515,20 @@ const isDateInScope = (dateStr) => {
    return false;
 };
 
+// Fixed data logic to properly grab both Admins and ALL their sellers' sales
 const baseCalculatedData = computed(() => {
    if (adminsList.value.length === 0) return [];
+   
    return adminsList.value.map(admin => {
-      const relevantSales = allSales.value.filter(s => s.createdBy === admin.id && isDateInScope(s.date));
+      // Find all seller IDs belonging to this admin
+      const adminSellersIds = allSellers.value.filter(seller => seller.createdBy === admin.id).map(s => s.id);
+
+      // A sale belongs to the admin if the admin created it OR if any of their sellers created/owned it
+      const relevantSales = allSales.value.filter(s => {
+          const isMatch = s.createdBy === admin.id || adminSellersIds.includes(s.createdBy) || adminSellersIds.includes(s.sellerId);
+          return isMatch && isDateInScope(s.date);
+      });
+
       let totalClients = 0;
       let revenueUSD = 0;
       let revenueKHR = 0;
@@ -417,7 +544,7 @@ const baseCalculatedData = computed(() => {
       });
 
       const hasSales = totalClients > 0 || Object.keys(unitCounts).length > 0;
-      const totalSellersCount = allSellers.value.filter(seller => seller.createdBy === admin.id).length;
+      const totalSellersCount = adminSellersIds.length;
       return { ...admin, unitCounts, totalClients, revenueUSD, revenueKHR, hasSales, totalSellersCount };
    }).sort((a, b) => {
        if (a.hasSales && !b.hasSales) return -1;
@@ -469,9 +596,78 @@ const selectedDateFormatter = (dateStr) => {
     return new Intl.DateTimeFormat('km-KH', { dateStyle: 'medium' }).format(new Date(dateStr));
 };
 
+const openAdminModal = (admin) => {
+    selectedAdmin.value = admin;
+    isAdminModalOpen.value = true;
+};
+
+const toggleRowExpand = (id) => {
+    const newSet = new Set(expandedRowIds.value);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    expandedRowIds.value = newSet;
+};
+
+// ប្តូរអនុគមន៍នេះនៅក្នុង script setup នៃ OwnerReports.vue របស់អ្នក
+const selectedAdminSellers = computed(() => {
+   if (!selectedAdmin.value) return [];
+   
+   return allSellers.value
+      .filter(s => s.createdBy === selectedAdmin.value.id)
+      .map(seller => {
+         // 🚀 ចំនុចសំខាន់៖ ទាញយកទិន្នន័យលក់របស់ Seller ម្នាក់ៗមកគណនាឡើងវិញក្នុង Modal
+         const relevantSales = allSales.value.filter(sale => 
+            sale.sellerId === seller.id && 
+            isDateInScope(sale.date)
+         );
+         
+         let totalClients = 0;
+         let usd = 0;
+         let khr = 0;
+         let unitCounts = {}; // ប្រើឈ្មោះ unitCounts ឱ្យដូច Template
+         
+         relevantSales.forEach(sale => {
+             totalClients += Number(sale.totalClients || 0);
+             if (sale.currency === 'USD' || sale.currency === '$') {
+                usd += Number(sale.totalPrice || 0);
+             } else {
+                khr += Number(sale.totalPrice || 0);
+             }
+             
+             // រាប់ចំនួនដប/កេស តាមប្រភេទ
+             const u = (sale.unit || 'unknown').toLowerCase().trim();
+             unitCounts[u] = (unitCounts[u] || 0) + Number(sale.totalSold || 0);
+         });
+
+         const hasSales = relevantSales.length > 0;
+
+         return { 
+            ...seller, 
+            totalClients, 
+            revenueUSD: usd, // ប្រើឈ្មោះ revenueUSD ឱ្យដូច Template
+            revenueKHR: khr, // ប្រើឈ្មោះ revenueKHR ឱ្យដូច Template
+            unitCounts, 
+            hasSales,
+            rawSale: relevantSales.length > 0 ? relevantSales[0] : null // សម្រាប់ Inline Edit បើចង់ប្រើ
+         };
+      })
+      .sort((a, b) => {
+         if (a.hasSales && !b.hasSales) return -1;
+         if (!a.hasSales && b.hasSales) return 1;
+         return b.revenueUSD - a.revenueUSD;
+      });
+});
+
+
+// ---------------------------------------------------------
+// NATIVE BROWSER PRINT LOGIC (ALL ADMINS)
+// ---------------------------------------------------------
 const executeNativePrint = () => {
     const contentHTML = generatePageHTML(displayedData.value, 1, 1, true);
+    triggerPrint(contentHTML, `Master_Sales_Report_${dateFilterType.value}`);
+};
 
+const triggerPrint = (htmlContent, title) => {
     const iframe = document.createElement('iframe');
     iframe.style.position = 'absolute';
     iframe.style.width = '0';
@@ -484,7 +680,7 @@ const executeNativePrint = () => {
     doc.write(`
         <html>
         <head>
-            <title>Master_Sales_Report_${dateFilterType.value}</title>
+            <title>${title}</title>
             <link href="https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&family=Kantumruy+Pro:wght@400;700&display=swap" rel="stylesheet">
             <style>
                 @page { size: A4 portrait; margin: 0; }
@@ -501,7 +697,7 @@ const executeNativePrint = () => {
                 tfoot { display: table-footer-group; }
             </style>
         </head>
-        <body>${contentHTML}</body>
+        <body>${htmlContent}</body>
         </html>
     `);
     doc.close();
@@ -513,6 +709,9 @@ const executeNativePrint = () => {
     });
 };
 
+// ---------------------------------------------------------
+// PDF LOGIC (ALL ADMINS)
+// ---------------------------------------------------------
 const generatePDF = async () => {
     processing.value = { active: true, message: 'កំពុងបំបែកទិន្នន័យ...', progress: 10 };
     
@@ -563,7 +762,7 @@ const generatePDF = async () => {
         
     } catch(e) {
         console.error(e);
-        alert("Failed to generate PDF");
+        triggerAlert('error', 'បរាជ័យ', 'មិនអាចទាញយក PDF បានទេ');
     } finally {
         if(printStaging.value) printStaging.value.innerHTML = '';
         processing.value.active = false;
@@ -571,100 +770,117 @@ const generatePDF = async () => {
 };
 
 const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
-    
     const rowsHTML = rows.map((item) => {
         let salesHTML = '';
         if (item.hasSales) {
-            salesHTML = `<div style="display: flex; flex-wrap: wrap; gap: 4px;">` + 
-                Object.entries(item.unitCounts).map(([u, c]) => 
-                    `<span style="font-size: 14px; font-weight: bold; color: #334155;">${c.toLocaleString()} ${translateUnit(u)}</span>`
+            salesHTML = `<div style="display: flex; flex-direction: column; gap: 6px;">` + 
+                Object.entries(item.unitCounts || {}).map(([u, c]) => 
+                    `<div style="display: flex; justify-content: space-between; font-size: 13px; border-bottom: 1px solid #f1f5f9; padding-bottom: 2px;">
+                        <span style="color: #475569;">${translateUnit(u)}</span>
+                        <span style="font-weight: 900; color: #1e293b;">${c.toLocaleString()}</span>
+                     </div>`
                 ).join('') + `</div>`;
         } else {
-            salesHTML = `<span style="font-size: 14px; font-weight: bold; color: #94a3b8;">គ្មានការលក់</span>`;
+            salesHTML = `<span style="font-size: 13px; font-weight: bold; color: #94a3b8;">គ្មានការលក់</span>`;
         }
 
         let revenueHTML = '';
         if (item.hasSales) {
             revenueHTML = `
                 <div style="text-align: right;">
-                    <div style="font-weight: 900; color: #047857; font-size: 18px;">${item.revenueUSD.toLocaleString()} $</div>
-                    <div style="font-weight: bold; color: #1d4ed8; font-size: 14px;">${item.revenueKHR.toLocaleString()} ៛</div>
+                    <div style="font-weight: 900; color: #047857; font-size: 16px;">${item.revenueUSD.toLocaleString()} $</div>
+                    <div style="font-weight: bold; color: #1d4ed8; font-size: 13px;">${item.revenueKHR.toLocaleString()} ៛</div>
                 </div>`;
         } else {
-            revenueHTML = `<div style="text-align: right; font-weight: bold; color: #94a3b8; font-size: 18px;">-</div>`;
+            revenueHTML = `<div style="text-align: right; font-weight: bold; color: #94a3b8; font-size: 16px;">-</div>`;
         }
 
         return `
-            <tr class="break-inside-avoid" style="border-bottom: 1px solid #e2e8f0;">
-                <td style="padding: 16px; text-align: center; vertical-align: middle; font-weight: 900; color: #94a3b8; font-size: 16px;">${item.index || rows.indexOf(item) + 1}</td>
-                <td style="padding: 16px; vertical-align: middle;">
-                    <p style="font-weight: bold; color: #1e293b; font-size: 18px; margin: 0;">${item.fullName}</p>
+            <tr style="border-bottom: 1px solid #e2e8f0; break-inside: avoid; page-break-inside: avoid; ${!item.hasSales ? 'background-color: #f8fafc;' : ''}">
+                <td style="padding: 14px 10px; text-align: center; vertical-align: middle; font-weight: 900; color: #94a3b8; font-size: 14px;">${item.index || rows.indexOf(item) + 1}</td>
+                <td style="padding: 14px 10px; vertical-align: middle;">
+                    <p style="font-weight: bold; color: #1e293b; font-size: 16px; margin: 0;">${item.fullName}</p>
                 </td>
-                <td style="padding: 16px; text-align: center; vertical-align: middle; font-weight: bold; color: #475569; font-size: 18px;">${item.totalSellersCount}</td>
-                <td style="padding: 16px; vertical-align: middle;">${salesHTML}</td>
-                <td style="padding: 16px; text-align: center; vertical-align: middle; font-weight: bold; color: #334155; font-size: 18px;">
+                <td style="padding: 14px 10px; text-align: center; vertical-align: middle; font-weight: bold; color: #475569; font-size: 16px;">${item.totalSellersCount}</td>
+                <td style="padding: 14px 10px; vertical-align: middle;">${salesHTML}</td>
+                <td style="padding: 14px 10px; text-align: center; vertical-align: middle; font-weight: bold; color: #334155; font-size: 16px;">
                     ${item.hasSales ? item.totalClients.toLocaleString() + ' នាក់' : '-'}
                 </td>
-                <td style="padding: 16px; vertical-align: middle;">${revenueHTML}</td>
+                <td style="padding: 14px 10px; vertical-align: middle;">${revenueHTML}</td>
             </tr>
         `;
     }).join('');
 
-    let summaryRowHTML = '';
+    let summarySectionHTML = '';
     if (pageNum === totalPages || isNativePrint) {
-        const unitsListHTML = Object.entries(grandTotals.value.units).map(([u, c]) => 
-            `<span style="font-size: 14px; font-weight: bold; color: #1e293b;">${c.toLocaleString()} ${translateUnit(u)}</span>`
-        ).join(', ');
+        const unitsList = Object.entries(grandTotals.value.units || {}).map(([u, c]) => 
+            `<div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding: 6px 0;">
+                <span style="color: #475569; font-size: 14px;">${translateUnit(u)}</span>
+                <span style="font-weight: 900; color: #0f172a; font-size: 14px;">${c.toLocaleString()}</span>
+            </div>`
+        ).join('');
 
-        summaryRowHTML = `
-            <tr style="border-top: 2px solid #4f46e5;">
-                <td colspan="3" style="padding: 20px 16px; text-align: right; vertical-align: middle; font-weight: 900; color: #1e293b; font-size: 20px;">សរុបរួម</td>
-                <td style="padding: 20px 16px; vertical-align: middle;">
-                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">${unitsListHTML}</div>
-                </td>
-                <td style="padding: 20px 16px; text-align: center; vertical-align: middle; font-weight: 900; color: #1e293b; font-size: 20px;">${grandTotals.value.clients.toLocaleString()} នាក់</td>
-                <td style="padding: 20px 16px; text-align: right; vertical-align: middle;">
-                    <div style="font-weight: 900; color: #059669; font-size: 24px;">${grandTotals.value.usd.toLocaleString()} $</div>
-                    <div style="font-weight: bold; color: #2563eb; font-size: 18px;">${grandTotals.value.khr.toLocaleString()} ៛</div>
-                </td>
-            </tr>
+        summarySectionHTML = `
+            <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-start; break-inside: avoid; page-break-inside: avoid;">
+                <div style="width: 45%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
+                    <h3 style="font-size: 16px; font-weight: 900; color: #1e293b; margin: 0 0 15px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">សរុបបរិមាណលក់តាមប្រភេទ</h3>
+                    ${unitsList || '<p style="color: #94a3b8; font-size: 14px;">គ្មានទិន្នន័យ</p>'}
+                </div>
+
+                <div style="width: 45%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
+                    <h3 style="font-size: 16px; font-weight: 900; color: #1e293b; margin: 0 0 15px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">សរុបរួម (Grand Total)</h3>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                        <span style="color: #475569; font-size: 14px;">អតិថិជនសរុប:</span>
+                        <span style="font-weight: 900; color: #0f172a; font-size: 16px;">${grandTotals.value.clients.toLocaleString()} នាក់</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                        <span style="color: #475569; font-size: 14px;">ចំណូល (USD):</span>
+                        <span style="font-weight: 900; color: #059669; font-size: 20px;">${grandTotals.value.usd.toLocaleString()} $</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #475569; font-size: 14px;">ចំណូល (KHR):</span>
+                        <span style="font-weight: 900; color: #2563eb; font-size: 16px;">${grandTotals.value.khr.toLocaleString()} ៛</span>
+                    </div>
+                </div>
+            </div>
         `;
     }
 
     const pageStyles = isNativePrint
-        ? `width: 100%; box-sizing: border-box; font-family: 'Battambong', 'Kantumruy Pro', sans-serif; line-height: 1.6;`
-        : `width: 1000px; height: 1414px; background: white; padding: 40px; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'Battambong', 'Kantumruy Pro', sans-serif; line-height: 1.6;`;
+        ? `width: 100%; box-sizing: border-box; font-family: 'Battambong', 'Kantumruy Pro', sans-serif; line-height: 1.6; padding: 20px;`
+        : `width: 1000px; min-height: 1414px; background: white; padding: 40px; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'Battambong', 'Kantumruy Pro', sans-serif; line-height: 1.6;`;
 
-   return `
+    return `
         <div class="print-page" style="${pageStyles}">
             
             <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #4f46e5;">
-                <h1 style="font-size: 36px; font-weight: 900; color: #4338ca; margin: 0;">របាយការណ៍លក់សរុបរបស់ Admin</h1>
+                <h1 style="font-size: 36px; font-weight: 900; color: #4338ca; margin: 0; text-align: center; width: 100%;">របាយការណ៍លក់សរុបរបស់ Admin</h1>
             </div>
 
             <div style="flex: 1;">
                 <table style="width: 100%; text-align: left; border-collapse: collapse; background-color: #ffffff;">
                     <thead style="color: #334155; font-size: 14px; font-weight: 900; border-bottom: 2px solid #cbd5e1; display: table-header-group;">
                         <tr>
-                            <th style="padding: 18px 16px; width: 40px; text-align: center; vertical-align: middle;">#</th>
-                            <th style="padding: 18px 16px; vertical-align: middle;">អ្នកគ្រប់គ្រង</th>
-                            <th style="padding: 18px 16px; text-align: center; vertical-align: middle;">តំណាងលក់</th>
-                            <th style="padding: 18px 16px; vertical-align: middle;">ចំនួនលក់</th>
-                            <th style="padding: 18px 16px; text-align: center; vertical-align: middle;">អតិថិជនសរុប</th>
-                            <th style="padding: 18px 16px; text-align: right; vertical-align: middle;">ចំណូល</th>
+                            <th style="padding: 14px 10px; width: 5%; text-align: center; vertical-align: middle;">#</th>
+                            <th style="padding: 14px 10px; width: 25%; vertical-align: middle;">អ្នកគ្រប់គ្រង</th>
+                            <th style="padding: 14px 10px; width: 15%; text-align: center; vertical-align: middle;">តំណាងលក់សរុប</th>
+                            <th style="padding: 14px 10px; width: 30%; vertical-align: middle;">ចំនួនលក់</th>
+                            <th style="padding: 14px 10px; width: 10%; text-align: center; vertical-align: middle;">អតិថិជន</th>
+                            <th style="padding: 14px 10px; width: 15%; text-align: right; vertical-align: middle;">ចំណូល</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${rowsHTML}
-                        ${summaryRowHTML}
                     </tbody>
                 </table>
+                ${summarySectionHTML}
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; font-size: 12px; font-weight: bold; color: #94a3b8;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; font-size: 12px; font-weight: bold; color: #94a3b8; break-inside: avoid; page-break-inside: avoid;">
                 <div>
-                   <span style="display: inline-block; padding: 4px 10px; color: #1e293b; font-size: 14px; font-weight: 900;">កាលបរិច្ឆេទ: ${reportDateLabel.value}</span>
-                   ថ្ងៃបញ្ចេញរបាយការណ៍ • ${new Date().toLocaleString('km-KH')}
+                   <span style="display: inline-block; background-color: #f8fafc; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0; color: #1e293b; font-size: 14px; font-weight: 900;">កាលបរិច្ឆេទ: ${reportDateLabel.value}</span>
+                   &nbsp;&nbsp;ថ្ងៃបញ្ចេញរបាយការណ៍ • ${new Date().toLocaleString('km-KH')}
                 </div>
                 <div>
                    ${isNativePrint ? '' : `ទំព័រទី ${pageNum} នៃ ${totalPages}`}
@@ -674,24 +890,36 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
     `;
 };
 
-const translateUnit = (unit) => {
-  if (!unit || unit === 'unknown') return 'ផ្សេងៗ';
-  const u = unit.toLowerCase().trim();
-  if (u === 'bottle' || u === 'bottles') return 'ដប';
-  if (u === 'pack' || u === 'packs') return 'កញ្ចប់';
-  if (u === 'can' || u === 'cans') return 'កំប៉ុង';
-  if (u === 'box' || u === 'boxes') return 'កេស';
-  return unit; 
+// Helpers
+const translateUnit = (unitVal) => {
+    if (!unitVal) return '';
+    const safeVal = String(unitVal);
+    const found = unitSettings.value.find(u => String(u.value) === safeVal);
+    if (found) return found.label;
+    
+    // Fallbacks
+    const u = safeVal.toLowerCase().trim();
+    if (u === 'bottle' || u === 'bottles') return 'ដប';
+    if (u === 'pack' || u === 'packs') return 'កញ្ចប់';
+    return safeVal; 
 };
 
-// Colors for App UI
-const getAppBadgeClass = (unit) => {
-  const u = unit.toLowerCase().trim();
-  if (u === 'bottle' || u === 'bottles') return 'text-cyan-600 border-cyan-200 bg-white';
-  if (u === 'pack' || u === 'packs') return 'text-purple-600 border-purple-200 bg-white';
-  if (u === 'can' || u === 'cans') return 'text-amber-600 border-amber-200 bg-white';
-  if (u === 'box' || u === 'boxes') return 'text-rose-600 border-rose-200 bg-white';
-  return 'text-slate-600 border-slate-200 bg-white';
+const getAppBadgeClass = (unitVal) => {
+    if (!unitVal) return 'text-slate-700 bg-slate-50 border-slate-200';
+    const safeVal = String(unitVal);
+    const found = unitSettings.value.find(u => String(u.value) === safeVal);
+    const color = found ? found.color : 'slate';
+    
+    const colorMap = {
+        cyan: 'text-cyan-700 bg-cyan-50 border-cyan-200',
+        purple: 'text-purple-700 bg-purple-50 border-purple-200',
+        amber: 'text-amber-700 bg-amber-50 border-amber-200',
+        rose: 'text-rose-700 bg-rose-50 border-rose-200',
+        emerald: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+        blue: 'text-blue-700 bg-blue-50 border-blue-200',
+        slate: 'text-slate-700 bg-slate-50 border-slate-200'
+    };
+    return colorMap[color] || colorMap['slate'];
 };
 
 </script>
