@@ -161,9 +161,9 @@
               @click="isSidebarOpen = false"
               class="group relative flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 overflow-hidden mb-2"
               active-class="bg-white/10 text-white shadow-lg backdrop-blur-md border border-white/5"
-              :class="$route.path.includes(item.key) ? '' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
+              :class="$route.path === item.path ? 'bg-white/10 text-white shadow-lg backdrop-blur-md border border-white/5' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
             >
-              <div v-if="$route.path.includes(item.key)" class="absolute left-0 top-0 bottom-0 w-1" :class="item.glowClass"></div>
+              <div v-if="$route.path === item.path" class="absolute left-0 top-0 bottom-0 w-1" :class="item.glowClass"></div>
               
               <span class="text-xl relative z-10 transition-transform group-hover:scale-110 duration-300">{{ item.icon }}</span>
               <span class="font-medium relative z-10">{{ item.label }}</span>
@@ -258,7 +258,7 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { TransitionRoot, TransitionChild, Dialog, DialogPanel, DialogTitle } from '@headlessui/vue';
 import CustomAlert from '../components/shared/CustomAlert.vue'; 
 import { auth, db } from '@/firebaseConfig'; 
@@ -267,6 +267,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import axios from 'axios';
 
 const router = useRouter();
+const route = useRoute();
 const isSidebarOpen = ref(false);
 const isAuthLoading = ref(true);
 

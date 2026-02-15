@@ -7,13 +7,14 @@ import MainLayout from '../layouts/MainLayout.vue'
 import OwnerDashboard from '../views/owner/Dashboard.vue'
 import ManageAdmins from '../views/owner/ManageAdmins.vue'
 import OwnerReports from '../views/owner/OwnerReports.vue'
-import OwnerSettings from '../views/owner/OwnerSettings.vue' // <--- NEW IMPORT
+import OwnerSettings from '../views/owner/OwnerSettings.vue' 
 import TrashAdmins from '../views/owner/TrashAdmins.vue'
 
 // Admin Views
 import AdminDashboard from '../views/admin/Dashboard.vue'
 import ManageSellers from '../views/admin/ManageSellers.vue'
 import InputSales from '../views/admin/InputSales.vue' 
+import SellerReports from '../views/admin/SellerReports.vue' // <-- MAKE SURE THIS IS IMPORTED
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -44,7 +45,7 @@ const router = createRouter({
           component: OwnerReports
         },
         {
-          path: 'owner/settings', // <--- NEW ROUTE
+          path: 'owner/settings', 
           name: 'owner-settings',
           component: OwnerSettings
         },
@@ -66,18 +67,20 @@ const router = createRouter({
           component: ManageSellers
         },
         {
-          path: 'admin/sales',
+          path: 'admin/sales', // <-- This is for INPUT SALES
           name: 'input-sales',
           component: InputSales
         },
         { 
           path: 'admin/seller-sales/:id', 
+          name: 'seller-sales-history',
           component: () => import('../views/admin/SellerSalesHistory.vue'),
           props: true 
         },
         { 
-          path: 'admin/seller-reports', 
-          component: () => import('../views/admin/SellerReports.vue') 
+          path: 'admin/seller-reports', // <-- This is for VIEWING REPORTS
+          name: 'seller-reports',
+          component: SellerReports 
         }
       ]
     }
