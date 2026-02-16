@@ -311,7 +311,6 @@ app.delete('/api/delete-seller/:uid', verifyToken, async (req, res) => {
 });
 
 // 7. CREATE SALES REPORT
-// 7. CREATE SALES REPORT
 app.post('/api/sales/create', verifyToken, async (req, res) => {
   try {
     const { 
@@ -319,6 +318,7 @@ app.post('/api/sales/create', verifyToken, async (req, res) => {
       sellerName, 
       sellerIdNumber,
       date, 
+      category, // <--- ADDED EXTRACTING CATEGORY
       totalClients, 
       totalSold, 
       unit, 
@@ -326,19 +326,23 @@ app.post('/api/sales/create', verifyToken, async (req, res) => {
       currency 
     } = req.body;
 
+    // Default category if old apps send data without one
+    const safeCategory = category || 'លក់រាយ';
+
     // 1. CHECK FOR DUPLICATES
-    // Query: Does a report exist for this Seller + This Date + This UNIT?
+    // Query: Does a report exist for this Seller + This Date + This UNIT + This CATEGORY?
     const existingReport = await db.collection('sales_reports')
       .where('sellerId', '==', sellerId)
       .where('date', '==', date)
-      .where('unit', '==', unit) // <--- CRITICAL FIX HERE
+      .where('unit', '==', unit) 
+      .where('category', '==', safeCategory) // <--- CRITICAL FIX: Duplicate check now includes category
       .get();
 
     if (!existingReport.empty) {
         return res.status(400).json({ 
             success: false, 
             error: "DUPLICATE_ENTRY", 
-            message: "This seller already has a report for this date and unit." 
+            message: "This seller already has a report for this date, unit, and category." 
         });
     }
 
@@ -348,6 +352,7 @@ app.post('/api/sales/create', verifyToken, async (req, res) => {
       sellerName,
       sellerIdNumber,
       date, 
+      category: safeCategory, // <--- ADDED TO FIRESTORE SAVE
       totalClients,
       totalSold,
       unit,

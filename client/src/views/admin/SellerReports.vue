@@ -20,7 +20,7 @@
                <button 
                  v-for="tab in filterTabs" 
                  :key="tab.key"
-                 @click="dateFilterType = tab.key"
+                 @click="handleTabClick(tab.key)"
                  class="flex-1 xl:flex-none px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all duration-300 whitespace-nowrap relative"
                  :class="dateFilterType === tab.key ? 'text-indigo-600 shadow-md bg-white' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'"
                >
@@ -77,73 +77,81 @@
          <div class="px-4 md:px-8 py-6 max-w-[90rem] mx-auto w-full">
            
            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
-              <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 rounded-[24px] p-6 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300 cursor-default">
-                 <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500"></div>
-                 <svg class="absolute right-4 bottom-4 w-24 h-24 text-white opacity-[0.07] group-hover:scale-110 transition-transform duration-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.15-1.46-3.27-3.04h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.57-4.15-1.63-4.15-3.81 0-1.89 1.4-3.26 3.09-3.57V4h2.67v1.9c1.7.35 2.96 1.48 3.16 2.95h-2.01c-.19-.94-.8-1.54-2.15-1.54-1.57 0-2.2.83-2.2 1.43 0 .74.45 1.43 2.79 2 2.48.59 4.03 1.77 4.03 3.86 0 1.94-1.4 3.32-3.23 3.65z"/></svg>
-                 <div class="relative z-10">
-                    <p class="text-indigo-100 text-[11px] font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                       <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
-                       ចំណូលសរុប (Revenue)
-                    </p>
-                    <div class="flex items-baseline gap-2">
-                       <span class="text-4xl font-black tracking-tight">{{ grandTotals.usd.toLocaleString() }}</span>
-                       <span class="text-xl font-bold opacity-80">$</span>
-                    </div>
-                    <div class="mt-2 pt-2 border-t border-white/20 flex items-baseline gap-2">
-                       <span class="text-xl font-bold">{{ grandTotals.khr.toLocaleString() }}</span>
-                       <span class="text-sm font-medium opacity-80">៛</span>
-                    </div>
-                 </div>
+              <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 rounded-[24px] p-6 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden flex flex-col justify-between">
+                  <div class="absolute -right-4 -top-4 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                  
+                  <div class="relative z-10">
+                      <p class="text-indigo-100 text-[11px] font-black uppercase tracking-widest mb-2 flex items-center gap-2">ចំណូលសរុប (Total Revenue)</p>
+                      <div class="flex items-baseline gap-2">
+                         <span class="text-4xl font-black tracking-tight">{{ grandTotals.all.usd.toLocaleString() }}</span>
+                         <span class="text-lg font-bold opacity-80">$</span>
+                      </div>
+                      <div class="text-sm font-bold mt-1 opacity-90 pb-2">{{ grandTotals.all.khr.toLocaleString() }} ៛</div>
+                  </div>
+
+                  <div v-if="activeCategory === 'all'" class="flex gap-2 border-t border-white/20 pt-3 mt-1 relative z-10">
+                      <div class="flex-1 bg-black/10 rounded-lg p-2.5 border border-white/10 backdrop-blur-sm">
+                          <div class="text-indigo-100 text-[10px] font-bold mb-1 uppercase">លក់រាយ (Retail)</div>
+                          <div class="font-black text-sm">{{ grandTotals.retail.usd.toLocaleString() }} $</div>
+                          <div class="font-bold text-[11px] opacity-90">{{ grandTotals.retail.khr.toLocaleString() }} ៛</div>
+                      </div>
+                      <div class="flex-1 bg-black/10 rounded-lg p-2.5 border border-white/10 backdrop-blur-sm">
+                          <div class="text-indigo-100 text-[10px] font-bold mb-1 uppercase">បោះដុំ (Wholesale)</div>
+                          <div class="font-black text-sm">{{ grandTotals.wholesale.usd.toLocaleString() }} $</div>
+                          <div class="font-bold text-[11px] opacity-90">{{ grandTotals.wholesale.khr.toLocaleString() }} ៛</div>
+                      </div>
+                  </div>
+              </div>
+              
+              <div class="bg-white rounded-[24px] p-6 border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:border-indigo-300 transition-colors flex flex-col justify-between">
+                  <div class="relative z-10">
+                      <p class="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-1">បរិមាណលក់ (Units Sold)</p>
+                      <h3 class="text-3xl font-black text-slate-800">{{ grandTotals.all.totalUnitsCount.toLocaleString() }}</h3>
+                  </div>
+                  
+                  <div class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-slate-100 relative z-10">
+                      <span v-for="(count, unit) in grandTotals.all.units" :key="unit" class="text-[10px] font-bold px-2 py-0.5 rounded border shadow-sm" :class="getUnitBadgeColor(unit)">
+                          {{ count.toLocaleString() }} {{ translateUnit(unit) }}
+                      </span>
+                  </div>
+
+                  <div v-if="activeCategory === 'all'" class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100 relative z-10">
+                      <div class="bg-indigo-50/50 rounded-lg p-2.5 border border-indigo-100/60">
+                          <p class="text-[10px] text-indigo-500 font-bold mb-1 uppercase tracking-widest">លក់រាយ</p>
+                          <span class="text-lg font-black text-slate-700">{{ grandTotals.retail.totalUnitsCount.toLocaleString() }}</span>
+                      </div>
+                      <div class="bg-purple-50/50 rounded-lg p-2.5 border border-purple-100/60">
+                          <p class="text-[10px] text-purple-600 font-bold mb-1 uppercase tracking-widest">បោះដុំ</p>
+                          <span class="text-lg font-black text-slate-700">{{ grandTotals.wholesale.totalUnitsCount.toLocaleString() }}</span>
+                      </div>
+                  </div>
               </div>
 
-              <div class="bg-white rounded-[24px] p-6 border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col justify-between group hover:border-blue-300 transition-colors">
-                  <div class="relative z-10 flex justify-between items-start mb-4">
-                     <div>
-                        <p class="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-1">ចំនួនលក់សរុប (Units)</p>
-                        <h3 class="text-3xl font-black text-slate-800">{{ grandTotals.totalUnitsCount.toLocaleString() }}</h3>
-                     </div>
-                     <div class="w-12 h-12 rounded-2xl bg-cyan-50 text-cyan-500 flex items-center justify-center">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                     </div>
+              <div class="bg-white rounded-[24px] p-6 border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:border-amber-300 transition-colors flex flex-col justify-between">
+                  <div class="relative z-10 flex justify-between items-start">
+                      <div>
+                          <p class="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-1">អតិថិជនសរុប (Clients)</p>
+                          <h3 class="text-3xl font-black text-slate-800">{{ grandTotals.all.clients.toLocaleString() }} <span class="text-sm text-slate-400 font-bold">នាក់</span></h3>
+                      </div>
+                      <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                      </div>
                   </div>
-                  <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
-    <template v-if="Object.keys(grandTotals.units).length > 0">
-        <template v-for="(entry, idx) in Object.entries(grandTotals.units)" :key="entry[0]">
-            <span v-if="idx < 3 || expandedRowIds.has('grandTotal')" class="text-xs font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1.5" :class="getUnitBadgeColor(entry[0])">
-                {{ entry[1].toLocaleString() }} {{ translateUnit(entry[0]) }}
-            </span>
-        </template>
-        
-        <button 
-            v-if="Object.keys(grandTotals.units).length > 3" 
-            @click.stop="toggleRowExpand('grandTotal')" 
-            class="text-[11px] font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 border border-indigo-100"
-        >
-            <span v-if="!expandedRowIds.has('grandTotal')">+{{ Object.keys(grandTotals.units).length - 3 }} ទៀត</span>
-            <span v-else>បង្រួម</span>
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path v-if="!expandedRowIds.has('grandTotal')" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
-            </svg>
-        </button>
-    </template>
-    <span v-else class="text-xs font-bold text-slate-300">គ្មានទិន្នន័យ</span>
-</div>
-              </div>
+                  
+                  <div class="mt-3 pt-3 border-t border-slate-100 text-[11px] font-bold text-slate-500 relative z-10 flex justify-between items-center">
+                      <span>តំណាងលក់សកម្ម:</span>
+                      <span class="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-lg text-xs font-black">{{ activeSellersCount }} អ្នក</span>
+                  </div>
 
-              <div class="bg-white rounded-[24px] p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
-                  <div class="flex justify-between items-start mb-4">
-                     <div>
-                        <p class="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-1">អតិថិជន (Clients)</p>
-                        <h3 class="text-3xl font-black text-slate-800">{{ grandTotals.clients.toLocaleString() }} <span class="text-sm font-bold text-slate-400">នាក់</span></h3>
-                     </div>
-                     <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                     </div>
-                  </div>
-                  <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                     <p class="text-xs font-bold text-slate-500">តំណាងលក់សកម្ម</p>
-                     <span class="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-lg text-xs font-black">{{ activeSellersCount }} អ្នក</span>
+                  <div v-if="activeCategory === 'all'" class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100 relative z-10">
+                      <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200/60">
+                          <p class="text-[10px] text-slate-500 font-bold mb-1 uppercase tracking-widest">អតិថិជនរាយ</p>
+                          <span class="text-base font-black text-slate-700">{{ grandTotals.retail.clients.toLocaleString() }} <span class="text-[10px] font-bold text-slate-400">នាក់</span></span>
+                      </div>
+                      <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-200/60">
+                          <p class="text-[10px] text-slate-500 font-bold mb-1 uppercase tracking-widest">អតិថិជនដុំ</p>
+                          <span class="text-base font-black text-slate-700">{{ grandTotals.wholesale.clients.toLocaleString() }} <span class="text-[10px] font-bold text-slate-400">នាក់</span></span>
+                      </div>
                   </div>
               </div>
            </div>
@@ -151,26 +159,48 @@
            <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
               <h3 class="text-lg font-black text-slate-800">បញ្ជីតំណាងលក់ <span class="text-slate-400 font-medium text-sm">({{ displayedData.length }})</span></h3>
               
-              <div class="bg-slate-200/50 p-1.5 rounded-xl flex w-full sm:w-auto shadow-inner border border-slate-200">
-                 <button 
-                   @click="activityFilter = 'all'"
-                   class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all"
-                   :class="activityFilter === 'all' ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'"
-                 >ទាំងអស់</button>
-                 <button 
-                   @click="activityFilter = 'active'"
-                   class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
-                   :class="activityFilter === 'active' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-emerald-100' : 'text-slate-500 hover:text-emerald-600'"
-                 >
-                   <span class="w-2 h-2 rounded-full" :class="activityFilter === 'active' ? 'bg-emerald-500' : 'bg-slate-300'"></span> លក់បាន
-                 </button>
-                 <button 
-                   @click="activityFilter = 'inactive'"
-                   class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
-                   :class="activityFilter === 'inactive' ? 'bg-white text-rose-600 shadow-sm ring-1 ring-rose-100' : 'text-slate-500 hover:text-rose-600'"
-                 >
-                   <span class="w-2 h-2 rounded-full" :class="activityFilter === 'inactive' ? 'bg-rose-500' : 'bg-slate-300'"></span> មិនបានលក់
-                 </button>
+              <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                 
+                 <div class="bg-slate-200/50 p-1.5 rounded-xl flex shadow-inner border border-slate-200 flex-1 sm:flex-none">
+                    <button @click="activeCategory = 'all'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all" :class="activeCategory === 'all' ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'">ទាំងអស់</button>
+                    <button @click="activeCategory = 'បោះដុំ'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5" :class="activeCategory === 'បោះដុំ' ? 'bg-white text-purple-700 shadow-sm ring-1 ring-purple-200' : 'text-slate-500 hover:text-purple-700'">
+                      បោះដុំ
+                    </button>
+                    <button @click="activeCategory = 'លក់រាយ'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5" :class="activeCategory === 'លក់រាយ' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-indigo-200' : 'text-slate-500 hover:text-indigo-600'">
+                      លក់រាយ
+                    </button>
+                 </div>
+
+                 <div class="bg-slate-200/50 p-1.5 rounded-xl flex shadow-inner border border-slate-200 flex-1 sm:flex-none">
+                    <button @click="activityFilter = 'all'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all" :class="activityFilter === 'all' ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'">សកម្មភាព</button>
+                    <button @click="activityFilter = 'active'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5" :class="activityFilter === 'active' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-emerald-100' : 'text-slate-500 hover:text-emerald-600'">
+                      <span class="w-2 h-2 rounded-full" :class="activityFilter === 'active' ? 'bg-emerald-500' : 'bg-slate-300'"></span> លក់បាន
+                    </button>
+                    <button @click="activityFilter = 'inactive'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5" :class="activityFilter === 'inactive' ? 'bg-white text-rose-600 shadow-sm ring-1 ring-rose-100' : 'text-slate-500 hover:text-rose-600'">
+                      <span class="w-2 h-2 rounded-full" :class="activityFilter === 'inactive' ? 'bg-rose-500' : 'bg-slate-300'"></span> មិនបានលក់
+                    </button>
+                 </div>
+
+                 <div class="flex gap-2 w-full sm:w-auto">
+                    <button 
+                       @click="executeNativePrint" 
+                       :disabled="displayedData.length === 0"
+                       class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-slate-900/20 flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2v4h10z"></path></svg>
+                       <span>Print</span>
+                    </button>
+
+                    <button 
+                       @click="generatePDF" 
+                       :disabled="processing.active || displayedData.length === 0"
+                       class="flex-1 sm:flex-none bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-rose-500/30 flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                       <svg v-if="processing.active" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                       <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                       <span>ទាញយក PDF</span>
+                    </button>
+                 </div>
               </div>
            </div>
 
@@ -184,259 +214,26 @@
                  <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
               </div>
               <p class="text-slate-600 font-bold text-lg">មិនមានទិន្នន័យទេ</p>
-              <p class="text-slate-400 text-sm mt-1">សូមជ្រើសរើសកាលបរិច្ឆេទផ្សេងទៀត។</p>
+              <p class="text-slate-400 text-sm mt-1">សូមជ្រើសរើសប្រភេទលក់ ឬកាលបរិច្ឆេទផ្សេងទៀត។</p>
            </div>
 
            <div v-else>
-              
-              <div class="md:hidden flex flex-col gap-4">
-                 <div v-for="(item, index) in displayedData" :key="item.id" class="bg-white p-5 rounded-[20px] shadow-[0_4px_15px_rgb(0,0,0,0.03)] border relative overflow-hidden group transition-all" :class="item.hasSales ? 'border-slate-100' : 'border-rose-100/50 bg-slate-50/50'">
-                    
-                    <div class="absolute top-0 right-0 bg-gradient-to-bl from-slate-100 to-white px-3 py-1.5 rounded-bl-xl border-b border-l border-slate-100">
-                       <span class="text-slate-400 font-black text-xs">#{{ index + 1 }}</span>
-                    </div>
-
-                    <div class="flex items-center gap-4 mb-5">
-                       <div class="relative">
-                          <img :src="item.photoUrl || `https://ui-avatars.com/api/?name=${item.fullName}`" class="w-14 h-14 rounded-2xl object-cover border border-slate-100 shadow-sm" :class="item.hasSales ? '' : 'grayscale-[30%] opacity-80'">
-                          <span class="absolute -bottom-1 -left-1 w-4 h-4 rounded-full border-2 border-white shadow-sm" :class="item.hasSales ? 'bg-emerald-500' : 'bg-rose-500'"></span>
-                          
-                          <div v-if="editingSaleId !== item.rawSale?.id" class="absolute -bottom-2 -right-2 flex gap-1 z-10">
-                             <button v-if="dateFilterType === 'daily' && item.hasSales" @click="startEdit(item)" class="bg-white p-1 rounded-full shadow-sm hover:scale-110 transition-transform">
-                                <div class="bg-amber-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center">
-                                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                </div>
-                             </button>
-                             <a v-if="item.telegram" :href="'https://t.me/'+item.telegram" target="_blank" class="bg-white p-1 rounded-full shadow-sm hover:scale-110 transition-transform">
-                               <div class="bg-sky-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center">
-                                  <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.48-.94-2.4-1.54-1.06-.7-.37-1.09.23-1.72.16-.16 2.87-2.63 2.92-2.85.01-.03.01-.14-.06-.2-.06-.06-.17-.04-.25-.02-.11.02-1.91 1.2-5.39 3.55-.5.34-.95.51-1.35.5-.44-.01-1.29-.25-1.92-.42-.77-.21-1.37-.32-1.31-.68.03-.18.28-.37.76-.56 3.03-1.32 5.06-2.19 6.09-2.62 2.93-1.21 3.53-1.43 3.93-1.43.09 0 .28.01.4.04.1.03.24.1.33.25.08.16.07.32.07.33z"/></svg>
-                               </div>
-                            </a>
-                          </div>
-                       </div>
-                       <div class="flex-1 min-w-0 pr-6">
-                          <h3 class="font-bold text-lg leading-tight truncate" :class="item.hasSales ? 'text-slate-800' : 'text-slate-500'">{{ item.fullName }}</h3>
-                          <p class="text-[11px] text-slate-400 font-mono mt-0.5 font-bold">ID: {{ item.idNumber || 'N/A' }}</p>
-                       </div>
-                    </div>
-
-                    <div v-if="editingSaleId !== item.rawSale?.id">
-                        <div v-if="item.hasSales" class="bg-slate-50/80 rounded-xl p-4 grid grid-cols-2 gap-4 border border-slate-100/80">
-                           <div>
-                              <p class="text-[10px] text-slate-400 font-black uppercase tracking-wider mb-2">បរិមាណលក់</p>
-                              
-                              <div class="flex flex-col gap-1.5 items-start">
-                                 <template v-for="(entry, idx) in Object.entries(item.unitCounts)" :key="entry[0]">
-                                    <span v-if="idx < 3 || expandedRowIds.has(item.id)" class="text-[11px] font-bold px-2.5 py-1 rounded-md border bg-white shadow-sm w-fit" :class="getUnitBadgeColor(entry[0])">
-                                       {{ entry[1].toLocaleString() }} {{ translateUnit(entry[0]) }}
-                                    </span>
-                                 </template>
-                                 <button 
-                                    v-if="Object.keys(item.unitCounts).length > 3" 
-                                    @click.stop="toggleRowExpand(item.id)" 
-                                    class="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md transition-colors flex items-center gap-1 border border-indigo-100 mt-1"
-                                 >
-                                    <span v-if="!expandedRowIds.has(item.id)">+{{ Object.keys(item.unitCounts).length - 3 }} ទៀត</span>
-                                    <span v-else>បង្រួម</span>
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                       <path v-if="!expandedRowIds.has(item.id)" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                       <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
-                                    </svg>
-                                 </button>
-                              </div>
-
-                           </div>
-                           <div class="text-right flex flex-col justify-between">
-                              <div>
-                                 <p class="text-[10px] text-slate-400 font-black uppercase tracking-wider mb-1">អតិថិជនសរុប</p>
-                                 <p class="text-sm font-bold text-slate-700"><span class="text-orange-500">{{ item.totalClients }}</span> នាក់</p>
-                              </div>
-                              <div class="mt-2 pt-2 border-t border-slate-200/60">
-                                 <p class="text-base font-black text-emerald-600 leading-none">{{ item.revenueUSD.toLocaleString() }} $</p>
-                                 <p class="text-[11px] font-bold text-blue-600 mt-1">{{ item.revenueKHR.toLocaleString() }} ៛</p>
-                              </div>
-                           </div>
-                        </div>
-                        <div v-else class="bg-rose-50/50 rounded-xl p-3 border border-rose-100/50 flex items-center justify-center gap-2">
-                            <span class="text-xs font-bold text-rose-500">គ្មានការលក់ទេ</span>
-                        </div>
-                    </div>
-
-                    <div v-else class="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100 animate-fade-in space-y-4 mt-4">
-                        <div>
-                           <p class="text-[10px] text-slate-500 font-black uppercase mb-1">បរិមាណលក់</p>
-                           <div class="flex gap-2">
-                              <input type="number" v-model="editForm.totalSold" class="w-full px-3 py-2 text-sm font-bold text-slate-800 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/30">
-                              <select v-model="editForm.unit" class="w-full px-2 py-2 text-sm font-bold text-slate-800 border border-indigo-200 rounded-lg outline-none bg-white focus:ring-2 focus:ring-indigo-500/30">
-                                 <option v-for="u in availableUnits" :key="u.value" :value="u.value">{{ u.label }}</option>
-                              </select>
-                           </div>
-                        </div>
-                        <div>
-                           <p class="text-[10px] text-slate-500 font-black uppercase mb-1">អតិថិជនសរុប</p>
-                           <div class="flex items-center gap-2">
-                              <input type="number" v-model="editForm.totalClients" class="w-full px-3 py-2 text-sm font-bold text-slate-800 border border-amber-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500/30">
-                              <span class="text-xs font-bold text-slate-500 shrink-0">នាក់</span>
-                           </div>
-                        </div>
-                        <div>
-                           <p class="text-[10px] text-slate-500 font-black uppercase mb-1">ចំណូលសរុប</p>
-                           <div class="flex gap-2">
-                              <input type="number" step="0.01" v-model="editForm.totalPrice" class="w-full px-3 py-2 text-sm font-black text-slate-800 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/30">
-                              <select v-model="editForm.currency" class="w-24 px-2 py-2 text-xs font-black text-slate-800 border border-emerald-200 rounded-lg outline-none bg-white focus:ring-2 focus:ring-emerald-500/30">
-                                 <option value="USD">USD</option>
-                                 <option value="KHR">KHR</option>
-                              </select>
-                           </div>
-                        </div>
-                        <div class="flex gap-2 pt-2 mt-2 border-t border-indigo-100/60">
-                           <button @click="cancelEdit" class="flex-1 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs transition-colors">បោះបង់</button>
-                           <button @click="saveEdit" :disabled="isUpdatingSale" class="flex-1 py-2 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/20 active:scale-95 transition-all">
-                               <svg v-if="isUpdatingSale" class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                               <span v-else>រក្សាទុក</span>
-                           </button>
-                        </div>
-                    </div>
-
-                 </div>
-              </div>
-
-              <div class="hidden md:block bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 overflow-hidden">
-                 <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-50/80 text-slate-500 text-[11px] uppercase font-black tracking-widest border-b border-slate-200">
-                       <tr>
-                          <th class="px-6 py-5 w-16 text-center">#</th>
-                          <th class="px-6 py-5">តំណាងលក់ (Seller)</th>
-                          <th class="px-6 py-5 w-64">បរិមាណលក់ (Units Sold)</th>
-                          <th class="px-6 py-5 text-center">ចំនួនភ្ញៀវ</th>
-                          <th class="px-6 py-5 text-right w-40">ចំណូលសរុប (Revenue)</th>
-                          <th class="px-6 py-5 text-center w-32">សកម្មភាព (Actions)</th>
-                       </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                       <tr v-for="(item, index) in displayedData" :key="item.id" class="transition-colors group" :class="[item.hasSales ? 'hover:bg-indigo-50/30' : 'bg-slate-50/30', editingSaleId === item.rawSale?.id ? 'bg-indigo-50/40 border-l-4 border-l-indigo-500' : '']">
-                          
-                          <td class="px-6 py-5 text-center align-top">
-                             <span class="text-xs font-black" :class="item.hasSales ? 'text-indigo-500' : 'text-slate-400'">{{ index + 1 }}</span>
-                          </td>
-                          
-                          <td class="px-6 py-5 align-top">
-                             <div class="flex items-center gap-4">
-                                <div class="relative">
-                                   <img :src="item.photoUrl || `https://ui-avatars.com/api/?name=${item.fullName}`" class="w-11 h-11 rounded-2xl object-cover border border-slate-200 shadow-sm transition-transform duration-300" :class="item.hasSales ? 'group-hover:scale-105' : 'grayscale-[40%] opacity-70'">
-                                   <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm" :class="item.hasSales ? 'bg-emerald-500' : 'bg-rose-400'"></span>
-                                </div>
-                                <div>
-                                   <p class="font-bold text-sm mb-0.5" :class="item.hasSales ? 'text-slate-800' : 'text-slate-500'">{{ item.fullName }}</p>
-                                   <div class="flex items-center gap-2">
-                                      <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 font-mono font-bold">{{ item.idNumber || 'N/A' }}</span>
-                                      <span class="text-[10px] text-slate-400 font-medium">{{ item.phoneNumber }}</span>
-                                   </div>
-                                </div>
-                             </div>
-                          </td>
-
-                          <td class="px-6 py-5 align-top">
-                             <div v-if="editingSaleId !== item.rawSale?.id">
-                                 <div v-if="item.hasSales" class="flex flex-wrap gap-2 items-center">
-                                    <template v-for="(entry, idx) in Object.entries(item.unitCounts)" :key="entry[0]">
-                                       <span v-if="idx < 3 || expandedRowIds.has(item.id)" 
-                                             class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-white shadow-sm border"
-                                             :class="getUnitBadgeColor(entry[0])">
-                                          {{ entry[1].toLocaleString() }} {{ translateUnit(entry[0]) }}
-                                       </span>
-                                    </template>
-                                    <button 
-                                       v-if="Object.keys(item.unitCounts).length > 3" 
-                                       @click.stop="toggleRowExpand(item.id)" 
-                                       class="text-[11px] font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 border border-indigo-100"
-                                    >
-                                       <span v-if="!expandedRowIds.has(item.id)">+{{ Object.keys(item.unitCounts).length - 3 }} ទៀត</span>
-                                       <span v-else>បង្រួម</span>
-                                       <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path v-if="!expandedRowIds.has(item.id)" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                          <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
-                                       </svg>
-                                    </button>
-                                 </div>
-                                 <div v-else>
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-500 border border-rose-100">
-                                       គ្មានការលក់
-                                    </span>
-                                 </div>
-                             </div>
-                             <div v-else class="flex flex-col gap-2 animate-fade-in">
-                                 <input type="number" v-model="editForm.totalSold" min="0" class="w-20 px-3 py-1.5 text-sm font-bold text-slate-800 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm">
-                                 <select v-model="editForm.unit" class="w-28 px-2 py-1.5 text-sm font-bold text-slate-800 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 outline-none bg-white shadow-sm cursor-pointer">
-                                    <option v-for="u in availableUnits" :key="u.value" :value="u.value">{{ u.label }}</option>
-                                 </select>
-                             </div>
-                          </td>
-
-                          <td class="px-6 py-5 text-center align-top">
-                             <div v-if="editingSaleId !== item.rawSale?.id">
-                                 <span v-if="item.hasSales" class="inline-flex items-center px-3 py-1 bg-amber-50 text-amber-600 rounded-lg text-sm font-bold border border-amber-100">
-                                    {{ item.totalClients.toLocaleString() }} នាក់
-                                 </span>
-                                 <span v-else class="text-slate-300 font-bold">-</span>
-                             </div>
-                             <div v-else class="flex items-center justify-center gap-1 animate-fade-in">
-                                 <input type="number" v-model="editForm.totalClients" min="0" class="w-16 px-2 py-1.5 text-sm font-bold text-center text-slate-800 border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500/20 outline-none shadow-sm">
-                                 <span class="text-xs font-bold text-slate-500">នាក់</span>
-                             </div>
-                          </td>
-
-                          <td class="px-6 py-5 text-right align-top">
-                             <div v-if="editingSaleId !== item.rawSale?.id">
-                                 <div v-if="item.hasSales" class="flex flex-col items-end gap-1">
-                                    <span class="text-emerald-700 font-black text-sm bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-100/60 min-w-[90px] text-right shadow-sm">
-                                       {{ item.revenueUSD.toLocaleString() }} $
-                                    </span>
-                                    <span class="text-blue-700 font-bold text-xs bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-100/60 min-w-[90px] text-right">
-                                       {{ item.revenueKHR.toLocaleString() }} ៛
-                                    </span>
-                                 </div>
-                                 <div v-else>
-                                     <span class="text-slate-300 font-bold">-</span>
-                                 </div>
-                             </div>
-                             <div v-else class="flex items-center justify-end gap-2 animate-fade-in">
-                                 <input type="number" step="0.01" min="0" v-model="editForm.totalPrice" class="w-24 px-3 py-1.5 text-sm font-black text-right text-slate-800 border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 outline-none shadow-sm">
-                                 <select v-model="editForm.currency" class="w-16 px-1 py-1.5 text-xs font-black text-slate-800 border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 outline-none bg-white shadow-sm cursor-pointer">
-                                    <option value="USD">USD</option>
-                                    <option value="KHR">KHR</option>
-                                 </select>
-                             </div>
-                          </td>
-
-                          <td class="px-6 py-5 text-center align-top">
-                             <div class="flex items-center justify-center gap-1.5">
-                                <template v-if="editingSaleId !== item.rawSale?.id">
-                                    <a v-if="item.telegram" :href="'https://t.me/' + item.telegram" target="_blank" class="text-sky-500 hover:text-white hover:bg-sky-500 w-9 h-9 rounded-xl inline-flex items-center justify-center transition-all bg-sky-50 shadow-sm hover:shadow-md" :class="!item.hasSales ? 'opacity-60 grayscale' : ''">
-                                       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.48-.94-2.4-1.54-1.06-.7-.37-1.09.23-1.72.16-.16 2.87-2.63 2.92-2.85.01-.03.01-.14-.06-.2-.06-.06-.17-.04-.25-.02-.11.02-1.91 1.2-5.39 3.55-.5.34-.95.51-1.35.5-.44-.01-1.29-.25-1.92-.42-.77-.21-1.37-.32-1.31-.68.03-.18.28-.37.76-.56 3.03-1.32 5.06-2.19 6.09-2.62 2.93-1.21 3.53-1.43 3.93-1.43.09 0 .28.01.4.04.1.03.24.1.33.25.08.16.07.32.07.33z"/></svg>
-                                    </a>
-                                    <span v-else-if="!item.hasSales" class="text-slate-300 font-black">-</span>
-
-                                    <button v-if="dateFilterType === 'daily' && item.hasSales" @click="startEdit(item)" class="text-amber-500 hover:text-white hover:bg-amber-500 w-9 h-9 rounded-xl inline-flex items-center justify-center transition-all bg-amber-50 shadow-sm hover:shadow-md" title="កែប្រែទិន្នន័យ (Edit)">
-                                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                    </button>
-                                </template>
-                                <template v-else>
-                                    <button @click="saveEdit" :disabled="isUpdatingSale" class="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 hover:bg-emerald-500 hover:text-white flex items-center justify-center shadow-sm transition-all active:scale-95" title="រក្សាទុក (Save)">
-                                        <svg v-if="isUpdatingSale" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                        <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                    </button>
-                                    <button @click="cancelEdit" :disabled="isUpdatingSale" class="w-9 h-9 rounded-xl bg-rose-50 border border-rose-200 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center shadow-sm transition-all active:scale-95" title="បោះបង់ (Cancel)">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                    </button>
-                                </template>
-                             </div>
-                          </td>
-                       </tr>
-                    </tbody>
-                 </table>
-              </div>
+              <SellerDataTable 
+                  :data="displayedData"
+                  :date-filter-type="dateFilterType"
+                  :available-units="availableUnits"
+                  :editing-sale-id="editingSaleId"
+                  :edit-form="editForm"
+                  :is-updating-sale="isUpdatingSale"
+                  :expanded-row-ids="expandedRowIds"
+                  @start-edit="startEdit"
+                  @cancel-edit="cancelEdit"
+                  @save-edit="saveEdit"
+                  @toggle-expand="toggleRowExpand"
+                  @row-click="goToSellerDetails"
+              />
            </div>
+
          </div>
       </div>
 
@@ -453,31 +250,18 @@
             </div>
             <div class="flex-1 flex justify-between md:justify-end items-center gap-6 w-full overflow-x-auto no-scrollbar">
                <div class="flex items-center gap-2">
-    <template v-if="Object.keys(grandTotals.units).length > 0">
-        <template v-for="(entry, idx) in Object.entries(grandTotals.units)" :key="entry[0]">
-            <span v-if="idx < 3 || expandedRowIds.has('grandTotal')" class="text-xs font-black text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm whitespace-nowrap">
-                {{ entry[1].toLocaleString() }} {{ translateUnit(entry[0]) }}
-            </span>
-        </template>
-
-        <button 
-            v-if="Object.keys(grandTotals.units).length > 3" 
-            @click.stop="toggleRowExpand('grandTotal')" 
-            class="text-[11px] font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-1 border border-indigo-100 whitespace-nowrap"
-        >
-            <span v-if="!expandedRowIds.has('grandTotal')">+{{ Object.keys(grandTotals.units).length - 3 }} ទៀត</span>
-            <span v-else>បង្រួម</span>
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path v-if="!expandedRowIds.has('grandTotal')" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
-            </svg>
-        </button>
-    </template>
-</div>
+                    <template v-if="Object.keys(grandTotals.all.units).length > 0">
+                        <template v-for="(count, unit) in grandTotals.all.units" :key="unit">
+                            <span class="text-xs font-black text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm whitespace-nowrap">
+                                {{ count.toLocaleString() }} {{ translateUnit(unit) }}
+                            </span>
+                        </template>
+                    </template>
+                </div>
                <div class="h-10 w-px bg-slate-200 hidden md:block"></div>
                <div class="text-right shrink-0">
-                  <p class="text-xl md:text-2xl font-black text-emerald-600 leading-none">{{ grandTotals.usd.toLocaleString() }} <span class="text-sm opacity-80">$</span></p>
-                  <p class="text-xs font-bold text-blue-600 mt-1">{{ grandTotals.khr.toLocaleString() }} ៛</p>
+                  <p class="text-xl md:text-2xl font-black text-emerald-600 leading-none">{{ grandTotals.all.usd.toLocaleString() }} <span class="text-sm opacity-80">$</span></p>
+                  <p class="text-xs font-bold text-blue-600 mt-1">{{ grandTotals.all.khr.toLocaleString() }} ៛</p>
                </div>
             </div>
          </div>
@@ -485,7 +269,7 @@
     </div>
 
     <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
-        <div v-if="processing.active" class="fixed inset-0 z-[99999] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+        <div v-if="processing.active" class="fixed inset-0 z-[999999] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
             <div class="w-full max-w-sm bg-[#18181b] border border-white/10 rounded-3xl p-10 shadow-2xl relative flex flex-col items-center text-center animate-fade-in-up">
                 <div class="relative w-20 h-20 mb-8">
                     <div class="absolute inset-0 rounded-full border-4 border-white/5"></div>
@@ -502,6 +286,13 @@
 
     <div ref="printStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1]"></div>
 
+    <CustomAlert 
+       v-if="alert.show" 
+       :type="alert.type" 
+       :title="alert.title" 
+       :message="alert.message" 
+       @close="alert.show = false" 
+    />
   </div>
 </template>
 
@@ -514,11 +305,22 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import CustomAlert from '../../components/shared/CustomAlert.vue';
 
+// IMPORT USE ROUTER
+import { useRouter } from 'vue-router';
+
+// IMPORT THE NEW COMPONENT
+import SellerDataTable from '../../components/SellerDataTable.vue';
+
+const router = useRouter(); 
+
 // --- STATE ---
 const isLoading = ref(true);
 const sellersList = ref([]);
 const allSales = ref([]); 
 const availableUnits = ref([]); 
+
+// ✅ CATEGORY FILTER STATE
+const activeCategory = ref('all'); 
 
 const printStaging = ref(null);
 const processing = ref({ active: false, message: '', progress: 0 });
@@ -529,14 +331,30 @@ const triggerAlert = (type, title, message) => {
   setTimeout(() => alert.show = false, 3000);
 };
 
+// HELPER FOR LOCAL DATES
+const getTodayString = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+};
+
 // Filters
 const dateFilterType = ref('monthly'); 
 const activityFilter = ref('all'); 
-const selectedDate = ref(new Date().toISOString().split('T')[0]);
+const selectedDate = ref(getTodayString()); 
 const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref(new Date().getMonth());
-const customStart = ref(new Date().toISOString().split('T')[0]);
-const customEnd = ref(new Date().toISOString().split('T')[0]);
+const customStart = ref(getTodayString());
+const customEnd = ref(getTodayString());
+
+const handleTabClick = (key) => {
+    dateFilterType.value = key;
+    if (key === 'daily') {
+        selectedDate.value = getTodayString(); 
+    }
+};
 
 const filterTabs = [
  { key: 'daily', label: 'ប្រចាំថ្ងៃ' },
@@ -547,7 +365,7 @@ const filterTabs = [
 
 const monthNames = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
 
-// Expanded Rows Set for Collapsible Units
+// Expanded Rows Set
 const expandedRowIds = ref(new Set());
 const toggleRowExpand = (id) => {
     const newSet = new Set(expandedRowIds.value);
@@ -561,12 +379,19 @@ const editingSaleId = ref(null);
 const isUpdatingSale = ref(false);
 const editForm = reactive({
  id: '',
+ category: 'លក់រាយ', // Default
  totalClients: '',
  totalSold: '',
  unit: '', 
  totalPrice: '',
  currency: 'USD'
 });
+
+const goToSellerDetails = (item) => {
+    if (item && item.originalSellerId) {
+        router.push(`/admin/seller-detail/${item.originalSellerId}`);
+    }
+};
 
 // --- FETCH DATA ---
 onMounted(() => {
@@ -582,15 +407,10 @@ onMounted(() => {
 
      const salesQ = query(collection(db, 'sales_reports'), where('createdBy', '==', user.uid));
      const salesSnap = await getDocs(salesQ);
-     allSales.value = salesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+     
+     // ALL SALES PRE-SORTED NEWEST FIRST
+     allSales.value = salesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => new Date(b.date) - new Date(a.date));
 
-     const validSales = allSales.value.filter(s => s && s.date);
-     if (validSales.length > 0) {
-      const latestDate = validSales.map(s => new Date(s.date)).sort((a,b) => b - a)[0];
-      selectedYear.value = latestDate.getFullYear();
-      selectedMonth.value = latestDate.getMonth();
-      selectedDate.value = latestDate.toISOString().split('T')[0];
-     }
    } catch (error) {
      console.error("Error fetching data", error);
    } finally {
@@ -623,7 +443,6 @@ watch(selectedYear, () => {
   }
 });
 
-// --- CALCULATION LOGIC ---
 const isDateInScope = (dateStr) => {
  if (!dateStr) return false;
  const date = new Date(dateStr);
@@ -638,37 +457,70 @@ const isDateInScope = (dateStr) => {
  return false;
 };
 
-// 1. Base Data: Maps ALL sellers to their stats in the selected date scope
+// 1. ✅ BASE DATA CALCULATION: SPLITS ROWS BY CATEGORY
 const baseCalculatedData = computed(() => {
  if (sellersList.value.length === 0) return [];
+ 
+ let rows = [];
 
- return sellersList.value.map(seller => {
-   const relevantSales = allSales.value.filter(s => s.sellerId === seller.id && s.date && isDateInScope(s.date));
+ sellersList.value.forEach(seller => {
+   const relevantSales = allSales.value.filter(s => s.sellerId === seller.id && isDateInScope(s.date));
 
-   let totalClients = 0;
-   let revenueUSD = 0;
-   let revenueKHR = 0;
-   let unitCounts = {}; 
+   const retailSales = relevantSales.filter(s => (s.category || 'លក់រាយ') === 'លក់រាយ');
+   const wholesaleSales = relevantSales.filter(s => s.category === 'បោះដុំ');
 
-   relevantSales.forEach(sale => {
-    const u = (sale.unit || 'unknown').toLowerCase().trim();
-    if (!unitCounts[u]) unitCounts[u] = 0;
-    unitCounts[u] += Number(sale.totalSold || 0);
+   const createRow = (catName, salesList) => {
+       let totalClients = 0;
+       let revenueUSD = 0;
+       let revenueKHR = 0;
+       let unitCounts = {}; 
 
-    totalClients += Number(sale.totalClients || 0);
-    
-    if (sale.currency === 'USD' || sale.currency === '$') {
-      revenueUSD += Number(sale.totalPrice || 0);
-    } else {
-      revenueKHR += Number(sale.totalPrice || 0);
-    }
-   });
+       salesList.forEach(sale => {
+        const u = (sale.unit || 'unknown').toLowerCase().trim();
+        if (!unitCounts[u]) unitCounts[u] = 0;
+        unitCounts[u] += Number(sale.totalSold || 0);
 
-   const hasSales = relevantSales.length > 0;
-   const rawSale = relevantSales.length > 0 ? relevantSales[0] : null;
+        totalClients += Number(sale.totalClients || 0);
+        
+        if (sale.currency === 'USD' || sale.currency === '$') {
+          revenueUSD += Number(sale.totalPrice || 0);
+        } else {
+          revenueKHR += Number(sale.totalPrice || 0);
+        }
+       });
 
-   return { ...seller, unitCounts, totalClients, revenueUSD, revenueKHR, hasSales, rawSale };
- }).sort((a, b) => {
+       const hasSales = salesList.length > 0;
+       const rawSale = hasSales ? salesList[0] : null;
+
+       rows.push({ 
+           ...seller, 
+           uniqueId: `${seller.id}_${catName === 'all' ? 'none' : catName}`, 
+           originalSellerId: seller.id, 
+           category: catName,
+           unitCounts, 
+           totalClients, 
+           revenueUSD, 
+           revenueKHR, 
+           hasSales, 
+           rawSale 
+       });
+   };
+
+   if (activeCategory.value === 'all') {
+       if (retailSales.length > 0) createRow('លក់រាយ', retailSales);
+       if (wholesaleSales.length > 0) createRow('បោះដុំ', wholesaleSales);
+       
+       if (retailSales.length === 0 && wholesaleSales.length === 0) {
+           createRow('-', []); 
+       }
+   } else if (activeCategory.value === 'លក់រាយ') {
+       createRow('លក់រាយ', retailSales);
+   } else if (activeCategory.value === 'បោះដុំ') {
+       createRow('បោះដុំ', wholesaleSales);
+   }
+ });
+
+ return rows.sort((a, b) => {
    if (a.hasSales && !b.hasSales) return -1;
    if (!a.hasSales && b.hasSales) return 1;
    return (b.revenueUSD + (b.revenueKHR/4000)) - (a.revenueUSD + (a.revenueKHR/4000));
@@ -676,48 +528,63 @@ const baseCalculatedData = computed(() => {
 });
 
 // 2. Counts for Insight Cards
-const activeSellersCount = computed(() => baseCalculatedData.value.filter(s => s.hasSales).length);
-const inactiveSellersCount = computed(() => baseCalculatedData.value.filter(s => !s.hasSales).length);
+const activeSellersCount = computed(() => {
+    const uniqueIds = new Set(baseCalculatedData.value.filter(s => s.hasSales).map(s => s.originalSellerId));
+    return uniqueIds.size;
+});
 
-// 3. Displayed Data: Filters the Base Data based on "All / Active / Inactive"
+// 3. Displayed Data
 const displayedData = computed(() => {
   if (activityFilter.value === 'active') return baseCalculatedData.value.filter(s => s.hasSales);
   if (activityFilter.value === 'inactive') return baseCalculatedData.value.filter(s => !s.hasSales);
   return baseCalculatedData.value;
 });
 
-// 4. Grand Totals 
+// 4. ✅ Grand Totals (SPLIT BY CATEGORY)
 const grandTotals = computed(() => {
- let units = {};
- let clients = 0;
- let usd = 0;
- let khr = 0;
- let totalUnitsCount = 0;
+    let stats = {
+        all: { usd: 0, khr: 0, clients: 0, totalUnitsCount: 0, units: {} },
+        retail: { usd: 0, khr: 0, clients: 0, totalUnitsCount: 0, units: {} },
+        wholesale: { usd: 0, khr: 0, clients: 0, totalUnitsCount: 0, units: {} }
+    };
 
- baseCalculatedData.value.forEach(row => {
-   if(row.hasSales) {
-     for (const [unit, count] of Object.entries(row.unitCounts)) {
-       if (count > 0) {
-         if (!units[unit]) units[unit] = 0;
-         units[unit] += count;
-         totalUnitsCount += count;
-       }
-     }
-     clients += row.totalClients;
-     usd += row.revenueUSD;
-     khr += row.revenueKHR;
-   }
- });
+    baseCalculatedData.value.forEach(row => {
+        if(row.hasSales) {
+            const cat = row.category === 'បោះដុំ' ? 'wholesale' : 'retail';
+            
+            // Add to ALL
+            stats.all.clients += row.totalClients;
+            stats.all.usd += row.revenueUSD;
+            stats.all.khr += row.revenueKHR;
+            
+            // Add to Specific
+            stats[cat].clients += row.totalClients;
+            stats[cat].usd += row.revenueUSD;
+            stats[cat].khr += row.revenueKHR;
 
- return { units, clients, usd, khr, totalUnitsCount };
+            for (const [unit, count] of Object.entries(row.unitCounts)) {
+                if(count > 0) {
+                    stats.all.units[unit] = (stats.all.units[unit] || 0) + count;
+                    stats.all.totalUnitsCount += count;
+                    
+                    stats[cat].units[unit] = (stats[cat].units[unit] || 0) + count;
+                    stats[cat].totalUnitsCount += count;
+                }
+            }
+        }
+    });
+
+    return stats;
 });
 
 const reportDateLabel = computed(() => {
-   if (dateFilterType.value === 'daily') return new Intl.DateTimeFormat('km-KH', { dateStyle: 'long' }).format(new Date(selectedDate.value));
-   if (dateFilterType.value === 'monthly') return `ខែ ${monthNames[selectedMonth.value]} ឆ្នាំ ${selectedYear.value}`;
-   if (dateFilterType.value === 'yearly') return `ឆ្នាំ ${selectedYear.value}`;
-   if (dateFilterType.value === 'custom') return `${selectedDateFormatter(customStart.value)} ដល់ ${selectedDateFormatter(customEnd.value)}`;
-   return '';
+    const categoryName = activeCategory.value === 'all' ? 'សរុប (All)' : activeCategory.value;
+    let dateStr = '';
+    if (dateFilterType.value === 'daily') dateStr = new Intl.DateTimeFormat('km-KH', { dateStyle: 'long' }).format(new Date(selectedDate.value));
+    if (dateFilterType.value === 'monthly') dateStr = `ខែ ${monthNames[selectedMonth.value]} ឆ្នាំ ${selectedYear.value}`;
+    if (dateFilterType.value === 'yearly') dateStr = `ឆ្នាំ ${selectedYear.value}`;
+    if (dateFilterType.value === 'custom') dateStr = `${selectedDateFormatter(customStart.value)} ដល់ ${selectedDateFormatter(customEnd.value)}`;
+    return `${dateStr} - ${categoryName}`;
 });
 
 const selectedDateFormatter = (dateStr) => {
@@ -731,6 +598,7 @@ const startEdit = (item) => {
  
  editingSaleId.value = item.rawSale.id;
  editForm.id = item.rawSale.id;
+ editForm.category = item.rawSale.category || 'លក់រាយ';
  editForm.totalClients = item.rawSale.totalClients;
  editForm.totalSold = item.rawSale.totalSold;
  
@@ -755,6 +623,7 @@ const saveEdit = async () => {
  try {
    const saleRef = doc(db, 'sales_reports', editForm.id);
    const updatedData = {
+     category: editForm.category,
      totalClients: parseInt(editForm.totalClients),
      totalSold: parseInt(editForm.totalSold),
      unit: editForm.unit,
@@ -784,7 +653,9 @@ const saveEdit = async () => {
 // NATIVE BROWSER PRINT LOGIC 
 // ---------------------------------------------------------
 const executeNativePrint = () => {
-    const contentHTML = generatePageHTML(displayedData.value, 1, 1, true);
+    // Inject correct index into array so Native Print shows the numbers
+    const dataWithIndex = displayedData.value.map((item, idx) => ({ ...item, printIndex: idx + 1 }));
+    const contentHTML = generatePageHTML(dataWithIndex, 1, 1, true);
 
     const iframe = document.createElement('iframe');
     iframe.style.position = 'absolute';
@@ -828,24 +699,76 @@ const executeNativePrint = () => {
 };
 
 // ---------------------------------------------------------
-// HTML2CANVAS + JSPDF LOGIC 
+// ✅ SMART HTML2CANVAS + JSPDF LOGIC 
 // ---------------------------------------------------------
 const generatePDF = async () => {
     processing.value = { active: true, message: 'កំពុងបំបែកទិន្នន័យ...', progress: 10 };
     
     try {
-        const rowsPerPage = 16; 
         const pages = [];
-        let remaining = [...displayedData.value];
-        let rowCounter = 1;
+        let currentPage = [];
         
-        while(remaining.length > 0) {
-            pages.push(remaining.slice(0, rowsPerPage).map(r => ({...r, index: rowCounter++})));
-            remaining = remaining.slice(rowsPerPage);
+        const MAX_PAGE_HEIGHT = 1250; 
+        const PAGE_TITLE_HEIGHT = 150; 
+        const TABLE_HEADER_HEIGHT = 65;
+        
+        let grandTotalUnitCount = Object.keys(grandTotals.value.all.units || {}).length;
+        // Adjust footer height depending if we need to show the breakdown or not
+        let FOOTER_HEIGHT = 220 + (Math.ceil(grandTotalUnitCount / 2) * 50);
+        if (activeCategory.value === 'all') {
+            FOOTER_HEIGHT += 140; // Space for the wholesale/retail boxes
+        }
+
+        let currentHeight = PAGE_TITLE_HEIGHT + TABLE_HEADER_HEIGHT; 
+        let rowCounter = 1;
+        let allRows = [...displayedData.value];
+
+        for (let i = 0; i < allRows.length; i++) {
+            let row = allRows[i];
+            let unitCount = row.hasSales && row.unitCounts ? Object.values(row.unitCounts).filter(c => c > 0).length : 0;
+            let rowHeight = 90 + (Math.ceil(unitCount / 2) * 45); 
+
+            if (currentHeight + rowHeight > MAX_PAGE_HEIGHT && currentPage.length > 0) {
+                pages.push(currentPage);
+                currentPage = [];
+                currentHeight = 60 + TABLE_HEADER_HEIGHT; 
+            }
+            
+            // ✅ FIX: Attach printIndex to ensure numbering doesn't show as # undefined
+            currentPage.push({ ...row, printIndex: rowCounter++ });
+            currentHeight += rowHeight;
+        }
+
+        // Check if footer fits on the CURRENT page
+        if (currentHeight + FOOTER_HEIGHT > MAX_PAGE_HEIGHT) {
+            // It doesn't fit. We need a new page.
+            if (currentPage.length > 1) {
+                // Steal the last row so the footer isn't alone on the new page
+                let stolenRow = currentPage.pop();
+                pages.push(currentPage);
+                currentPage = [stolenRow]; 
+            } else if (currentPage.length === 1) {
+                pages.push(currentPage);
+                currentPage = []; 
+            }
+        }
+        
+        // 🚨 CRITICAL FIX: If currentPage is empty, steal a row from the previous page so the footer is NEVER alone!
+        if (currentPage.length === 0 && pages.length > 0) {
+            let prevPage = pages[pages.length - 1];
+            if (prevPage.length > 1) {
+                let stolenRow = prevPage.pop();
+                currentPage.push(stolenRow);
+            }
+        }
+
+        if (currentPage.length > 0 || allRows.length === 0) {
+            pages.push(currentPage);
         }
 
         const pdf = new jsPDF('p', 'mm', 'a4'); 
         const pdfWidth = 210; 
+        const pdfHeightA4 = 297; 
         
         for (let i = 0; i < pages.length; i++) {
             processing.value.message = `កំពុងថតចម្លងទំព័រទី ${i+1} នៃ ${pages.length}...`;
@@ -867,10 +790,7 @@ const generatePDF = async () => {
             const imgData = canvas.toDataURL('image/jpeg', 1.0);
             if (i > 0) pdf.addPage();
             
-            const props = pdf.getImageProperties(imgData);
-            const pdfHeight = (props.height * pdfWidth) / props.width;
-            
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeightA4);
             processing.value.progress = 10 + Math.round(((i + 1) / pages.length) * 80);
         }
 
@@ -889,126 +809,259 @@ const generatePDF = async () => {
 
 const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
     
-    const rowsHTML = rows.map((item) => {
+    // ✅ 1. SEPARATE THE LAST ROW (For Native Print Grouping)
+    let normalRows = rows;
+    let lastRow = null;
+
+    // If native print, we steal the last row to group it with the footer
+    if (isNativePrint && rows.length > 0) {
+        normalRows = rows.slice(0, rows.length - 1);
+        lastRow = rows[rows.length - 1];
+    }
+
+    const renderRow = (item) => {
         let salesHTML = '';
         if (item.hasSales) {
-            salesHTML = `<div style="display: flex; flex-direction: column; gap: 6px;">` + 
-                Object.entries(item.unitCounts).map(([u, c]) => 
-                    `<div style="display: flex; justify-content: space-between; font-size: 13px; border-bottom: 1px solid #f1f5f9; padding-bottom: 2px;">
-                        <span style="color: #475569;">${translateUnit(u)}</span>
-                        <span style="font-weight: 900; color: #1e293b;">${c.toLocaleString()}</span>
+            salesHTML = `<div style="overflow: hidden;">` + 
+                Object.entries(item.unitCounts || {}).filter(([u, c]) => c > 0).map(([u, c]) => 
+                    `<div style="float: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; margin: 0 6px 6px 0;">
+                        <span style="font-weight: 900; color: #1e293b; font-size: 13px;">${c.toLocaleString()}</span>
+                        <span style="color: #64748b; font-size: 11px; font-weight: bold; margin-left: 4px;">${translateUnit(u)}</span>
                      </div>`
-                ).join('') + `</div>`;
+                ).join('') + `<div style="clear: both;"></div></div>`;
         } else {
-            salesHTML = `<span style="font-size: 13px; font-weight: bold; color: #94a3b8;">គ្មានការលក់</span>`;
+            salesHTML = `<span style="font-size: 13px; font-weight: bold; color: #94a3b8; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; display: inline-block;">គ្មានការលក់</span>`;
         }
 
         let revenueHTML = '';
         if (item.hasSales) {
             revenueHTML = `
                 <div style="text-align: right;">
-                    <div style="font-weight: 900; color: #047857; font-size: 16px;">${item.revenueUSD.toLocaleString()} $</div>
-                    <div style="font-weight: bold; color: #1d4ed8; font-size: 13px;">${item.revenueKHR.toLocaleString()} ៛</div>
+                    <span style="color:#059669; font-size:15px; font-weight:900; background: #ecfdf5; padding: 2px 8px; border-radius: 6px; display: inline-block;">${item.revenueUSD.toLocaleString()} $</span><br/>
+                    <span style="color:#2563eb; font-size:12px; font-weight:bold; padding-right: 4px; display: inline-block; margin-top: 4px;">${item.revenueKHR.toLocaleString()} ៛</span>
                 </div>`;
         } else {
-            revenueHTML = `<div style="text-align: right; font-weight: bold; color: #94a3b8; font-size: 16px;">-</div>`;
+            revenueHTML = `<div style="text-align: right; color:#94a3b8; font-weight:bold; font-size:14px;">-</div>`;
         }
 
+        const catBadge = item.category === 'បោះដុំ' 
+            ? `<span style="background-color: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold;">បោះដុំ</span>`
+            : `<span style="background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold;">លក់រាយ</span>`;
+
         return `
-            <tr style="border-bottom: 1px solid #e2e8f0; break-inside: avoid; page-break-inside: avoid; ${!item.hasSales ? 'background-color: #f8fafc;' : ''}">
-                <td style="padding: 14px 10px; text-align: center; vertical-align: top; font-weight: 900; color: #94a3b8; font-size: 14px;">${item.index || rows.indexOf(item) + 1}</td>
-                <td style="padding: 14px 10px; vertical-align: top;">
+            <tr style="break-inside: avoid; page-break-inside: avoid; ${!item.hasSales ? 'background-color: #f8fafc;' : 'border-bottom: 1px solid #f1f5f9;'}">
+                <td style="padding: 16px 10px; text-align: center; vertical-align: top; font-weight: 900; color: #94a3b8; font-size: 14px;">${item.printIndex}</td>
+                <td style="padding: 16px 10px; vertical-align: top;">
                     <p style="font-weight: bold; color: #1e293b; font-size: 16px; margin: 0;">${item.fullName}</p>
                     <p style="font-family: monospace; color: #64748b; font-size: 12px; margin: 4px 0 0 0;">ID: ${item.idNumber || 'N/A'}</p>
                 </td>
-                <td style="padding: 14px 10px; vertical-align: top;">${salesHTML}</td>
-                <td style="padding: 14px 10px; text-align: center; vertical-align: top; font-weight: bold; color: #334155; font-size: 16px;">
+                <td style="padding: 16px 10px; vertical-align: top;">${item.hasSales ? catBadge : '-'}</td>
+                <td style="padding: 16px 10px; vertical-align: top;">${salesHTML}</td>
+                <td style="padding: 16px 10px; text-align: center; vertical-align: top; font-weight: bold; color: #334155; font-size: 16px;">
                     ${item.hasSales ? item.totalClients.toLocaleString() + ' នាក់' : '-'}
                 </td>
-                <td style="padding: 14px 10px; vertical-align: top;">${revenueHTML}</td>
+                <td style="padding: 16px 10px; vertical-align: top;">${revenueHTML}</td>
             </tr>
         `;
-    }).join('');
+    };
+
+    const normalRowsHTML = normalRows.map(renderRow).join('');
+    const lastRowHTML = lastRow ? renderRow(lastRow) : '';
 
     let summarySectionHTML = '';
     if (pageNum === totalPages || isNativePrint) {
         
-        const unitsList = Object.entries(grandTotals.value.units).map(([u, c]) => 
-            `<div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding: 6px 0;">
-                <span style="color: #475569; font-size: 14px;">${translateUnit(u)}</span>
-                <span style="font-weight: 900; color: #0f172a; font-size: 14px;">${c.toLocaleString()}</span>
-            </div>`
-        ).join('');
+        const unitsArray = Object.entries(grandTotals.value.all.units || {});
+        let unitRows = '';
+        for (let i = 0; i < unitsArray.length; i += 2) {
+            const [u1, c1] = unitsArray[i];
+            const item2 = unitsArray[i + 1];
+            
+            const cell1 = `
+                <td style="width: 50%; padding: 4px 8px 4px 0; vertical-align: top;">
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; overflow: hidden;">
+                        <span style="color: #475569; font-size: 13px; font-weight: bold; float: left;">${translateUnit(u1)}</span>
+                        <span style="font-weight: 900; color: #0f172a; font-size: 15px; float: right;">${c1.toLocaleString()}</span>
+                        <div style="clear: both;"></div>
+                    </div>
+                </td>`;
+                
+            const cell2 = item2 ? `
+                <td style="width: 50%; padding: 4px 0 4px 8px; vertical-align: top;">
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; overflow: hidden;">
+                        <span style="color: #475569; font-size: 13px; font-weight: bold; float: left;">${translateUnit(item2[0])}</span>
+                        <span style="font-weight: 900; color: #0f172a; font-size: 15px; float: right;">${item2[1].toLocaleString()}</span>
+                        <div style="clear: both;"></div>
+                    </div>
+                </td>` : `<td style="width: 50%;"></td>`;
+                
+            unitRows += `<tr>${cell1}${cell2}</tr>`;
+        }
+        
+        const unitsTableHTML = unitsArray.length > 0 
+            ? `<table style="width: 100%; border-collapse: collapse; border: none;"><tbody>${unitRows}</tbody></table>`
+            : `<p style="color: #94a3b8; font-size: 14px; margin: 0;">គ្មានទិន្នន័យ</p>`;
+
+        let breakdownHTML = '';
+        if (activeCategory.value === 'all') {
+            breakdownHTML = `
+                <div style="margin-top: 20px; border-top: 1px dashed #cbd5e1; padding-top: 20px; overflow: hidden; width: 100%;">
+                    <div style="float: left; width: 48%; background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; box-sizing: border-box;">
+                        <p style="font-size: 11px; color: #64748b; font-weight: 900; margin: 0 0 10px 0;">លក់រាយ (RETAIL)</p>
+                        <p style="margin: 0; font-size: 18px; font-weight: 900; color: #059669;">${grandTotals.value.retail.usd.toLocaleString()} $</p>
+                        <p style="margin: 4px 0 0 0; font-size: 13px; font-weight: bold; color: #2563eb;">${grandTotals.value.retail.khr.toLocaleString()} ៛</p>
+                        <div style="margin-top: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+                            <p style="margin: 0; font-size: 12px; font-weight: bold; color: #475569;">អតិថិជន: ${grandTotals.value.retail.clients.toLocaleString()} នាក់</p>
+                            <p style="margin: 4px 0 0 0; font-size: 12px; font-weight: bold; color: #475569;">បរិមាណលក់: ${grandTotals.value.retail.totalUnitsCount.toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <div style="float: right; width: 48%; background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; box-sizing: border-box;">
+                        <p style="font-size: 11px; color: #64748b; font-weight: 900; margin: 0 0 10px 0;">បោះដុំ (WHOLESALE)</p>
+                        <p style="margin: 0; font-size: 18px; font-weight: 900; color: #059669;">${grandTotals.value.wholesale.usd.toLocaleString()} $</p>
+                        <p style="margin: 4px 0 0 0; font-size: 13px; font-weight: bold; color: #2563eb;">${grandTotals.value.wholesale.khr.toLocaleString()} ៛</p>
+                        <div style="margin-top: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+                            <p style="margin: 0; font-size: 12px; font-weight: bold; color: #475569;">អតិថិជន: ${grandTotals.value.wholesale.clients.toLocaleString()} នាក់</p>
+                            <p style="margin: 4px 0 0 0; font-size: 12px; font-weight: bold; color: #475569;">បរិមាណលក់: ${grandTotals.value.wholesale.totalUnitsCount.toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <div style="clear: both;"></div>
+                </div>
+            `;
+        }
+
+        const categoryLabel = activeCategory.value === 'all' ? '' : `- ${activeCategory.value}`;
 
         summarySectionHTML = `
-            <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-start; break-inside: avoid; page-break-inside: avoid;">
-                <div style="width: 45%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
-                    <h3 style="font-size: 16px; font-weight: 900; color: #1e293b; margin: 0 0 15px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">សរុបបរិមាណលក់តាមប្រភេទ</h3>
-                    ${unitsList || '<p style="color: #94a3b8; font-size: 14px;">គ្មានទិន្នន័យ</p>'}
+            <div style="margin-top: 40px; border-top: 2px dashed #cbd5e1; padding-top: 30px; overflow: hidden; break-inside: avoid; page-break-inside: avoid; width: 100%; display: table;">
+                
+                <div style="display: table-cell; width: 60%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; vertical-align: top;">
+                    <div style="margin-bottom: 20px; overflow: hidden;">
+                        <div style="float: left; width: 32px; height: 32px; background: #e0e7ff; color: #4f46e5; border-radius: 8px; text-align: center; line-height: 32px; margin-right: 10px;">
+                            <svg style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-top: -2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        </div>
+                        <h3 style="font-size: 16px; font-weight: 900; color: #1e293b; margin: 0; line-height: 32px; float: left;">សរុបបរិមាណលក់តាមប្រភេទ ${categoryLabel}</h3>
+                        <div style="clear: both;"></div>
+                    </div>
+                    <div>
+                        ${unitsTableHTML}
+                    </div>
                 </div>
 
-                <div style="width: 45%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
-                    <h3 style="font-size: 16px; font-weight: 900; color: #1e293b; margin: 0 0 15px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">សរុបរួម (Grand Total)</h3>
-                    
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                        <span style="color: #475569; font-size: 14px;">អតិថិជនសរុប:</span>
-                        <span style="font-weight: 900; color: #0f172a; font-size: 16px;">${grandTotals.value.clients.toLocaleString()} នាក់</span>
+                <div style="display: table-cell; width: 3%;"></div>
+
+                <div style="display: table-cell; width: 37%; border: 1px solid #e2e8f0; border-radius: 16px; padding: 0; vertical-align: top; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                    <div style="background: #1e293b; padding: 16px 20px; border-top-left-radius: 15px; border-top-right-radius: 15px;">
+                        <h3 style="font-size: 16px; font-weight: 900; color: white; margin: 0;">សរុបរួម (Grand Total) ${categoryLabel}</h3>
                     </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                        <span style="color: #475569; font-size: 14px;">ចំណូល (USD):</span>
-                        <span style="font-weight: 900; color: #059669; font-size: 20px;">${grandTotals.value.usd.toLocaleString()} $</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #475569; font-size: 14px;">ចំណូល (KHR):</span>
-                        <span style="font-weight: 900; color: #2563eb; font-size: 16px;">${grandTotals.value.khr.toLocaleString()} ៛</span>
+                    <div style="padding: 20px; background: #f8fafc; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;">
+                        <table style="width: 100%; border-collapse: collapse; border: none;">
+                            <tr>
+                                <td style="padding-bottom: 12px; border-bottom: 1px dashed #cbd5e1; color: #64748b; font-size: 13px; font-weight: bold; border-top: none; border-left: none; border-right: none;">អតិថិជនសរុប:</td>
+                                <td style="padding-bottom: 12px; border-bottom: 1px dashed #cbd5e1; text-align: right; border-top: none; border-left: none; border-right: none;">
+                                    <span style="font-weight: 900; color: #0f172a; font-size: 16px; background: white; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">${grandTotals.value.all.clients.toLocaleString()} នាក់</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding-top: 16px; padding-bottom: 8px; color: #64748b; font-size: 13px; font-weight: bold; border: none;">ចំណូល (USD):</td>
+                                <td style="padding-top: 16px; padding-bottom: 8px; text-align: right; font-weight: 900; color: #059669; font-size: 22px; border: none;">${grandTotals.value.all.usd.toLocaleString()} $</td>
+                            </tr>
+                            <tr>
+                                <td style="padding-top: 0; color: #64748b; font-size: 13px; font-weight: bold; border: none;">ចំណូល (KHR):</td>
+                                <td style="padding-top: 0; text-align: right; font-weight: 900; color: #2563eb; font-size: 16px; border: none;">${grandTotals.value.all.khr.toLocaleString()} ៛</td>
+                            </tr>
+                        </table>
+                        ${breakdownHTML}
                     </div>
                 </div>
             </div>
         `;
     }
 
-    const pageStyles = isNativePrint
-        ? `width: 100%; box-sizing: border-box; font-family: 'Battambong', 'Kantumruy Pro', sans-serif; line-height: 1.6; padding: 20px;`
-        : `width: 1000px; min-height: 1414px; background: white; padding: 40px; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'Battambong', 'Kantumruy Pro', sans-serif; line-height: 1.6;`;
+    // ✅ 2. ASSEMBLE HTML based on generator type
+    let finalContentHTML = '';
 
-    return `
-        <div class="print-page" style="${pageStyles}">
-            
-            <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #4f46e5;">
-                <h1 style="font-size: 36px; font-weight: 900; color: #4338ca; margin: 0; text-align: center; width: 100%;">របាយការណ៍លក់សរុប</h1>
-            </div>
-
-            <div style="flex: 1;">
+    if (rows.length > 0) {
+        if (isNativePrint) {
+            // NATIVE PRINT: Wrap the Last Row + Summary inside a <tbody> with page-break-inside: avoid
+            finalContentHTML = `
                 <table style="width: 100%; text-align: left; border-collapse: collapse; background-color: #ffffff;">
-                    <thead style="color: #334155; font-size: 14px; font-weight: 900; border-bottom: 2px solid #cbd5e1; display: table-header-group;">
+                    <thead style="color: #334155; font-size: 13px; font-weight: 900; display: table-header-group;">
                         <tr>
-                            <th style="padding: 14px 10px; width: 5%; text-align: center; vertical-align: middle;">#</th>
-                            <th style="padding: 14px 10px; width: 30%; vertical-align: middle;">តំណាងលក់</th>
-                            <th style="padding: 14px 10px; width: 30%; vertical-align: middle;">ចំនួនលក់</th>
-                            <th style="padding: 14px 10px; width: 15%; text-align: center; vertical-align: middle;">អតិថិជន</th>
-                            <th style="padding: 14px 10px; width: 20%; text-align: right; vertical-align: middle;">ចំណូល</th>
+                            <th style="padding: 16px 10px; width: 5%; text-align: center; border-bottom: 2px solid #cbd5e1;">#</th>
+                            <th style="padding: 16px 10px; width: 25%; border-bottom: 2px solid #cbd5e1;">តំណាងលក់</th>
+                            <th style="padding: 16px 10px; width: 12%; border-bottom: 2px solid #cbd5e1;">ប្រភេទ</th>
+                            <th style="padding: 16px 10px; width: 25%; border-bottom: 2px solid #cbd5e1;">ចំនួនលក់ (Units)</th>
+                            <th style="padding: 16px 10px; width: 10%; text-align: center; border-bottom: 2px solid #cbd5e1;">អតិថិជន</th>
+                            <th style="padding: 16px 10px; width: 23%; text-align: right; border-bottom: 2px solid #cbd5e1;">ចំណូល</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${rowsHTML}
+                        ${normalRowsHTML}
+                    </tbody>
+                    <tbody style="break-inside: avoid; page-break-inside: avoid;">
+                        ${lastRowHTML}
+                        <tr>
+                            <td colspan="6" style="padding: 0; border: none;">
+                                ${summarySectionHTML}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+        } else {
+            // PDF GENERATOR (html2canvas): Keep them separate, JS logic already handles orphans
+            finalContentHTML = `
+                <table style="width: 100%; text-align: left; border-collapse: collapse; background-color: #ffffff;">
+                    <thead style="color: #334155; font-size: 13px; font-weight: 900; display: table-header-group;">
+                        <tr>
+                            <th style="padding: 16px 10px; width: 5%; text-align: center; border-bottom: 2px solid #cbd5e1;">#</th>
+                            <th style="padding: 16px 10px; width: 25%; border-bottom: 2px solid #cbd5e1;">តំណាងលក់</th>
+                            <th style="padding: 16px 10px; width: 12%; border-bottom: 2px solid #cbd5e1;">ប្រភេទ</th>
+                            <th style="padding: 16px 10px; width: 25%; border-bottom: 2px solid #cbd5e1;">ចំនួនលក់ (Units)</th>
+                            <th style="padding: 16px 10px; width: 10%; text-align: center; border-bottom: 2px solid #cbd5e1;">អតិថិជន</th>
+                            <th style="padding: 16px 10px; width: 23%; text-align: right; border-bottom: 2px solid #cbd5e1;">ចំណូល</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${normalRowsHTML}
+                        ${lastRowHTML}
                     </tbody>
                 </table>
                 ${summarySectionHTML}
-            </div>
+            `;
+        }
+    } else {
+        finalContentHTML = summarySectionHTML;
+    }
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; font-size: 12px; font-weight: bold; color: #94a3b8; break-inside: avoid; page-break-inside: avoid;">
-                <div>
+    const pageStyles = isNativePrint
+        ? `width: 100%; box-sizing: border-box; font-family: 'Battambong', 'Kantumruy Pro', sans-serif; line-height: 1.6; padding: 20px;`
+        : `width: 1000px; height: 1414px; background: white; padding: 40px; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'Battambong', 'Kantumruy Pro', sans-serif; line-height: 1.6; position: relative; overflow: hidden;`;
+
+    const mainTitle = pageNum === 1 || isNativePrint 
+        ? `<div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #4f46e5;">
+             <h1 style="font-size: 32px; font-weight: 900; color: #4338ca; margin: 0; text-align: center; width: 100%;">របាយការណ៍លក់សរុប</h1>
+           </div>` 
+        : '';
+
+    return `
+        <div class="print-page" style="${pageStyles}">
+            ${mainTitle}
+            <div style="flex: 1;">
+                ${finalContentHTML}
+            </div>
+            <div style="position: absolute; bottom: 40px; left: 40px; right: 40px; border-top: 1px solid #e2e8f0; padding-top: 15px; font-size: 12px; font-weight: bold; color: #94a3b8; overflow: hidden;">
+                <div style="float: left;">
                    <span style="display: inline-block; background-color: #f8fafc; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0; color: #1e293b; font-size: 14px; font-weight: 900;">កាលបរិច្ឆេទ: ${reportDateLabel.value}</span>
                    &nbsp;&nbsp;ថ្ងៃបញ្ចេញរបាយការណ៍ • ${new Date().toLocaleString('km-KH')}
                 </div>
-                <div>
+                <div style="float: right;">
                    ${isNativePrint ? '' : `ទំព័រទី ${pageNum} នៃ ${totalPages}`}
                 </div>
             </div>
         </div>
     `;
 };
-
 
 // --- HELPERS ---
 const translateUnit = (unitVal) => {

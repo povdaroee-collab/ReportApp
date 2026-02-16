@@ -15,6 +15,7 @@ import AdminDashboard from '../views/admin/Dashboard.vue'
 import ManageSellers from '../views/admin/ManageSellers.vue'
 import InputSales from '../views/admin/InputSales.vue' 
 import SellerReports from '../views/admin/SellerReports.vue' // <-- MAKE SURE THIS IS IMPORTED
+import SellerSalesDetail from '../views/admin/SellerSalesDetail.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -81,7 +82,23 @@ const router = createRouter({
           path: 'admin/seller-reports', // <-- This is for VIEWING REPORTS
           name: 'seller-reports',
           component: SellerReports 
-        }
+        },
+        {
+  path: '/admin/seller-detail/:id',
+  name: 'SellerSalesDetail',
+  component: SellerSalesDetail,
+  meta: { requiresAuth: true }
+},
+
+{
+  path: '/owner/admin-detail/:id',
+  name: 'OwnerAdminDetail',
+  component: () => import('../views/owner/AdminDetail.vue'), // Update this path to match exactly where you saved the file!
+  meta: { 
+    requiresAuth: true, 
+    role: 'owner' // Add your specific route guards here if you use them
+  }
+}
       ]
     }
   ]

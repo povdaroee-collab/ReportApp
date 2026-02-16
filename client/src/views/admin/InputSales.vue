@@ -52,7 +52,7 @@
                 <div>
                    <p class="text-sm font-black text-amber-800">របៀបកែប្រែទិន្នន័យ (Edit Mode)</p>
                    <p class="text-[11px] font-bold text-amber-600 mt-1 leading-relaxed">
-                      តំណាងលក់នេះមានទិន្នន័យរួចហើយសម្រាប់ <strong class="text-rose-500">ប្រភេទឯកតានេះ</strong> នៅថ្ងៃនេះ។ ការរក្សាទុកនឹងធ្វើការ <strong class="text-amber-800">កែប្រែទិន្នន័យចាស់ជាន់ពីលើ</strong>។
+                      តំណាងលក់នេះមានទិន្នន័យរួចហើយសម្រាប់ប្រភេទ <strong class="text-rose-500">{{ form.category }} ({{ translateUnit(form.unit) }})</strong> នៅថ្ងៃនេះ។ ការរក្សាទុកនឹងធ្វើការ <strong class="text-amber-800">កែប្រែទិន្នន័យចាស់ជាន់ពីលើ</strong>។
                    </p>
                 </div>
             </div>
@@ -162,6 +162,24 @@
 
               <div class="space-y-6">
                 
+                <div class="space-y-2.5">
+                  <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest">ប្រភេទលក់ (Category) <span class="text-rose-500">*</span></label>
+                  <div class="flex gap-3">
+                     <label class="flex-1 relative cursor-pointer group">
+                        <input type="radio" v-model="form.category" value="លក់រាយ" class="peer sr-only">
+                        <div class="px-4 py-3 rounded-xl border-2 font-bold text-sm text-center transition-all peer-checked:bg-indigo-50 peer-checked:border-indigo-500 peer-checked:text-indigo-700 border-slate-200 text-slate-500 hover:border-indigo-200 shadow-sm">
+                            លក់រាយ
+                        </div>
+                     </label>
+                     <label class="flex-1 relative cursor-pointer group">
+                        <input type="radio" v-model="form.category" value="បោះដុំ" class="peer sr-only">
+                        <div class="px-4 py-3 rounded-xl border-2 font-bold text-sm text-center transition-all peer-checked:bg-purple-50 peer-checked:border-purple-500 peer-checked:text-purple-700 border-slate-200 text-slate-500 hover:border-purple-200 shadow-sm">
+                            បោះដុំ
+                        </div>
+                     </label>
+                  </div>
+                </div>
+
                 <div class="space-y-2.5">
                   <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest">បរិមាណលក់ (Qty & Unit) <span class="text-rose-500">*</span></label>
                   <div class="flex flex-col sm:flex-row gap-3">
@@ -287,7 +305,7 @@ import CustomAlert from '../../components/shared/CustomAlert.vue';
 
 // State
 const sellers = ref([]);
-const availableUnits = ref([]); // Store dynamic units here
+const availableUnits = ref([]); 
 const loadingSellers = ref(true);
 const isSubmitting = ref(false);
 const isCheckingData = ref(false);
@@ -305,14 +323,16 @@ const triggerAlert = (type, title, message) => {
   setTimeout(() => alert.show = false, 3000);
 };
 
+// ✅ ADDED CATEGORY FIELD
 const form = reactive({
   sellerId: '',
   sellerName: '',
   sellerIdNumber: '',
   date: new Date().toISOString().substr(0, 10),
+  category: 'លក់រាយ', // Default to Retail
   totalClients: '',
   totalSold: '',
-  unit: '', // Starts empty so user has to select
+  unit: '', 
   totalPrice: '',
   currency: 'USD'
 });
@@ -322,7 +342,6 @@ onMounted(() => {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       try {
-        // Fetch Sellers
         const qSellers = query(
             collection(db, "users"), 
             where("role", "==", "seller"),
@@ -331,11 +350,9 @@ onMounted(() => {
         const snapshotSellers = await getDocs(qSellers);
         sellers.value = snapshotSellers.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Fetch Dynamic Settings Units
         const snapUnits = await getDocs(collection(db, 'settings_units'));
         availableUnits.value = snapUnits.docs.map(doc => doc.data());
         
-        // Auto-select first unit if available
         if(availableUnits.value.length > 0) {
             form.unit = availableUnits.value[0].value;
         }
@@ -350,22 +367,21 @@ onMounted(() => {
   });
 });
 
-// 🚀 WATCHER: NOW CHECKS SELLER + DATE + UNIT
-watch([() => form.sellerId, () => form.date, () => form.unit], async ([newId, newDate, newUnit]) => {
-  // Only run the query if ALL THREE variables have values
-  if (newId && newDate && newUnit) {
+// 🚀 WATCHER: NOW CHECKS SELLER + DATE + UNIT + CATEGORY
+watch([() => form.sellerId, () => form.date, () => form.unit, () => form.category], async ([newId, newDate, newUnit, newCategory]) => {
+  if (newId && newDate && newUnit && newCategory) {
     isCheckingData.value = true;
     try {
       const q = query(
         collection(db, 'sales_reports'), 
         where('sellerId', '==', newId), 
         where('date', '==', newDate),
-        where('unit', '==', newUnit) // <--- CRITICAL NEW CHECK
+        where('unit', '==', newUnit),
+        where('category', '==', newCategory) // <--- CRITICAL FIX: Add category to check
       );
       const snap = await getDocs(q);
       
       if (!snap.empty) {
-        // Data exists for this specific Seller + Date + Unit combination! Set Edit Mode.
         const data = snap.docs[0].data();
         existingSaleId.value = snap.docs[0].id;
         
@@ -373,17 +389,16 @@ watch([() => form.sellerId, () => form.date, () => form.unit], async ([newId, ne
         form.totalSold = data.totalSold;
         form.totalPrice = data.totalPrice;
         form.currency = data.currency || 'USD';
+        form.category = data.category || 'លក់រាយ';
         
-        triggerAlert('info', 'រកឃើញទិន្នន័យចាស់', `អ្នកកំពុងស្ថិតក្នុងរបៀបកែប្រែទិន្នន័យ [${translateUnit(newUnit)}] ដែលមានស្រាប់។`);
+        triggerAlert('info', 'រកឃើញទិន្នន័យចាស់', `អ្នកកំពុងស្ថិតក្នុងរបៀបកែប្រែទិន្នន័យប្រភេទ [${newCategory}] ដែលមានស្រាប់។`);
       } else {
-        // No data found for this combination. Prepare for NEW entry.
         if (existingSaleId.value) {
-            // Clear out numbers so the user doesn't accidentally save the old numbers to the new unit
             form.totalClients = '';
             form.totalSold = '';
             form.totalPrice = '';
         }
-        existingSaleId.value = null; // Turns off Edit Mode
+        existingSaleId.value = null; 
       }
     } catch (error) {
       console.error("Check Error:", error);
@@ -391,7 +406,6 @@ watch([() => form.sellerId, () => form.date, () => form.unit], async ([newId, ne
       isCheckingData.value = false;
     }
   } else {
-    // If any of the 3 fields are empty, reset edit mode
     existingSaleId.value = null;
   }
 });
@@ -432,18 +446,16 @@ const resetForm = () => {
   form.totalSold = '';
   form.totalPrice = '';
   form.unit = availableUnits.value.length > 0 ? availableUnits.value[0].value : '';
+  form.category = 'លក់រាយ';
   form.currency = 'USD';
   form.date = new Date().toISOString().substr(0, 10);
   existingSaleId.value = null;
 };
 
-// Dynamic Translation from Settings
 const translateUnit = (unitVal) => {
     if (!unitVal) return '';
     const found = availableUnits.value.find(u => u.value === unitVal);
     if (found) return found.label;
-    
-    // Fallbacks just in case
     const u = unitVal.toLowerCase().trim();
     if (u === 'bottle' || u === 'bottles') return 'ដប';
     if (u === 'pack' || u === 'packs') return 'កញ្ចប់';
@@ -464,6 +476,7 @@ const submitSale = async () => {
           totalClients: parseInt(form.totalClients),
           totalSold: parseInt(form.totalSold),
           unit: form.unit,
+          category: form.category, // ✅ UPDATE CATEGORY
           totalPrice: parseFloat(form.totalPrice),
           currency: form.currency
        });
@@ -475,6 +488,7 @@ const submitSale = async () => {
         sellerName: form.sellerName,
         sellerIdNumber: form.sellerIdNumber,
         date: form.date,
+        category: form.category, // ✅ ADD CATEGORY TO PAYLOAD
         totalClients: parseInt(form.totalClients),
         totalSold: parseInt(form.totalSold),
         unit: form.unit,
@@ -495,7 +509,7 @@ const submitSale = async () => {
   } catch (error) {
     console.error(error);
     if (error.response && error.response.data && error.response.data.error === "DUPLICATE_ENTRY") {
-        triggerAlert('error', 'ទិន្នន័យជាន់គ្នា', 'តំណាងលក់នេះមានទិន្នន័យសម្រាប់ថ្ងៃ និងឯកតានេះរួចហើយ!');
+        triggerAlert('error', 'ទិន្នន័យជាន់គ្នា', 'តំណាងលក់នេះមានទិន្នន័យសម្រាប់ថ្ងៃ ប្រភេទ និងឯកតានេះរួចហើយ!');
     } else {
         triggerAlert('error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ');
     }
@@ -509,7 +523,6 @@ const submitSale = async () => {
 @import url('https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&family=Kantumruy+Pro:wght@400;700&display=swap');
 .font-khmer { font-family: 'Kantumruy Pro', 'Battambong', sans-serif; }
 
-/* Custom Webkit Scrollbar for Dropdown */
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
@@ -524,6 +537,6 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-.animate-fade-in { animation: fadeIn 0.4s ease-out; }
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 </style>
