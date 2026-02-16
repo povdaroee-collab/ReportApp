@@ -458,21 +458,28 @@ onMounted(() => {
               .map(doc => ({ id: doc.id, ...doc.data() }))
               .filter(a => a.isDeleted === false || a.isDeleted === "false" || !a.isDeleted);
 
+          // ✅ FIX 1: Added { id: doc.id } to sales
           const salesSnap = await getDocs(collection(db, 'sales_reports'));
-          allSales.value = salesSnap.docs.map(doc => doc.data());
+          allSales.value = salesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+          // ✅ FIX 2: Added { id: doc.id } to sellers
           const sellerQ = query(collection(db, 'users'), where('role', '==', 'seller'));
           const sellerSnap = await getDocs(sellerQ);
-          allSellers.value = sellerSnap.docs.map(doc => doc.data());
+          allSellers.value = sellerSnap.docs
+              .map(doc => ({ id: doc.id, ...doc.data() }))
+              .filter(s => s.isDeleted === false || s.isDeleted === "false" || !s.isDeleted);
 
           const unitSettingsSnap = await getDocs(collection(db, 'settings_units'));
           unitSettings.value = unitSettingsSnap.docs.map(doc => doc.data());
 
           if (allSales.value.length > 0) {
-             const latestDate = allSales.value.map(s => new Date(s.date)).sort((a,b) => b - a)[0];
-             selectedYear.value = latestDate.getFullYear();
-             selectedMonth.value = latestDate.getMonth();
-             selectedDate.value = latestDate.toISOString().split('T')[0];
+             const validSales = allSales.value.filter(s => s.date);
+             if (validSales.length > 0) {
+                 const latestDate = validSales.map(s => new Date(s.date)).sort((a,b) => b - a)[0];
+                 selectedYear.value = latestDate.getFullYear();
+                 selectedMonth.value = latestDate.getMonth();
+                 selectedDate.value = latestDate.toISOString().split('T')[0];
+             }
           }
        } catch (error) {
           console.error("Error", error);
@@ -482,7 +489,6 @@ onMounted(() => {
     }
   });
 });
-
 const availableYears = computed(() => {
     if (allSales.value.length === 0) return [new Date().getFullYear()];
     const years = new Set(allSales.value.map(s => new Date(s.date).getFullYear()));
@@ -515,15 +521,12 @@ const isDateInScope = (dateStr) => {
    return false;
 };
 
-// Fixed data logic to properly grab both Admins and ALL their sellers' sales
 const baseCalculatedData = computed(() => {
    if (adminsList.value.length === 0) return [];
    
    return adminsList.value.map(admin => {
-      // Find all seller IDs belonging to this admin
       const adminSellersIds = allSellers.value.filter(seller => seller.createdBy === admin.id).map(s => s.id);
 
-      // A sale belongs to the admin if the admin created it OR if any of their sellers created/owned it
       const relevantSales = allSales.value.filter(s => {
           const isMatch = s.createdBy === admin.id || adminSellersIds.includes(s.createdBy) || adminSellersIds.includes(s.sellerId);
           return isMatch && isDateInScope(s.date);
@@ -608,33 +611,32 @@ const toggleRowExpand = (id) => {
     expandedRowIds.value = newSet;
 };
 
-// ប្តូរអនុគមន៍នេះនៅក្នុង script setup នៃ OwnerReports.vue របស់អ្នក
 const selectedAdminSellers = computed(() => {
-   if (!selectedAdmin.value) return [];
+   if (!selectedAdmin.value || !selectedAdmin.value.id) return [];
    
    return allSellers.value
       .filter(s => s.createdBy === selectedAdmin.value.id)
       .map(seller => {
-         // 🚀 ចំនុចសំខាន់៖ ទាញយកទិន្នន័យលក់របស់ Seller ម្នាក់ៗមកគណនាឡើងវិញក្នុង Modal
-         const relevantSales = allSales.value.filter(sale => 
-            sale.sellerId === seller.id && 
-            isDateInScope(sale.date)
-         );
+         // ✅ FIX 3: Properly match the sale to the seller's ID
+         const relevantSales = allSales.value.filter(sale => {
+             const isMatch = sale.sellerId === seller.id || sale.createdBy === seller.id;
+             return isMatch && isDateInScope(sale.date);
+         });
          
          let totalClients = 0;
-         let usd = 0;
-         let khr = 0;
-         let unitCounts = {}; // ប្រើឈ្មោះ unitCounts ឱ្យដូច Template
+         let revenueUSD = 0;
+         let revenueKHR = 0;
+         let unitCounts = {}; 
          
          relevantSales.forEach(sale => {
              totalClients += Number(sale.totalClients || 0);
+             
              if (sale.currency === 'USD' || sale.currency === '$') {
-                usd += Number(sale.totalPrice || 0);
+                 revenueUSD += Number(sale.totalPrice || 0);
              } else {
-                khr += Number(sale.totalPrice || 0);
+                 revenueKHR += Number(sale.totalPrice || 0);
              }
              
-             // រាប់ចំនួនដប/កេស តាមប្រភេទ
              const u = (sale.unit || 'unknown').toLowerCase().trim();
              unitCounts[u] = (unitCounts[u] || 0) + Number(sale.totalSold || 0);
          });
@@ -642,13 +644,12 @@ const selectedAdminSellers = computed(() => {
          const hasSales = relevantSales.length > 0;
 
          return { 
-            ...seller, 
-            totalClients, 
-            revenueUSD: usd, // ប្រើឈ្មោះ revenueUSD ឱ្យដូច Template
-            revenueKHR: khr, // ប្រើឈ្មោះ revenueKHR ឱ្យដូច Template
-            unitCounts, 
-            hasSales,
-            rawSale: relevantSales.length > 0 ? relevantSales[0] : null // សម្រាប់ Inline Edit បើចង់ប្រើ
+             ...seller, 
+             totalClients, 
+             revenueUSD, 
+             revenueKHR, 
+             unitCounts, 
+             hasSales 
          };
       })
       .sort((a, b) => {
@@ -657,7 +658,6 @@ const selectedAdminSellers = computed(() => {
          return b.revenueUSD - a.revenueUSD;
       });
 });
-
 
 // ---------------------------------------------------------
 // NATIVE BROWSER PRINT LOGIC (ALL ADMINS)

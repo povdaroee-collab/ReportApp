@@ -18,7 +18,7 @@
                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                   </button>
 
-                  <div v-if="admin" class="flex flex-col md:flex-row gap-6 relative z-10">
+                  <div v-if="admin && Object.keys(admin).length" class="flex flex-col md:flex-row gap-6 relative z-10">
                      <img :src="admin.photoUrl || `https://ui-avatars.com/api/?name=${admin.fullName}`" class="w-24 h-24 rounded-3xl object-cover border-4 border-white/20 shadow-xl shrink-0 bg-white">
                      <div class="flex-1">
                         <h2 class="text-2xl font-black mb-1">{{ admin.fullName }}</h2>
@@ -100,7 +100,7 @@
                       </div>
                   </div>
 
-                  <div v-else-if="sellerViewMode === 'card'" class="grid grid-cols-1 md:grid-cols-2 gap-4 content-start animate-fade-in">
+                  <div v-else-if="sellerViewMode === 'card' && modalActiveTab === 'sellers'" class="grid grid-cols-1 md:grid-cols-2 gap-4 content-start animate-fade-in">
                       <div v-for="seller in paginatedModalSellers" :key="seller.id" class="bg-white p-5 rounded-[20px] border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
                           <div class="flex gap-4 items-center">
                               <img :src="seller.photoUrl || `https://ui-avatars.com/api/?name=${seller.fullName}`" class="w-14 h-14 rounded-2xl object-cover border shadow-sm group-hover:scale-105 transition-transform shrink-0">
@@ -124,7 +124,7 @@
                       </div>
                   </div>
 
-                  <div v-else-if="sellerViewMode === 'list'" class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm animate-fade-in flex flex-col flex-1 min-h-0">
+                  <div v-else-if="sellerViewMode === 'list' || modalActiveTab === 'report'" class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm animate-fade-in flex flex-col flex-1 min-h-0">
                       <div class="overflow-x-auto overflow-y-auto custom-scrollbar flex-1">
                           <table class="w-full text-left border-collapse min-w-[700px]">
                               <thead class="bg-slate-50/95 backdrop-blur-sm border-b border-slate-200 text-slate-500 text-[10px] uppercase font-black tracking-widest sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
@@ -146,9 +146,9 @@
                               </thead>
                               <tbody class="divide-y divide-slate-100">
                                   <tr v-for="(seller, index) in paginatedModalSellers" :key="seller.id" class="hover:bg-slate-50/80 transition-colors">
-                                      <td class="px-4 py-3.5 text-center text-xs font-bold text-slate-400">{{ (sellerCurrentPage - 1) * sellerItemsPerPage + index + 1 }}</td>
+                                      <td class="px-4 py-3.5 text-center text-xs font-bold text-slate-400 align-top pt-4">{{ (sellerCurrentPage - 1) * sellerItemsPerPage + index + 1 }}</td>
                                       
-                                      <td class="px-4 py-3.5">
+                                      <td class="px-4 py-3.5 align-top">
                                           <div class="flex items-center gap-3">
                                               <img :src="seller.photoUrl || `https://ui-avatars.com/api/?name=${seller.fullName}`" class="w-9 h-9 rounded-xl object-cover border border-slate-200 shadow-sm shrink-0">
                                               <p class="font-bold text-[13px] text-slate-800">{{ seller.fullName }}</p>
@@ -156,9 +156,9 @@
                                       </td>
                                       
                                       <template v-if="modalActiveTab === 'sellers'">
-                                          <td class="px-4 py-3.5 text-center text-xs font-mono font-bold text-slate-500">{{ seller.idNumber || '-' }}</td>
-                                          <td class="px-4 py-3.5 text-center text-xs font-medium text-slate-600">{{ seller.phoneNumber || '-' }}</td>
-                                          <td class="px-4 py-3.5 text-center">
+                                          <td class="px-4 py-3.5 text-center text-xs font-mono font-bold text-slate-500 align-top pt-5">{{ seller.idNumber || '-' }}</td>
+                                          <td class="px-4 py-3.5 text-center text-xs font-medium text-slate-600 align-top pt-5">{{ seller.phoneNumber || '-' }}</td>
+                                          <td class="px-4 py-3.5 text-center align-top pt-5">
                                               <a v-if="seller.telegram" :href="'https://t.me/' + seller.telegram.replace('@', '')" target="_blank" class="text-[10px] font-bold text-sky-600 bg-sky-50 px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1 hover:bg-sky-500 hover:text-white transition-colors">
                                                   <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.48-.94-2.4-1.54-1.06-.7-.37-1.09.23-1.72.16-.16 2.87-2.63 2.92-2.85.01-.03.01-.14-.06-.2-.06-.06-.17-.04-.25-.02-.11.02-1.91 1.2-5.39 3.55-.5.34-.95.51-1.35.5-.44-.01-1.29-.25-1.92-.42-.77-.21-1.37-.32-1.31-.68.03-.18.28-.37.76-.56 3.03-1.32 5.06-2.19 6.09-2.62 2.93-1.21 3.53-1.43 3.93-1.43.09 0 .28.01.4.04.1.03.24.1.33.25.08.16.07.32.07.33z"/></svg>
                                                   @{{ seller.telegram.replace('@', '') }}
@@ -168,28 +168,28 @@
                                       </template>
                                       
                                       <template v-else>
-                                          <td class="px-4 py-3.5">
+                                          <td class="px-4 py-3.5 align-top pt-4">
                                               <div v-if="seller.hasSales" class="flex flex-wrap gap-1.5 items-center">
                                                   <template v-for="(entry, idx) in Object.entries(seller.unitCounts || {})" :key="entry[0]">
                                                       <span v-if="idx < 3 || expandedRowIds.has('modalSellerUnitsList_'+seller.id)" class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold shadow-sm border whitespace-nowrap" :class="getAppBadgeClass(entry[0])">
                                                           {{ entry[1].toLocaleString() }} {{ translateUnit(entry[0]) }}
                                                       </span>
                                                   </template>
-                                                  <button v-if="Object.keys(seller.unitCounts).length > 3" @click.stop="toggleRowExpand('modalSellerUnitsList_'+seller.id)" class="text-[10px] text-indigo-600 font-bold hover:text-indigo-800 bg-indigo-50 px-2 py-1 rounded-md transition-colors border border-indigo-100 whitespace-nowrap">
+                                                  <button v-if="Object.keys(seller.unitCounts || {}).length > 3" @click.stop="toggleRowExpand('modalSellerUnitsList_'+seller.id)" class="text-[10px] text-indigo-600 font-bold hover:text-indigo-800 bg-indigo-50 px-2 py-1 rounded-md transition-colors border border-indigo-100 whitespace-nowrap">
                                                       <span v-if="!expandedRowIds.has('modalSellerUnitsList_'+seller.id)">+{{ Object.keys(seller.unitCounts).length - 3 }} ទៀត</span>
                                                       <span v-else>បង្រួម</span>
                                                   </button>
                                               </div>
                                               <span v-else class="text-[11px] font-bold text-slate-300">គ្មានការលក់</span>
                                           </td>
-                                          <td class="px-4 py-3.5 text-center">
-                                              <span v-if="seller.hasSales" class="inline-flex items-center px-2.5 py-1 bg-amber-50 text-amber-600 rounded-lg text-[11px] font-bold border border-amber-100 shadow-sm">{{ seller.totalClients.toLocaleString() }} នាក់</span>
+                                          <td class="px-4 py-3.5 text-center align-top pt-5">
+                                              <span v-if="seller.hasSales" class="inline-flex items-center px-2.5 py-1 bg-amber-50 text-amber-600 rounded-lg text-[11px] font-bold border border-amber-100 shadow-sm">{{ seller.totalClients?.toLocaleString() || 0 }} នាក់</span>
                                               <span v-else class="text-[11px] text-slate-300 font-bold">-</span>
                                           </td>
-                                          <td class="px-4 py-3.5 text-right">
+                                          <td class="px-4 py-3.5 text-right align-top pt-4">
                                               <div v-if="seller.hasSales" class="flex flex-col items-end leading-tight gap-1">
-                                                  <span class="text-emerald-600 font-black text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 shadow-sm">{{ seller.revenueUSD.toLocaleString() }} $</span>
-                                                  <span class="text-blue-600 font-bold text-[10px]">{{ seller.revenueKHR.toLocaleString() }} ៛</span>
+                                                  <span class="text-emerald-600 font-black text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 shadow-sm">{{ seller.revenueUSD?.toLocaleString() || 0 }} $</span>
+                                                  <span class="text-blue-600 font-bold text-[10px]">{{ seller.revenueKHR?.toLocaleString() || 0 }} ៛</span>
                                               </div>
                                               <span v-else class="text-[11px] text-slate-300 font-bold">-</span>
                                           </td>
@@ -203,7 +203,7 @@
 
                   <div v-if="modalTotalPages > 1" class="mt-4 flex justify-between items-center bg-white p-3 rounded-2xl border border-slate-200 shadow-sm shrink-0">
                       <p class="text-[11px] font-bold text-slate-500 pl-2">
-                          ទំព័រទី {{ sellerCurrentPage }} នៃ {{ modalTotalPages }}
+                          បង្ហាញទំព័រ {{ sellerCurrentPage }} នៃ {{ modalTotalPages }}
                       </p>
                       <div class="flex items-center gap-1">
                           <button @click="prevPage" :disabled="sellerCurrentPage === 1" class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
@@ -220,55 +220,6 @@
 
                </div>
                
-               <div v-if="modalActiveTab === 'report'" class="bg-white border-t border-slate-200/80 p-4 md:px-6 shrink-0 z-20 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
-                   <div class="flex flex-col sm:flex-row justify-between items-center gap-4 max-w-5xl mx-auto w-full">
-                       <div class="flex items-center gap-3 w-full sm:w-auto shrink-0">
-                           <div class="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-md shadow-indigo-500/30">
-                               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                           </div>
-                           <div>
-                               <p class="text-slate-400 text-[11px] font-black uppercase tracking-widest">សរុបរួម</p>
-                               <p class="text-slate-800 font-black text-base uppercase leading-none mt-1">GRAND TOTAL</p>
-                           </div>
-                       </div>
-                       
-                       <div class="flex-1 flex justify-end items-center gap-4 sm:gap-6 w-full overflow-x-auto no-scrollbar">
-                           <div class="flex items-center gap-2">
-                              <template v-if="Object.keys(admin?.unitCounts || {}).length > 0">
-                                  <template v-for="(entry, idx) in Object.entries(admin.unitCounts || {})" :key="entry[0]">
-                                      <span v-if="idx < 3 || expandedRowIds.has('modalGrandTotalFooter')" class="text-xs font-black text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm whitespace-nowrap">
-                                          {{ entry[1].toLocaleString() }} {{ translateUnit(entry[0]) }}
-                                      </span>
-                                  </template>
-                                  <button 
-                                      v-if="Object.keys(admin.unitCounts).length > 3" 
-                                      @click.stop="toggleRowExpand('modalGrandTotalFooter')" 
-                                      class="text-[11px] font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-1 border border-indigo-100 whitespace-nowrap"
-                                  >
-                                      <span v-if="!expandedRowIds.has('modalGrandTotalFooter')">+{{ Object.keys(admin.unitCounts).length - 3 }} ទៀត</span>
-                                      <span v-else>បង្រួម</span>
-                                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path v-if="!expandedRowIds.has('modalGrandTotalFooter')" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                          <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
-                                      </svg>
-                                  </button>
-                              </template>
-                          </div>
-                          
-                           <div class="hidden sm:block h-10 w-px bg-slate-200 shrink-0"></div>
-                           
-                           <div class="text-right flex flex-col items-end shrink-0">
-                               <p class="text-2xl md:text-3xl font-black text-emerald-600 leading-none flex items-baseline gap-1">
-                                   {{ admin?.revenueUSD?.toLocaleString() || 0 }} <span class="text-lg font-bold opacity-80">$</span>
-                               </p>
-                               <p class="text-xs font-bold text-blue-600 mt-1 flex items-baseline gap-1">
-                                   {{ admin?.revenueKHR?.toLocaleString() || 0 }} <span class="text-[10px] font-medium opacity-80">៛</span>
-                               </p>
-                           </div>
-                       </div>
-                   </div>
-               </div>
-
             </DialogPanel>
           </TransitionChild>
         </div>
@@ -291,6 +242,7 @@
           </div>
       </div>
   </transition>
+  
   <div ref="printStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1]"></div>
 </template>
 
@@ -300,11 +252,13 @@ import { TransitionRoot, TransitionChild, Dialog, DialogPanel } from '@headlessu
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
+// --- THE CRITICAL FIX IS HERE ---
+// Added default types and empty arrays so Vue doesn't crash on length/slice calls
 const props = defineProps({
-  isOpen: Boolean,
-  admin: Object,
-  sellers: Array,
-  unitSettings: Array
+  isOpen: { type: Boolean, default: false },
+  admin: { type: Object, default: () => ({}) },
+  sellers: { type: Array, default: () => [] },
+  unitSettings: { type: Array, default: () => [] }
 });
 
 const emit = defineEmits(['close', 'error']);
@@ -345,17 +299,24 @@ const toggleRowExpand = (id) => {
 };
 
 const filteredModalSellers = computed(() => {
+    // Failsafe: if somehow undefined, return empty array
+    if (!props.sellers) return [];
+    
     if (!sellerSearchQuery.value) return props.sellers;
     const q = sellerSearchQuery.value.toLowerCase();
     return props.sellers.filter(s => 
-        s.fullName.toLowerCase().includes(q) || 
+        (s.fullName && s.fullName.toLowerCase().includes(q)) || 
         (s.idNumber && s.idNumber.toLowerCase().includes(q))
     );
 });
 
-const modalTotalPages = computed(() => Math.ceil(filteredModalSellers.value.length / sellerItemsPerPage));
+const modalTotalPages = computed(() => {
+    if(!filteredModalSellers.value || filteredModalSellers.value.length === 0) return 1;
+    return Math.ceil(filteredModalSellers.value.length / sellerItemsPerPage)
+});
 
 const paginatedModalSellers = computed(() => {
+    if(!filteredModalSellers.value) return [];
     const start = (sellerCurrentPage.value - 1) * sellerItemsPerPage;
     return filteredModalSellers.value.slice(start, start + sellerItemsPerPage);
 });
@@ -364,12 +325,13 @@ const prevPage = () => { if (sellerCurrentPage.value > 1) sellerCurrentPage.valu
 const nextPage = () => { if (sellerCurrentPage.value < modalTotalPages.value) sellerCurrentPage.value++; };
 const goToPage = (p) => { sellerCurrentPage.value = p; };
 
-
-// --- UTILITIES (Fixed string casting issue) ---
+// --- UTILITIES ---
 const translateUnit = (unitVal) => {
     if (!unitVal) return '';
     const safeVal = String(unitVal);
-    const found = props.unitSettings.find(u => String(u.value) === safeVal);
+    // Failsafe if unitSettings is undefined
+    const settings = props.unitSettings || [];
+    const found = settings.find(u => String(u.value) === safeVal);
     if (found) return found.label;
     const u = safeVal.toLowerCase().trim();
     if (u === 'bottle' || u === 'bottles') return 'ដប';
@@ -380,7 +342,8 @@ const translateUnit = (unitVal) => {
 const getAppBadgeClass = (unitVal) => {
     if (!unitVal) return 'text-slate-700 bg-slate-50 border-slate-200';
     const safeVal = String(unitVal);
-    const found = props.unitSettings.find(u => String(u.value) === safeVal);
+    const settings = props.unitSettings || [];
+    const found = settings.find(u => String(u.value) === safeVal);
     const color = found ? found.color : 'slate';
     const colorMap = {
         cyan: 'text-cyan-700 bg-cyan-50 border-cyan-200',
@@ -397,7 +360,8 @@ const getAppBadgeClass = (unitVal) => {
 // --- PRINT & PDF ---
 const executeAdminPrint = () => {
     const isReport = modalActiveTab.value === 'report';
-    const title = isReport ? `Sales_Report_${props.admin.fullName}` : `Sellers_List_${props.admin.fullName}`;
+    const adminName = props.admin?.fullName || 'Admin';
+    const title = isReport ? `Sales_Report_${adminName}` : `Sellers_List_${adminName}`;
     const contentHTML = generateAdminPageHTML(filteredModalSellers.value, 1, 1, true);
     triggerPrint(contentHTML, title);
 };
@@ -437,7 +401,7 @@ const generateAdminPDF = async () => {
     const isReport = modalActiveTab.value === 'report';
     
     try {
-        const rowsPerPage = 20; 
+        const rowsPerPage = isReport ? 16 : 20; 
         const pages = [];
         let remaining = [...filteredModalSellers.value];
         let rowCounter = 1;
@@ -463,8 +427,8 @@ const generateAdminPDF = async () => {
             const imgData = canvas.toDataURL('image/jpeg', 1.0);
             if (i > 0) pdf.addPage();
             
-            const props = pdf.getImageProperties(imgData);
-            const pdfHeight = (props.height * pdfWidth) / props.width;
+            const propsImg = pdf.getImageProperties(imgData);
+            const pdfHeight = (propsImg.height * pdfWidth) / propsImg.width;
             
             pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             processing.value.progress = 10 + Math.round(((i + 1) / pages.length) * 80);
@@ -472,7 +436,8 @@ const generateAdminPDF = async () => {
 
         processing.value.message = 'កំពុងរក្សាទុកឯកសារ...';
         processing.value.progress = 100;
-        const fileName = isReport ? `Sales_Report_${props.admin.fullName}.pdf` : `Sellers_List_${props.admin.fullName}.pdf`;
+        const adminName = props.admin?.fullName || 'Admin';
+        const fileName = isReport ? `Sales_Report_${adminName}.pdf` : `Sellers_List_${adminName}.pdf`;
         pdf.save(fileName);
         
     } catch(e) {
@@ -491,20 +456,27 @@ const generateAdminPageHTML = (rows, pageNum, totalPages, isNativePrint = false)
         if (isReport) {
             let salesHTML = item.hasSales ? 
                 `<div style="display: flex; flex-direction: column; gap: 4px;">` + 
-                Object.entries(item.unitCounts || {}).map(([u, c]) => `<span style="font-size:12px;">${c.toLocaleString()} ${translateUnit(u)}</span>`).join('') + 
-                `</div>` : `<span style="color:#94a3b8; font-size:12px; font-weight:bold;">គ្មានការលក់</span>`;
+                Object.entries(item.unitCounts || {}).map(([u, c]) => 
+                    `<div style="display: flex; justify-content: space-between; font-size: 13px; border-bottom: 1px solid #f1f5f9; padding-bottom: 2px;">
+                        <span style="color: #475569;">${translateUnit(u)}</span>
+                        <span style="font-weight: 900; color: #1e293b;">${c.toLocaleString()}</span>
+                     </div>`
+                ).join('') + `</div>` : `<span style="color:#94a3b8; font-size:12px; font-weight:bold;">គ្មានការលក់</span>`;
                 
             let revHTML = item.hasSales ? 
-                `<div style="text-align: right; font-size:12px;"><b style="color:#059669; font-size:14px;">${item.revenueUSD.toLocaleString()} $</b><br/><b style="color:#2563eb;">${item.revenueKHR.toLocaleString()} ៛</b></div>` : 
-                `<div style="text-align: right; color:#94a3b8; font-weight:bold;">-</div>`;
+                `<div style="text-align: right; font-size:12px;"><b style="color:#059669; font-size:16px;">${item.revenueUSD?.toLocaleString() || 0} $</b><br/><b style="color:#2563eb; font-size:13px;">${item.revenueKHR?.toLocaleString() || 0} ៛</b></div>` : 
+                `<div style="text-align: right; color:#94a3b8; font-weight:bold; font-size:16px;">-</div>`;
 
             return `
-                <tr style="border-bottom: 1px solid #e2e8f0; break-inside: avoid;">
-                    <td style="padding: 16px; text-align: center; vertical-align: top; color: #94a3b8; font-weight: 900;">${item.index || rows.indexOf(item) + 1}</td>
-                    <td style="padding: 16px; vertical-align: top;"><b>${item.fullName}</b></td>
-                    <td style="padding: 16px; vertical-align: top;">${salesHTML}</td>
-                    <td style="padding: 16px; text-align: center; vertical-align: top; font-weight: bold;">${item.hasSales ? item.totalClients + ' នាក់' : '-'}</td>
-                    <td style="padding: 16px; vertical-align: top;">${revHTML}</td>
+                <tr style="border-bottom: 1px solid #e2e8f0; break-inside: avoid; page-break-inside: avoid; ${!item.hasSales ? 'background-color: #f8fafc;' : ''}">
+                    <td style="padding: 14px 10px; text-align: center; vertical-align: top; color: #94a3b8; font-weight: 900;">${item.index || rows.indexOf(item) + 1}</td>
+                    <td style="padding: 14px 10px; vertical-align: top;">
+                        <p style="font-weight: bold; color: #1e293b; font-size: 16px; margin: 0;">${item.fullName}</p>
+                        <p style="font-family: monospace; color: #64748b; font-size: 12px; margin: 4px 0 0 0;">ID: ${item.idNumber || 'N/A'}</p>
+                    </td>
+                    <td style="padding: 14px 10px; vertical-align: top;">${salesHTML}</td>
+                    <td style="padding: 14px 10px; text-align: center; vertical-align: top; font-weight: bold; color: #334155; font-size: 16px;">${item.hasSales ? (item.totalClients || 0) + ' នាក់' : '-'}</td>
+                    <td style="padding: 14px 10px; vertical-align: top;">${revHTML}</td>
                 </tr>
             `;
         } else {
@@ -529,10 +501,10 @@ const generateAdminPageHTML = (rows, pageNum, totalPages, isNativePrint = false)
 
     const thHTML = isReport ? `
         <th style="padding: 18px 16px; width: 40px; text-align: center;">#</th>
-        <th style="padding: 18px 16px;">តំណាងលក់</th>
-        <th style="padding: 18px 16px;">ចំនួនលក់ (Units)</th>
-        <th style="padding: 18px 16px; text-align: center;">អតិថិជន</th>
-        <th style="padding: 18px 16px; text-align: right;">ចំណូល</th>
+        <th style="padding: 18px 16px; width: 35%;">តំណាងលក់</th>
+        <th style="padding: 18px 16px; width: 25%;">ចំនួនលក់ (Units)</th>
+        <th style="padding: 18px 16px; width: 15%; text-align: center;">អតិថិជន</th>
+        <th style="padding: 18px 16px; width: 25%; text-align: right;">ចំណូល</th>
     ` : `
         <th style="padding: 18px 16px; width: 40px; text-align: center;">#</th>
         <th style="padding: 18px 16px;">តំណាងលក់</th>
@@ -550,9 +522,9 @@ const generateAdminPageHTML = (rows, pageNum, totalPages, isNativePrint = false)
             <div style="display: flex; justify-content: space-between; align-items: center; background-color: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e2e8f0; break-inside: avoid; page-break-inside: avoid;">
                 <div style="display: flex; gap: 15px; align-items: center;">
                     <div>
-                        <p style="font-size: 12px; color: #64748b; font-weight: bold; margin: 0 0 5px 0;">អ្នកគ្រប់គ្រង</p>
+                        <p style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase; margin: 0 0 5px 0;">អ្នកគ្រប់គ្រង (Admin)</p>
                         <h2 style="font-size: 24px; font-weight: 900; color: #0f172a; margin: 0;">${props.admin?.fullName || 'N/A'}</h2>
-                        <p style="font-size: 14px; color: #3b82f6; font-weight: bold; margin: 5px 0 0 0;">@${props.admin?.username || 'N/A'} ${props.admin?.telegram ? `| ${props.admin.telegram}` : ''}</p>
+                        <p style="font-size: 14px; color: #3b82f6; font-weight: bold; margin: 5px 0 0 0;">@${props.admin?.username || 'N/A'} ${props.admin?.telegram ? `| Tel: ${props.admin.telegram}` : ''}</p>
                     </div>
                 </div>
             </div>
