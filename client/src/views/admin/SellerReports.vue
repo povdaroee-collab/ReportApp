@@ -299,7 +299,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue';
 import { db, auth } from '@/firebaseConfig';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -319,7 +319,7 @@ const sellersList = ref([]);
 const allSales = ref([]); 
 const availableUnits = ref([]); 
 
-// ✅ CATEGORY FILTER STATE
+// CATEGORY FILTER STATE
 const activeCategory = ref('all'); 
 
 const printStaging = ref(null);
@@ -398,7 +398,19 @@ onMounted(() => {
  onAuthStateChanged(auth, async (user) => {
   if (user) {
    try {
-     const sellerQ = query(collection(db, 'users'), where('role', '==', 'seller'), where('createdBy', '==', user.uid));
+     
+     // 1. Fetch user role to determine if owner or admin
+     const userDoc = await getDoc(doc(db, "users", user.uid));
+     const role = userDoc.exists() ? userDoc.data().role : 'user';
+
+     // 2. Fetch SELLERS + DEALERS based on role
+     let sellerQ;
+     if (role === 'admin') {
+         sellerQ = query(collection(db, 'users'), where('role', 'in', ['seller', 'dealer']), where('createdBy', '==', user.uid));
+     } else {
+         sellerQ = query(collection(db, 'users'), where('role', 'in', ['seller', 'dealer']));
+     }
+
      const sellerSnap = await getDocs(sellerQ);
      sellersList.value = sellerSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(s => s.isDeleted === false || s.isDeleted === "false" || !s.isDeleted);
 
@@ -653,7 +665,6 @@ const saveEdit = async () => {
 // NATIVE BROWSER PRINT LOGIC 
 // ---------------------------------------------------------
 const executeNativePrint = () => {
-    // Inject correct index into array so Native Print shows the numbers
     const dataWithIndex = displayedData.value.map((item, idx) => ({ ...item, printIndex: idx + 1 }));
     const contentHTML = generatePageHTML(dataWithIndex, 1, 1, true);
 
@@ -713,10 +724,9 @@ const generatePDF = async () => {
         const TABLE_HEADER_HEIGHT = 65;
         
         let grandTotalUnitCount = Object.keys(grandTotals.value.all.units || {}).length;
-        // Adjust footer height depending if we need to show the breakdown or not
         let FOOTER_HEIGHT = 220 + (Math.ceil(grandTotalUnitCount / 2) * 50);
         if (activeCategory.value === 'all') {
-            FOOTER_HEIGHT += 140; // Space for the wholesale/retail boxes
+            FOOTER_HEIGHT += 140; 
         }
 
         let currentHeight = PAGE_TITLE_HEIGHT + TABLE_HEADER_HEIGHT; 
@@ -734,16 +744,12 @@ const generatePDF = async () => {
                 currentHeight = 60 + TABLE_HEADER_HEIGHT; 
             }
             
-            // ✅ FIX: Attach printIndex to ensure numbering doesn't show as # undefined
             currentPage.push({ ...row, printIndex: rowCounter++ });
             currentHeight += rowHeight;
         }
 
-        // Check if footer fits on the CURRENT page
         if (currentHeight + FOOTER_HEIGHT > MAX_PAGE_HEIGHT) {
-            // It doesn't fit. We need a new page.
             if (currentPage.length > 1) {
-                // Steal the last row so the footer isn't alone on the new page
                 let stolenRow = currentPage.pop();
                 pages.push(currentPage);
                 currentPage = [stolenRow]; 
@@ -753,7 +759,6 @@ const generatePDF = async () => {
             }
         }
         
-        // 🚨 CRITICAL FIX: If currentPage is empty, steal a row from the previous page so the footer is NEVER alone!
         if (currentPage.length === 0 && pages.length > 0) {
             let prevPage = pages[pages.length - 1];
             if (prevPage.length > 1) {
@@ -809,11 +814,9 @@ const generatePDF = async () => {
 
 const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
     
-    // ✅ 1. SEPARATE THE LAST ROW (For Native Print Grouping)
     let normalRows = rows;
     let lastRow = null;
 
-    // If native print, we steal the last row to group it with the footer
     if (isNativePrint && rows.length > 0) {
         normalRows = rows.slice(0, rows.length - 1);
         lastRow = rows[rows.length - 1];
@@ -848,11 +851,18 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
             ? `<span style="background-color: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold;">បោះដុំ</span>`
             : `<span style="background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold;">លក់រាយ</span>`;
 
+        // ✅ DEALER BADGE IN PDF
+        const dealerBadge = item.role === 'dealer' 
+            ? `<span style="background-color: #fffbeb; color: #d97706; border: 1px solid #fde68a; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; vertical-align: text-top; margin-left: 6px;">DEALER</span>` 
+            : '';
+
         return `
             <tr style="break-inside: avoid; page-break-inside: avoid; ${!item.hasSales ? 'background-color: #f8fafc;' : 'border-bottom: 1px solid #f1f5f9;'}">
                 <td style="padding: 16px 10px; text-align: center; vertical-align: top; font-weight: 900; color: #94a3b8; font-size: 14px;">${item.printIndex}</td>
                 <td style="padding: 16px 10px; vertical-align: top;">
-                    <p style="font-weight: bold; color: #1e293b; font-size: 16px; margin: 0;">${item.fullName}</p>
+                    <p style="font-weight: bold; color: #1e293b; font-size: 16px; margin: 0; display: flex; align-items: center;">
+                        ${item.fullName} ${dealerBadge}
+                    </p>
                     <p style="font-family: monospace; color: #64748b; font-size: 12px; margin: 4px 0 0 0;">ID: ${item.idNumber || 'N/A'}</p>
                 </td>
                 <td style="padding: 16px 10px; vertical-align: top;">${item.hasSales ? catBadge : '-'}</td>
@@ -977,12 +987,10 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
         `;
     }
 
-    // ✅ 2. ASSEMBLE HTML based on generator type
     let finalContentHTML = '';
 
     if (rows.length > 0) {
         if (isNativePrint) {
-            // NATIVE PRINT: Wrap the Last Row + Summary inside a <tbody> with page-break-inside: avoid
             finalContentHTML = `
                 <table style="width: 100%; text-align: left; border-collapse: collapse; background-color: #ffffff;">
                     <thead style="color: #334155; font-size: 13px; font-weight: 900; display: table-header-group;">
@@ -1009,7 +1017,6 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
                 </table>
             `;
         } else {
-            // PDF GENERATOR (html2canvas): Keep them separate, JS logic already handles orphans
             finalContentHTML = `
                 <table style="width: 100%; text-align: left; border-collapse: collapse; background-color: #ffffff;">
                     <thead style="color: #334155; font-size: 13px; font-weight: 900; display: table-header-group;">
@@ -1062,6 +1069,7 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
         </div>
     `;
 };
+
 
 // --- HELPERS ---
 const translateUnit = (unitVal) => {

@@ -185,13 +185,15 @@ app.delete('/api/delete-admin/:uid', verifyToken, async (req, res) => {
 // 4. CREATE SELLER
 app.post('/api/create-seller', verifyToken, upload.fields([{ name: 'profileImage' }, { name: 'idCardImage' }]), async (req, res) => {
   try {
-    const { fullName, address, username, telegram, phoneNumber, idNumber, password } = req.body;
+    const { fullName, address, username, telegram, phoneNumber, idNumber, password, role } = req.body;
+
+    // Default to 'seller' if not provided or invalid
+    const assignedRole = role === 'dealer' ? 'dealer' : 'seller';
 
     // 🔴 1. CHECK IF ID NUMBER ALREADY EXISTS
     if (idNumber) {
         const idCheckQuery = await db.collection('users').where('idNumber', '==', idNumber).get();
         if (!idCheckQuery.empty) {
-            // NOTE: We removed fs.unlinkSync because memoryStorage doesn't create physical files.
             return res.status(400).json({ 
                 success: false, 
                 error: "ID_EXISTS", 
@@ -200,38 +202,39 @@ app.post('/api/create-seller', verifyToken, upload.fields([{ name: 'profileImage
         }
     }
 
-    // 2. Create Firebase Auth User
+    // 2. Create Firebase Auth User (Using provided password)
     const userRecord = await admin.auth().createUser({
       email: username + "@seller.com",
-      password: password,
+      password: password, 
       displayName: fullName,
     });
 
     let photoUrl = "";
     let idCardUrl = "";
 
-    // 3. Upload Profile Image to Cloudinary (using buffer)
+    // 3. Upload Profile Image 
     if (req.files && req.files.profileImage) {
         const profileResult = await uploadToCloudinary(req.files.profileImage[0].buffer, "report_project/sellers");
         photoUrl = profileResult.secure_url;
     }
 
-    // 4. Upload ID Card Image to Cloudinary (using buffer)
+    // 4. Upload ID Card Image 
     if (req.files && req.files.idCardImage) {
         const idResult = await uploadToCloudinary(req.files.idCardImage[0].buffer, "report_project/sellers_id");
         idCardUrl = idResult.secure_url;
     }
 
-    // 5. Save to Firestore
+    // 5. Save to Firestore (Store password as plain text as requested)
     await db.collection('users').doc(userRecord.uid).set({
-      uid: userRecord.uid, // Good practice to include UID in the doc
+      uid: userRecord.uid, 
       fullName,
       address,
       username,
       telegram,
       phoneNumber,
       idNumber, 
-      role: 'seller',
+      password, // Save password to DB
+      role: assignedRole, // Save assigned role
       photoUrl,
       idCardUrl,
       createdBy: req.user.uid,
@@ -250,27 +253,30 @@ app.post('/api/create-seller', verifyToken, upload.fields([{ name: 'profileImage
 app.put('/api/update-seller/:uid', verifyToken, upload.fields([{ name: 'profileImage' }, { name: 'idCardImage' }]), async (req, res) => {
     try {
         const { uid } = req.params;
-        const { fullName, username, address, telegram, phoneNumber, idNumber, password } = req.body;
+        const { fullName, username, address, telegram, phoneNumber, idNumber, password, role } = req.body;
         
+        // Securely handle role
+        const assignedRole = role === 'dealer' ? 'dealer' : 'seller';
+
         const updateData = {
             fullName,
             username,
             address,
             telegram,
             phoneNumber,
-            idNumber
+            idNumber,
+            password, // Update password field in DB
+            role: assignedRole // Update role field in DB
         };
 
         const authUpdates = {};
 
-        // Update Profile Image if provided
+        // Update Images
         if (req.files && req.files.profileImage) {
             const profileResult = await uploadToCloudinary(req.files.profileImage[0].buffer, "report_project/sellers");
             updateData.photoUrl = profileResult.secure_url;
             authUpdates.photoURL = updateData.photoUrl;
         }
-
-        // Update ID Card Image if provided
         if (req.files && req.files.idCardImage) {
             const idResult = await uploadToCloudinary(req.files.idCardImage[0].buffer, "report_project/sellers_id");
             updateData.idCardUrl = idResult.secure_url;
@@ -279,7 +285,11 @@ app.put('/api/update-seller/:uid', verifyToken, upload.fields([{ name: 'profileI
         // Prepare Auth Updates
         if (fullName) authUpdates.displayName = fullName;
         if (username) authUpdates.email = `${username}@report-system.com`;
-        if (password && password.trim().length >= 6) authUpdates.password = password;
+        
+        // ALWAYS update password in Firebase Auth if it was provided
+        if (password && password.trim().length >= 6) {
+            authUpdates.password = password.trim();
+        }
 
         // Apply Auth Updates
         if (Object.keys(authUpdates).length > 0) {

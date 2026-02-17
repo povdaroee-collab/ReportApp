@@ -27,7 +27,10 @@
                 </div>
              </div>
              <div class="flex-1 min-w-0 pr-6">
-                <h3 class="font-bold text-lg leading-tight truncate" :class="item.hasSales ? 'text-slate-800' : 'text-slate-500'">{{ item.fullName }}</h3>
+                <h3 class="font-bold text-lg leading-tight truncate flex items-center gap-2" :class="item.hasSales ? 'text-slate-800' : 'text-slate-500'">
+                   {{ item.fullName }}
+                   <span v-if="item.role === 'dealer'" class="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border border-amber-200">Dealer</span>
+                </h3>
                 <div class="flex items-center gap-2 mt-1">
                    <span class="text-[11px] text-slate-400 font-mono font-bold">ID: {{ item.idNumber || 'N/A' }}</span>
                    <span v-if="item.hasSales" class="px-2 py-0.5 rounded text-[9px] font-black border uppercase" :class="item.category === 'បោះដុំ' ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-slate-100 border-slate-200 text-slate-600'">
@@ -128,9 +131,7 @@
              <tr>
                 <th class="px-6 py-5 w-16 text-center">#</th>
                 <th class="px-6 py-5 w-64">តំណាងលក់ (Seller)</th>
-                
                 <th class="px-6 py-5 w-24">ប្រភេទ</th>
-                
                 <th class="px-6 py-5 w-56">បរិមាណលក់ (Units Sold)</th>
                 <th class="px-6 py-5 text-center">អតិថិជន</th>
                 <th class="px-6 py-5 text-right w-40">ចំណូល (Revenue)</th>
@@ -151,7 +152,10 @@
                          <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm" :class="item.hasSales ? 'bg-emerald-500' : 'bg-rose-400'"></span>
                       </div>
                       <div class="min-w-0">
-                         <p class="font-bold text-sm mb-0.5 group-hover:text-indigo-600 transition-colors truncate" :class="item.hasSales ? 'text-slate-800' : 'text-slate-500'">{{ item.fullName }}</p>
+                         <h3 class="font-bold text-sm mb-0.5 group-hover:text-teal-600 transition-colors truncate flex items-center" :class="item.hasSales ? 'text-slate-800' : 'text-slate-500'">
+                             {{ item.fullName }}
+                             <span v-if="item.role === 'dealer'" class="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ml-2 border border-amber-200">Dealer</span>
+                         </h3>
                          <div class="flex items-center gap-2">
                             <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 font-mono font-bold">{{ item.idNumber || 'N/A' }}</span>
                             <span class="text-[10px] text-slate-400 font-medium truncate">{{ item.phoneNumber }}</span>

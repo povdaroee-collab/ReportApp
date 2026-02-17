@@ -10,7 +10,9 @@
                   </button>
                   <div>
                       <h1 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight">ប្រវត្តិលក់លម្អិត</h1>
-                      <p class="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mt-0.5">Seller Sales History</p>
+                      <p class="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mt-0.5">
+                          {{ seller?.role === 'dealer' ? 'Dealer Sales History' : 'Seller Sales History' }}
+                      </p>
                   </div>
               </div>
 
@@ -81,15 +83,24 @@
                           <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-4 border-white shadow-sm" :class="filteredSales.length > 0 ? 'bg-emerald-500' : 'bg-slate-300'"></span>
                       </div>
                       
-                      <div class="flex-1 text-center sm:text-left z-10">
-                          <h2 class="text-2xl font-black text-slate-800 mb-1">{{ seller.fullName }}</h2>
-                          <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs font-bold text-slate-500 mb-4">
-                              <span class="bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg font-mono text-slate-600">ID: {{ seller.idNumber || 'N/A' }}</span>
-                              <span class="flex items-center gap-1 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg">
-                                  <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                                  {{ seller.phoneNumber || 'N/A' }}
+                      <div class="flex-1 text-center sm:text-left z-10 flex flex-col justify-center py-1">
+                          <div class="flex flex-col sm:flex-row items-center sm:items-end gap-2 sm:gap-4 mb-2">
+                              <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-none">{{ seller.fullName }}</h2>
+                              <span v-if="seller.role === 'dealer'" class="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md flex items-center gap-1.5 mb-0.5">
+                                  <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                  Dealer Account
                               </span>
-                              <a v-if="seller.telegram" :href="'https://t.me/' + seller.telegram.replace('@', '')" target="_blank" class="flex items-center gap-1 bg-sky-50 text-sky-600 hover:bg-sky-500 hover:text-white transition-colors border border-sky-100 px-2.5 py-1 rounded-lg">
+                          </div>
+
+                          <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 mt-2">
+                              <span class="bg-slate-100 border border-slate-200 text-slate-600 px-3 py-1 rounded-lg text-xs font-mono font-bold tracking-widest shadow-inner">ID: {{ seller.idNumber || 'N/A' }}</span>
+                              
+                              <span v-if="seller.phoneNumber" class="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-600 px-3 py-1 rounded-lg text-xs font-bold shadow-sm">
+                                  <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                  {{ seller.phoneNumber }}
+                              </span>
+                              
+                              <a v-if="seller.telegram" :href="'https://t.me/' + seller.telegram.replace('@', '')" target="_blank" class="flex items-center gap-1.5 bg-sky-50 text-sky-600 hover:bg-sky-500 hover:text-white transition-colors border border-sky-100 px-3 py-1 rounded-lg text-xs font-bold shadow-sm">
                                   <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.48-.94-2.4-1.54-1.06-.7-.37-1.09.23-1.72.16-.16 2.87-2.63 2.92-2.85.01-.03.01-.14-.06-.2-.06-.06-.17-.04-.25-.02-.11.02-1.91 1.2-5.39 3.55-.5.34-.95.51-1.35.5-.44-.01-1.29-.25-1.92-.42-.77-.21-1.37-.32-1.31-.68.03-.18.28-.37.76-.56 3.03-1.32 5.06-2.19 6.09-2.62 2.93-1.21 3.53-1.43 3.93-1.43.09 0 .28.01.4.04.1.03.24.1.33.25.08.16.07.32.07.33z"/></svg>
                                   @{{ seller.telegram.replace('@', '') }}
                               </a>
@@ -150,12 +161,19 @@
                       </div>
 
                       <div class="bg-white rounded-[20px] p-5 border border-slate-200 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-amber-300 transition-colors">
-                          <div class="relative z-10">
-                              <p class="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-1">អតិថិជនសរុប (Clients)</p>
-                              <h3 class="text-3xl font-black text-slate-800">{{ sellerStats.all.clients.toLocaleString() }} <span class="text-sm text-slate-400 font-bold">នាក់</span></h3>
+                          <div class="relative z-10 flex justify-between items-start">
+                              <div>
+                                  <p class="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-1">អតិថិជនសរុប (Clients)</p>
+                                  <h3 class="text-3xl font-black text-slate-800">{{ sellerStats.all.clients.toLocaleString() }} <span class="text-sm text-slate-400 font-bold">នាក់</span></h3>
+                              </div>
+                              <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                                  <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                              </div>
                           </div>
-                          <div class="mt-3 pt-3 border-t border-slate-100 text-[11px] font-bold text-slate-500 relative z-10">
-                              ចំនួនប្រតិបត្តិការសរុប: <span class="text-indigo-600 font-black">{{ sellerStats.all.count }}</span>
+                          
+                          <div class="mt-3 pt-3 border-t border-slate-100 text-[11px] font-bold text-slate-500 relative z-10 flex justify-between items-center">
+                              <span>ចំនួនប្រតិបត្តិការសរុប:</span>
+                              <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-lg text-xs font-black">{{ filteredSales.length }}</span>
                           </div>
 
                           <div v-if="activeCategory === 'all'" class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100 relative z-10">
@@ -261,7 +279,7 @@
                                           <td class="px-4 py-3">
                                               <input type="date" v-model="editForm.date" class="w-full bg-white border border-slate-200 rounded-lg px-2 py-2 text-sm font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm transition-shadow">
                                           </td>
-
+                                          
                                           <td class="px-4 py-3">
                                               <select v-model="editForm.category" class="w-full bg-white border border-slate-200 rounded-lg px-2 py-2 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm transition-shadow cursor-pointer">
                                                   <option value="លក់រាយ">លក់រាយ</option>
@@ -397,7 +415,7 @@
                                           <button @click="cancelEdit" class="flex-1 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 font-bold text-xs active:scale-95 transition-all shadow-sm">បោះបង់</button>
                                           <button @click="saveEdit" :disabled="isUpdating" class="flex-1 py-2.5 rounded-xl bg-emerald-500 text-white font-bold text-xs flex items-center justify-center shadow-md shadow-emerald-500/20 active:scale-95 transition-all disabled:opacity-50">
                                               <svg v-if="isUpdating" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                              <span v-else>រក្សាទុកបម្រែបម្រួល</span>
+                                              <span v-else>រក្សាទុក</span>
                                           </button>
                                       </div>
                                   </div>
@@ -509,23 +527,23 @@ const isLoading = ref(true);
 
 const alert = reactive({ show: false, type: 'success', title: '', message: '' });
 const triggerAlert = (type, title, message) => {
-    alert.show = false; 
-    setTimeout(() => {
-        alert.type = type; 
-        alert.title = title; 
-        alert.message = message; 
-        alert.show = true;
-        setTimeout(() => alert.show = false, 3000);
-    }, 50);
+  alert.show = false; 
+  setTimeout(() => {
+    alert.type = type; 
+    alert.title = title; 
+    alert.message = message; 
+    alert.show = true;
+    setTimeout(() => alert.show = false, 3000);
+  }, 50);
 };
 
 // --- DYNAMIC FILTER TABS ---
 const getTodayString = () => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 };
 
 const dateFilterType = ref('monthly'); 
@@ -536,55 +554,55 @@ const customStart = ref(getTodayString());
 const customEnd = ref(getTodayString());
 
 const filterTabs = [
- { key: 'daily', label: 'ប្រចាំថ្ងៃ' },
- { key: 'monthly', label: 'ប្រចាំខែ' },
- { key: 'yearly', label: 'ប្រចាំឆ្នាំ' },
- { key: 'custom', label: 'កំណត់ថ្ងៃ' },
+{ key: 'daily', label: 'ប្រចាំថ្ងៃ' },
+{ key: 'monthly', label: 'ប្រចាំខែ' },
+{ key: 'yearly', label: 'ប្រចាំឆ្នាំ' },
+{ key: 'custom', label: 'កំណត់ថ្ងៃ' },
 ];
 
 const monthNames = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
 
 const handleTabClick = (key) => {
-    dateFilterType.value = key;
-    if (key === 'daily') {
-        selectedDate.value = getTodayString(); 
-    }
+  dateFilterType.value = key;
+  if (key === 'daily') {
+    selectedDate.value = getTodayString(); 
+  }
 };
 
 const availableYears = computed(() => {
-  const validSales = sellerSales.value.filter(s => s && s.date);
-  if (validSales.length === 0) return [new Date().getFullYear()];
-  const years = new Set(validSales.map(s => new Date(s.date).getFullYear()));
-  return Array.from(years).sort((a, b) => b - a);
+ const validSales = sellerSales.value.filter(s => s && s.date);
+ if (validSales.length === 0) return [new Date().getFullYear()];
+ const years = new Set(validSales.map(s => new Date(s.date).getFullYear()));
+ return Array.from(years).sort((a, b) => b - a);
 });
 
 const availableMonths = computed(() => {
-  const validSales = sellerSales.value.filter(s => s && s.date);
-  if (validSales.length === 0) return [{ index: new Date().getMonth(), name: monthNames[new Date().getMonth()] }];
-  const yearSales = validSales.filter(s => new Date(s.date).getFullYear() === parseInt(selectedYear.value));
-  const months = new Set(yearSales.map(s => new Date(s.date).getMonth()));
-  return Array.from(months).sort((a, b) => a - b).map(mIndex => ({ index: mIndex, name: monthNames[mIndex] }));
+ const validSales = sellerSales.value.filter(s => s && s.date);
+ if (validSales.length === 0) return [{ index: new Date().getMonth(), name: monthNames[new Date().getMonth()] }];
+ const yearSales = validSales.filter(s => new Date(s.date).getFullYear() === parseInt(selectedYear.value));
+ const months = new Set(yearSales.map(s => new Date(s.date).getMonth()));
+ return Array.from(months).sort((a, b) => a - b).map(mIndex => ({ index: mIndex, name: monthNames[mIndex] }));
 });
 
 watch(selectedYear, () => {
-  const months = availableMonths.value;
-  if (!months.find(m => m.index === selectedMonth.value)) {
-    if(months.length > 0) selectedMonth.value = months[months.length - 1].index;
-  }
+ const months = availableMonths.value;
+ if (!months.find(m => m.index === selectedMonth.value)) {
+  if(months.length > 0) selectedMonth.value = months[months.length - 1].index;
+ }
 });
 
 const isDateInScope = (dateStr) => {
- if (!dateStr) return false;
- const date = new Date(dateStr);
- const dYear = date.getFullYear();
- const dMonth = date.getMonth();
- const dDateStr = dateStr; 
+ if (!dateStr) return false;
+ const date = new Date(dateStr);
+ const dYear = date.getFullYear();
+ const dMonth = date.getMonth();
+ const dDateStr = dateStr; 
 
- if (dateFilterType.value === 'daily') return dDateStr === selectedDate.value;
- if (dateFilterType.value === 'monthly') return dMonth === parseInt(selectedMonth.value) && dYear === parseInt(selectedYear.value);
- if (dateFilterType.value === 'yearly') return dYear === parseInt(selectedYear.value);
- if (dateFilterType.value === 'custom') return dDateStr >= customStart.value && dDateStr <= customEnd.value;
- return false;
+ if (dateFilterType.value === 'daily') return dDateStr === selectedDate.value;
+ if (dateFilterType.value === 'monthly') return dMonth === parseInt(selectedMonth.value) && dYear === parseInt(selectedYear.value);
+ if (dateFilterType.value === 'yearly') return dYear === parseInt(selectedYear.value);
+ if (dateFilterType.value === 'custom') return dDateStr >= customStart.value && dDateStr <= customEnd.value;
+ return false;
 };
 
 // --- CATEGORY FILTER ---
@@ -592,46 +610,46 @@ const activeCategory = ref('all');
 
 // --- DATA FILTERING ---
 const filteredSales = computed(() => {
-    return sellerSales.value.filter(sale => {
-        const matchDate = isDateInScope(sale.date);
-        const matchCat = activeCategory.value === 'all' || (sale.category || 'លក់រាយ') === activeCategory.value;
-        return matchDate && matchCat;
-    });
+  return sellerSales.value.filter(sale => {
+    const matchDate = isDateInScope(sale.date);
+    const matchCat = activeCategory.value === 'all' || (sale.category || 'លក់រាយ') === activeCategory.value;
+    return matchDate && matchCat;
+  });
 });
 
 // --- COMPUTED TOTALS (Based on filter) ---
 const sellerStats = computed(() => {
-    let stats = {
-        all: { usd: 0, khr: 0, clients: 0, totalUnits: 0, count: 0, units: {} },
-        retail: { usd: 0, khr: 0, clients: 0, totalUnits: 0, count: 0, units: {} },
-        wholesale: { usd: 0, khr: 0, clients: 0, totalUnits: 0, count: 0, units: {} }
-    };
+  let stats = {
+    all: { usd: 0, khr: 0, clients: 0, totalUnits: 0, count: 0, units: {} },
+    retail: { usd: 0, khr: 0, clients: 0, totalUnits: 0, count: 0, units: {} },
+    wholesale: { usd: 0, khr: 0, clients: 0, totalUnits: 0, count: 0, units: {} }
+  };
 
-    filteredSales.value.forEach(sale => {
-        const cat = (sale.category || 'លក់រាយ') === 'បោះដុំ' ? 'wholesale' : 'retail';
-        
-        let sUsd = 0, sKhr = 0;
-        if (sale.currency === 'USD' || sale.currency === '$') sUsd = Number(sale.totalPrice || 0);
-        else sKhr = Number(sale.totalPrice || 0);
+  filteredSales.value.forEach(sale => {
+    const cat = (sale.category || 'លក់រាយ') === 'បោះដុំ' ? 'wholesale' : 'retail';
+    
+    let sUsd = 0, sKhr = 0;
+    if (sale.currency === 'USD' || sale.currency === '$') sUsd = Number(sale.totalPrice || 0);
+    else sKhr = Number(sale.totalPrice || 0);
 
-        const sClients = Number(sale.totalClients || 0);
-        const sAmt = Number(sale.totalSold || 0);
-        const u = (sale.unit || 'unknown').toLowerCase().trim();
+    const sClients = Number(sale.totalClients || 0);
+    const sAmt = Number(sale.totalSold || 0);
+    const u = (sale.unit || 'unknown').toLowerCase().trim();
 
-        // Add to ALL
-        stats.all.usd += sUsd; stats.all.khr += sKhr;
-        stats.all.clients += sClients; stats.all.totalUnits += sAmt;
-        stats.all.count += 1;
-        stats.all.units[u] = (stats.all.units[u] || 0) + sAmt;
+    // Add to ALL
+    stats.all.usd += sUsd; stats.all.khr += sKhr;
+    stats.all.clients += sClients; stats.all.totalUnits += sAmt;
+    stats.all.count += 1;
+    stats.all.units[u] = (stats.all.units[u] || 0) + sAmt;
 
-        // Add to SPECIFIC CAT
-        stats[cat].usd += sUsd; stats[cat].khr += sKhr;
-        stats[cat].clients += sClients; stats[cat].totalUnits += sAmt;
-        stats[cat].count += 1;
-        stats[cat].units[u] = (stats[cat].units[u] || 0) + sAmt;
-    });
+    // Add to SPECIFIC CAT
+    stats[cat].usd += sUsd; stats[cat].khr += sKhr;
+    stats[cat].clients += sClients; stats[cat].totalUnits += sAmt;
+    stats[cat].count += 1;
+    stats[cat].units[u] = (stats[cat].units[u] || 0) + sAmt;
+  });
 
-    return stats;
+  return stats;
 });
 
 // --- PAGINATION ---
@@ -639,23 +657,23 @@ const currentPage = ref(1);
 const itemsPerPage = 50;
 
 watch([dateFilterType, selectedDate, selectedMonth, selectedYear, customStart, customEnd, activeCategory], () => {
-    currentPage.value = 1;
-    selectedSales.value.clear();
+  currentPage.value = 1;
+  selectedSales.value.clear();
 });
 
 const totalPages = computed(() => Math.ceil(filteredSales.value.length / itemsPerPage));
 
 const filteredAndPaginatedSales = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage;
-    return filteredSales.value.slice(start, start + itemsPerPage);
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return filteredSales.value.slice(start, start + itemsPerPage);
 });
 
 const visiblePages = computed(() => {
-    let pages = [];
-    for (let i = 1; i <= totalPages.value; i++) {
-        pages.push(i);
-    }
-    return pages;
+  let pages = [];
+  for (let i = 1; i <= totalPages.value; i++) {
+    pages.push(i);
+  }
+  return pages;
 });
 
 
@@ -664,49 +682,49 @@ const selectedSales = ref(new Set());
 
 // True if ALL items visible on the current page are selected
 const isAllVisibleSelected = computed(() => {
-    if (filteredAndPaginatedSales.value.length === 0) return false;
-    return filteredAndPaginatedSales.value.every(sale => selectedSales.value.has(sale.id));
+  if (filteredAndPaginatedSales.value.length === 0) return false;
+  return filteredAndPaginatedSales.value.every(sale => selectedSales.value.has(sale.id));
 });
 
 // Toggle only the items currently visible on the screen
 const toggleSelectAllVisible = (e) => {
-    if (e.target.checked) {
-        filteredAndPaginatedSales.value.forEach(sale => {
-            selectedSales.value.add(sale.id);
-        });
-    } else {
-        filteredAndPaginatedSales.value.forEach(sale => {
-            selectedSales.value.delete(sale.id);
-        });
-    }
+  if (e.target.checked) {
+    filteredAndPaginatedSales.value.forEach(sale => {
+      selectedSales.value.add(sale.id);
+    });
+  } else {
+    filteredAndPaginatedSales.value.forEach(sale => {
+      selectedSales.value.delete(sale.id);
+    });
+  }
 };
 
 const toggleSelectRow = (id) => {
-    const newSet = new Set(selectedSales.value);
-    if (newSet.has(id)) {
-        newSet.delete(id);
-    } else {
-        newSet.add(id);
-    }
-    selectedSales.value = newSet;
+  const newSet = new Set(selectedSales.value);
+  if (newSet.has(id)) {
+    newSet.delete(id);
+  } else {
+    newSet.add(id);
+  }
+  selectedSales.value = newSet;
 };
 
 
 // --- CUSTOM CONFIRM MODAL STATE ---
 const confirmModal = reactive({
-    isOpen: false,
-    targetIds: [], // handles both single and bulk deletes
-    isProcessing: false
+  isOpen: false,
+  targetIds: [], // handles both single and bulk deletes
+  isProcessing: false
 });
 
 const confirmDeleteDialog = (id) => {
-    confirmModal.targetIds = [id];
-    confirmModal.isOpen = true;
+  confirmModal.targetIds = [id];
+  confirmModal.isOpen = true;
 };
 
 const confirmBulkDelete = () => {
-    confirmModal.targetIds = Array.from(selectedSales.value);
-    confirmModal.isOpen = true;
+  confirmModal.targetIds = Array.from(selectedSales.value);
+  confirmModal.isOpen = true;
 };
 
 // Editing State
@@ -715,157 +733,157 @@ const isUpdating = ref(false);
 const editForm = reactive({ id: '', date: '', category: 'លក់រាយ', totalClients: '', totalSold: '', unit: '', totalPrice: '', currency: 'USD' });
 
 onMounted(async () => {
-    if (!sellerId) return;
+  if (!sellerId) return;
 
-    try {
-        // Fetch Seller Info
-        const sellerSnap = await getDoc(doc(db, 'users', sellerId));
-        if (sellerSnap.exists()) seller.value = sellerSnap.data();
+  try {
+    // Fetch Seller Info
+    const sellerSnap = await getDoc(doc(db, 'users', sellerId));
+    if (sellerSnap.exists()) seller.value = sellerSnap.data();
 
-        // Fetch Units Setup
-        const unitSnap = await getDocs(collection(db, 'settings_units'));
-        availableUnits.value = unitSnap.docs.map(doc => doc.data());
+    // Fetch Units Setup
+    const unitSnap = await getDocs(collection(db, 'settings_units'));
+    availableUnits.value = unitSnap.docs.map(doc => doc.data());
 
-        // Fetch All Sales for this seller
-        const q = query(collection(db, 'sales_reports'), where('sellerId', '==', sellerId));
-        const salesSnap = await getDocs(q);
-        sellerSales.value = salesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Fetch All Sales for this seller
+    const q = query(collection(db, 'sales_reports'), where('sellerId', '==', sellerId));
+    const salesSnap = await getDocs(q);
+    sellerSales.value = salesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        // Auto select current month logic
-        if (sellerSales.value.length > 0) {
-            const validSales = sellerSales.value.filter(s => s.date);
-            if (validSales.length > 0) {
-                const latestDate = validSales.map(s => new Date(s.date)).sort((a,b) => b - a)[0];
-                selectedYear.value = latestDate.getFullYear();
-                selectedMonth.value = latestDate.getMonth();
-                
-                const yyyy = latestDate.getFullYear();
-                const mm = String(latestDate.getMonth() + 1).padStart(2, '0');
-                const dd = String(latestDate.getDate()).padStart(2, '0');
-                selectedDate.value = `${yyyy}-${mm}-${dd}`;
-            }
-        }
-
-    } catch (err) {
-        console.error(err);
-        triggerAlert('error', 'បរាជ័យ', 'មិនអាចទាញយកទិន្នន័យបានទេ');
-    } finally {
-        isLoading.value = false;
+    // Auto select current month logic
+    if (sellerSales.value.length > 0) {
+      const validSales = sellerSales.value.filter(s => s.date);
+      if (validSales.length > 0) {
+        const latestDate = validSales.map(s => new Date(s.date)).sort((a,b) => b - a)[0];
+        selectedYear.value = latestDate.getFullYear();
+        selectedMonth.value = latestDate.getMonth();
+        
+        const yyyy = latestDate.getFullYear();
+        const mm = String(latestDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(latestDate.getDate()).padStart(2, '0');
+        selectedDate.value = `${yyyy}-${mm}-${dd}`;
+      }
     }
+
+  } catch (err) {
+    console.error(err);
+    triggerAlert('error', 'បរាជ័យ', 'មិនអាចទាញយកទិន្នន័យបានទេ');
+  } finally {
+    isLoading.value = false;
+  }
 });
 
 
 const translateUnit = (unitVal) => {
-    if (!unitVal) return '';
-    const found = availableUnits.value.find(u => u.value === unitVal);
-    return found ? found.label : unitVal;
+  if (!unitVal) return '';
+  const found = availableUnits.value.find(u => u.value === unitVal);
+  return found ? found.label : unitVal;
 };
 
 const getUnitBadgeColor = (unitVal) => {
-    const found = availableUnits.value.find(u => u.value === unitVal);
-    const color = found ? found.color : 'slate';
-    const colorMap = {
-        cyan: 'text-cyan-700 bg-cyan-50 border-cyan-200',
-        blue: 'text-blue-700 bg-blue-50 border-blue-200',
-        indigo: 'text-indigo-700 bg-indigo-50 border-indigo-200',
-        purple: 'text-purple-700 bg-purple-50 border-purple-200',
-        emerald: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-        amber: 'text-amber-700 bg-amber-50 border-amber-200',
-        rose: 'text-rose-700 bg-rose-50 border-rose-200',
-        slate: 'text-slate-700 bg-slate-50 border-slate-200'
-    };
-    return colorMap[color] || colorMap['slate'];
+  const found = availableUnits.value.find(u => u.value === unitVal);
+  const color = found ? found.color : 'slate';
+  const colorMap = {
+    cyan: 'text-cyan-700 bg-cyan-50 border-cyan-200',
+    blue: 'text-blue-700 bg-blue-50 border-blue-200',
+    indigo: 'text-indigo-700 bg-indigo-50 border-indigo-200',
+    purple: 'text-purple-700 bg-purple-50 border-purple-200',
+    emerald: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+    amber: 'text-amber-700 bg-amber-50 border-amber-200',
+    rose: 'text-rose-700 bg-rose-50 border-rose-200',
+    slate: 'text-slate-700 bg-slate-50 border-slate-200'
+  };
+  return colorMap[color] || colorMap['slate'];
 };
 
 const formatDate = (dateStr) => {
-    if(!dateStr) return '';
-    return new Intl.DateTimeFormat('km-KH', { dateStyle: 'long' }).format(new Date(dateStr));
+  if(!dateStr) return '';
+  return new Intl.DateTimeFormat('km-KH', { dateStyle: 'long' }).format(new Date(dateStr));
 };
 
 // --- CRUD LOGIC ---
 const startEdit = (sale) => {
-    editingSaleId.value = sale.id;
-    editForm.id = sale.id;
-    editForm.date = sale.date;
-    editForm.category = sale.category || 'លក់រាយ';
-    editForm.totalClients = sale.totalClients;
-    editForm.totalSold = sale.totalSold;
-    
-    // Ensure unit exists in dropdown, else default to first
-    const unitExists = availableUnits.value.some(u => u.value === sale.unit);
-    editForm.unit = unitExists ? sale.unit : (availableUnits.value[0]?.value || '');
-    
-    editForm.totalPrice = sale.totalPrice;
-    editForm.currency = sale.currency || 'USD';
+  editingSaleId.value = sale.id;
+  editForm.id = sale.id;
+  editForm.date = sale.date;
+  editForm.category = sale.category || 'លក់រាយ';
+  editForm.totalClients = sale.totalClients;
+  editForm.totalSold = sale.totalSold;
+  
+  // Ensure unit exists in dropdown, else default to first
+  const unitExists = availableUnits.value.some(u => u.value === sale.unit);
+  editForm.unit = unitExists ? sale.unit : (availableUnits.value[0]?.value || '');
+  
+  editForm.totalPrice = sale.totalPrice;
+  editForm.currency = sale.currency || 'USD';
 };
 
 const cancelEdit = () => { editingSaleId.value = null; };
 
 const saveEdit = async () => {
-    if (!editForm.date || !editForm.totalSold || !editForm.totalPrice || !editForm.category) return triggerAlert('warning', 'សូមបំពេញ', 'សូមបំពេញព័ត៌មានអោយបានគ្រប់គ្រាន់!');
+  if (!editForm.date || !editForm.totalSold || !editForm.totalPrice || !editForm.category) return triggerAlert('warning', 'សូមបំពេញ', 'សូមបំពេញព័ត៌មានអោយបានគ្រប់គ្រាន់!');
+  
+  isUpdating.value = true;
+  try {
+    const updatedData = {
+      date: editForm.date,
+      category: editForm.category,
+      totalClients: parseInt(editForm.totalClients),
+      totalSold: parseInt(editForm.totalSold),
+      unit: editForm.unit,
+      totalPrice: parseFloat(editForm.totalPrice),
+      currency: editForm.currency
+    };
+    await updateDoc(doc(db, 'sales_reports', editForm.id), updatedData);
     
-    isUpdating.value = true;
-    try {
-        const updatedData = {
-            date: editForm.date,
-            category: editForm.category,
-            totalClients: parseInt(editForm.totalClients),
-            totalSold: parseInt(editForm.totalSold),
-            unit: editForm.unit,
-            totalPrice: parseFloat(editForm.totalPrice),
-            currency: editForm.currency
-        };
-        await updateDoc(doc(db, 'sales_reports', editForm.id), updatedData);
-        
-        // Update Local State
-        const index = sellerSales.value.findIndex(s => s.id === editForm.id);
-        if (index !== -1) sellerSales.value[index] = { ...sellerSales.value[index], ...updatedData };
-        
-        // Resort array by date just in case they changed the date
-        sellerSales.value.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Update Local State
+    const index = sellerSales.value.findIndex(s => s.id === editForm.id);
+    if (index !== -1) sellerSales.value[index] = { ...sellerSales.value[index], ...updatedData };
+    
+    // Resort array by date just in case they changed the date
+    sellerSales.value.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        triggerAlert('success', 'ជោគជ័យ', 'ទិន្នន័យត្រូវបានកែប្រែ!');
-        cancelEdit();
-    } catch (err) {
-        console.error(err);
-        triggerAlert('error', 'បរាជ័យ', 'មិនអាចកែប្រែទិន្នន័យបានទេ!');
-    } finally {
-        isUpdating.value = false;
-    }
+    triggerAlert('success', 'ជោគជ័យ', 'ទិន្នន័យត្រូវបានកែប្រែ!');
+    cancelEdit();
+  } catch (err) {
+    console.error(err);
+    triggerAlert('error', 'បរាជ័យ', 'មិនអាចកែប្រែទិន្នន័យបានទេ!');
+  } finally {
+    isUpdating.value = false;
+  }
 };
 
 const executeDelete = async () => {
-    if (!confirmModal.targetIds || confirmModal.targetIds.length === 0) return;
+  if (!confirmModal.targetIds || confirmModal.targetIds.length === 0) return;
+  
+  confirmModal.isProcessing = true;
+  try {
+    // Bulk delete from Firebase
+    const deletePromises = confirmModal.targetIds.map(id => deleteDoc(doc(db, 'sales_reports', id)));
+    await Promise.all(deletePromises);
+
+    // Update local state
+    sellerSales.value = sellerSales.value.filter(s => !confirmModal.targetIds.includes(s.id));
+    selectedSales.value.clear(); // clear selections
     
-    confirmModal.isProcessing = true;
-    try {
-        // Bulk delete from Firebase
-        const deletePromises = confirmModal.targetIds.map(id => deleteDoc(doc(db, 'sales_reports', id)));
-        await Promise.all(deletePromises);
+    confirmModal.isOpen = false;
+    
+    // Trigger alert AFTER modal animation starts closing to ensure it's visible
+    setTimeout(() => {
+      triggerAlert('success', 'បានលុប', 'ទិន្នន័យត្រូវបានលុបដោយជោគជ័យ!');
+      
+      // Adjust pagination if they deleted the last items on a page
+      if (filteredAndPaginatedSales.value.length === 0 && currentPage.value > 1) {
+        currentPage.value--;
+      }
+    }, 300);
 
-        // Update local state
-        sellerSales.value = sellerSales.value.filter(s => !confirmModal.targetIds.includes(s.id));
-        selectedSales.value.clear(); // clear selections
-        
-        confirmModal.isOpen = false;
-        
-        // Trigger alert AFTER modal animation starts closing to ensure it's visible
-        setTimeout(() => {
-            triggerAlert('success', 'បានលុប', 'ទិន្នន័យត្រូវបានលុបដោយជោគជ័យ!');
-            
-            // Adjust pagination if they deleted the last items on a page
-            if (filteredAndPaginatedSales.value.length === 0 && currentPage.value > 1) {
-                currentPage.value--;
-            }
-        }, 300);
-
-    } catch (err) {
-        console.error(err);
-        triggerAlert('error', 'បរាជ័យ', 'មិនអាចលុបទិន្នន័យបានទេ!');
-    } finally {
-        confirmModal.isProcessing = false;
-        confirmModal.targetIds = [];
-    }
+  } catch (err) {
+    console.error(err);
+    triggerAlert('error', 'បរាជ័យ', 'មិនអាចលុបទិន្នន័យបានទេ!');
+  } finally {
+    confirmModal.isProcessing = false;
+    confirmModal.targetIds = [];
+  }
 };
 </script>
 
@@ -882,10 +900,10 @@ const executeDelete = async () => {
 
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+ -webkit-appearance: none;
+ margin: 0;
 }
 input[type="number"] {
-  -moz-appearance: textfield;
+ -moz-appearance: textfield;
 }
 </style>
