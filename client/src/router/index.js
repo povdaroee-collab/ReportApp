@@ -1,21 +1,24 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
+// 1. Import Views
 import Login from '../views/Login.vue'
 import MainLayout from '../layouts/MainLayout.vue'
 
-// Owner Views
+// --- Owner Views ---
 import OwnerDashboard from '../views/owner/Dashboard.vue'
 import ManageAdmins from '../views/owner/ManageAdmins.vue'
 import OwnerReports from '../views/owner/OwnerReports.vue'
 import OwnerSettings from '../views/owner/OwnerSettings.vue' 
 import TrashAdmins from '../views/owner/TrashAdmins.vue'
+import StockManagement from '../views/owner/StockManagement.vue'
 
-// Admin Views
+// --- Admin Views ---
 import AdminDashboard from '../views/admin/Dashboard.vue'
 import ManageSellers from '../views/admin/ManageSellers.vue'
 import InputSales from '../views/admin/InputSales.vue' 
-import SellerReports from '../views/admin/SellerReports.vue' // <-- MAKE SURE THIS IS IMPORTED
+import SellerReports from '../views/admin/SellerReports.vue'
 import SellerSalesDetail from '../views/admin/SellerSalesDetail.vue'
+import SellerSalesHistory from '../views/admin/SellerSalesHistory.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -29,7 +32,9 @@ const router = createRouter({
       path: '/app',
       component: MainLayout,
       children: [
-        // --- OWNER ROUTES ---
+        // ===========================
+        //       OWNER ROUTES
+        // ===========================
         {
           path: 'owner/dashboard',
           name: 'owner-dashboard',
@@ -46,6 +51,11 @@ const router = createRouter({
           component: OwnerReports
         },
         {
+          path: 'owner/stock-management', 
+          name: 'StockManagement',
+          component: StockManagement
+        },
+        {
           path: 'owner/settings', 
           name: 'owner-settings',
           component: OwnerSettings
@@ -55,8 +65,18 @@ const router = createRouter({
           name: 'trash-admins',
           component: TrashAdmins
         },
+        // ✅ កំណត់ Route សម្រាប់ AdminDetail ឱ្យត្រឹមត្រូវ
+        {
+          path: 'owner/admin-detail/:id',
+          name: 'OwnerAdminDetail',
+          component: () => import('../views/owner/AdminDetail.vue'), // ត្រូវប្រាកដថាមាន file នេះ
+          meta: { requiresAuth: true, role: 'owner' },
+          props: true
+        },
 
-        // --- ADMIN ROUTES ---
+        // ===========================
+        //       ADMIN ROUTES
+        // ===========================
         {
           path: 'admin/dashboard',
           name: 'admin-dashboard',
@@ -68,37 +88,27 @@ const router = createRouter({
           component: ManageSellers
         },
         {
-          path: 'admin/sales', // <-- This is for INPUT SALES
+          path: 'admin/sales', 
           name: 'input-sales',
           component: InputSales
         },
         { 
           path: 'admin/seller-sales/:id', 
           name: 'seller-sales-history',
-          component: () => import('../views/admin/SellerSalesHistory.vue'),
+          component: SellerSalesHistory,
           props: true 
         },
         { 
-          path: 'admin/seller-reports', // <-- This is for VIEWING REPORTS
+          path: 'admin/seller-reports', 
           name: 'seller-reports',
           component: SellerReports 
         },
         {
-  path: '/admin/seller-detail/:id',
-  name: 'SellerSalesDetail',
-  component: SellerSalesDetail,
-  meta: { requiresAuth: true }
-},
-
-{
-  path: '/owner/admin-detail/:id',
-  name: 'OwnerAdminDetail',
-  component: () => import('../views/owner/AdminDetail.vue'), // Update this path to match exactly where you saved the file!
-  meta: { 
-    requiresAuth: true, 
-    role: 'owner' // Add your specific route guards here if you use them
-  }
-}
+          path: 'admin/seller-detail/:id',
+          name: 'SellerSalesDetail',
+          component: SellerSalesDetail,
+          meta: { requiresAuth: true }
+        }
       ]
     }
   ]

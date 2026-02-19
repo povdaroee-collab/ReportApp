@@ -78,51 +78,51 @@
            
            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
               <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 rounded-[24px] p-6 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300 cursor-default flex flex-col justify-between">
-                 <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500"></div>
-                 <div class="relative z-10">
-                    <p class="text-indigo-100 text-[11px] font-black uppercase tracking-widest mb-2 flex items-center gap-2">ចំណូលសរុប (Total Revenue)</p>
-                    <div class="flex items-baseline gap-2">
-                       <span class="text-4xl font-black tracking-tight">{{ grandTotals.all.usd.toLocaleString() }}</span>
-                       <span class="text-xl font-bold opacity-80">$</span>
-                    </div>
-                    <div class="text-sm font-bold mt-1 opacity-90 pb-2">{{ grandTotals.all.khr.toLocaleString() }} ៛</div>
-                 </div>
+                  <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500"></div>
+                  <div class="relative z-10">
+                      <p class="text-indigo-100 text-[11px] font-black uppercase tracking-widest mb-2 flex items-center gap-2">ចំណូលសរុប (Total Revenue)</p>
+                      <div class="flex items-baseline gap-2">
+                         <span class="text-4xl font-black tracking-tight">{{ grandTotals.all.usd.toLocaleString() }}</span>
+                         <span class="text-xl font-bold opacity-80">$</span>
+                      </div>
+                      <div class="text-sm font-bold mt-1 opacity-90 pb-2">{{ grandTotals.all.khr.toLocaleString() }} ៛</div>
+                  </div>
 
-                 <div v-if="activeCategory === 'all'" class="flex gap-2 border-t border-white/20 pt-3 mt-1 relative z-10">
-                     <div class="flex-1 bg-black/10 rounded-lg p-2.5 border border-white/10 backdrop-blur-sm">
-                         <div class="text-indigo-100 text-[10px] font-bold mb-1 uppercase">លក់រាយ (Retail)</div>
-                         <div class="font-black text-sm">{{ grandTotals.retail.usd.toLocaleString() }} $</div>
-                         <div class="font-bold text-[11px] opacity-90">{{ grandTotals.retail.khr.toLocaleString() }} ៛</div>
-                     </div>
-                     <div class="flex-1 bg-black/10 rounded-lg p-2.5 border border-white/10 backdrop-blur-sm">
-                         <div class="text-indigo-100 text-[10px] font-bold mb-1 uppercase">បោះដុំ (Wholesale)</div>
-                         <div class="font-black text-sm">{{ grandTotals.wholesale.usd.toLocaleString() }} $</div>
-                         <div class="font-bold text-[11px] opacity-90">{{ grandTotals.wholesale.khr.toLocaleString() }} ៛</div>
-                     </div>
-                 </div>
+                  <div v-if="activeCategory === 'all'" class="flex gap-2 border-t border-white/20 pt-3 mt-1 relative z-10">
+                      <div class="flex-1 bg-black/10 rounded-lg p-2.5 border border-white/10 backdrop-blur-sm">
+                          <div class="text-indigo-100 text-[10px] font-bold mb-1 uppercase">លក់រាយ (Retail)</div>
+                          <div class="font-black text-sm">{{ grandTotals.retail.usd.toLocaleString() }} $</div>
+                          <div class="font-bold text-[11px] opacity-90">{{ grandTotals.retail.khr.toLocaleString() }} ៛</div>
+                      </div>
+                      <div class="flex-1 bg-black/10 rounded-lg p-2.5 border border-white/10 backdrop-blur-sm">
+                          <div class="text-indigo-100 text-[10px] font-bold mb-1 uppercase">បោះដុំ (Wholesale)</div>
+                          <div class="font-black text-sm">{{ grandTotals.wholesale.usd.toLocaleString() }} $</div>
+                          <div class="font-bold text-[11px] opacity-90">{{ grandTotals.wholesale.khr.toLocaleString() }} ៛</div>
+                      </div>
+                  </div>
               </div>
 
               <div class="bg-white rounded-[24px] p-6 border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col justify-between group hover:border-blue-300 transition-colors">
                   <div class="relative z-10 flex justify-between items-start mb-2">
-                     <div>
-                        <p class="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-1">អតិថិជនទូទាំងប្រព័ន្ធ</p>
-                        <h3 class="text-3xl font-black text-slate-800">{{ grandTotals.all.clients.toLocaleString() }} <span class="text-sm font-bold text-slate-400">នាក់</span></h3>
-                     </div>
-                     <div class="w-12 h-12 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center shadow-inner">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                     </div>
+                      <div>
+                          <p class="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-1">អតិថិជនទូទាំងប្រព័ន្ធ</p>
+                          <h3 class="text-3xl font-black text-slate-800">{{ grandTotals.all.clients.toLocaleString() }} <span class="text-sm font-bold text-slate-400">នាក់</span></h3>
+                      </div>
+                      <div class="w-12 h-12 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center shadow-inner">
+                          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                      </div>
                   </div>
                   <div class="relative z-10 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                     
-                     <div class="flex flex-wrap gap-1.5 items-center">
-                        <template v-if="Object.keys(grandTotals.all.units).length > 0">
-                            <template v-for="(count, unit) in grandTotals.all.units" :key="unit">
-                                <span class="text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 bg-white border shadow-sm" :class="getAppBadgeClass(unit)">
-                                    {{ count.toLocaleString() }} {{ translateUnit(unit) }}
-                                </span>
-                            </template>
-                        </template>
-                     </div>
+                      
+                      <div class="flex flex-wrap gap-1.5 items-center">
+                         <template v-if="Object.keys(grandTotals.all.units).length > 0">
+                             <template v-for="(count, unit) in grandTotals.all.units" :key="unit">
+                                 <span class="text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 bg-white border shadow-sm" :class="getAppBadgeClass(unit)">
+                                     {{ count.toLocaleString() }} {{ translateUnit(unit) }}
+                                 </span>
+                             </template>
+                         </template>
+                      </div>
                   </div>
 
                   <div v-if="activeCategory === 'all'" class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100 relative z-10">
@@ -140,18 +140,18 @@
               <div class="bg-white rounded-[24px] p-6 border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col justify-center group hover:border-emerald-300 transition-colors">
                   <p class="text-slate-400 text-[11px] font-black uppercase mb-4 tracking-widest">ស្ថិតិអ្នកគ្រប់គ្រង</p>
                   <div class="space-y-3">
-                     <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                        <span class="text-xs font-bold text-slate-600">អ្នកគ្រប់គ្រងសរុប</span>
-                        <span class="font-black text-slate-800">{{ activeAdminsCount + inactiveAdminsCount }}</span>
-                     </div>
-                     <div class="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-100">
-                        <span class="text-xs font-bold text-emerald-700">មានការលក់</span>
-                        <span class="font-black text-emerald-700">{{ activeAdminsCount }}</span>
-                     </div>
-                     <div class="flex items-center justify-between p-2.5 rounded-xl bg-rose-50 border border-rose-100">
-                        <span class="text-xs font-bold text-rose-700">គ្មានការលក់</span>
-                        <span class="font-black text-rose-700">{{ inactiveAdminsCount }}</span>
-                     </div>
+                      <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                         <span class="text-xs font-bold text-slate-600">អ្នកគ្រប់គ្រងសរុប</span>
+                         <span class="font-black text-slate-800">{{ activeAdminsCount + inactiveAdminsCount }}</span>
+                      </div>
+                      <div class="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-100">
+                         <span class="text-xs font-bold text-emerald-700">មានការលក់</span>
+                         <span class="font-black text-emerald-700">{{ activeAdminsCount }}</span>
+                      </div>
+                      <div class="flex items-center justify-between p-2.5 rounded-xl bg-rose-50 border border-rose-100">
+                         <span class="text-xs font-bold text-rose-700">គ្មានការលក់</span>
+                         <span class="font-black text-rose-700">{{ inactiveAdminsCount }}</span>
+                      </div>
                   </div>
               </div>
            </div>
@@ -161,46 +161,46 @@
               
               <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
 
-                 <div class="bg-slate-200/50 p-1.5 rounded-xl flex shadow-inner border border-slate-200 flex-1 sm:flex-none">
-                    <button @click="activeCategory = 'all'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all" :class="activeCategory === 'all' ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'">ទាំងអស់</button>
-                    <button @click="activeCategory = 'បោះដុំ'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5" :class="activeCategory === 'បោះដុំ' ? 'bg-white text-purple-700 shadow-sm ring-1 ring-purple-200' : 'text-slate-500 hover:text-purple-700'">
-                      បោះដុំ
-                    </button>
-                    <button @click="activeCategory = 'លក់រាយ'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5" :class="activeCategory === 'លក់រាយ' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-indigo-200' : 'text-slate-500 hover:text-indigo-600'">
-                      លក់រាយ
-                    </button>
-                 </div>
+                  <div class="bg-slate-200/50 p-1.5 rounded-xl flex shadow-inner border border-slate-200 flex-1 sm:flex-none">
+                     <button @click="activeCategory = 'all'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all" :class="activeCategory === 'all' ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'">ទាំងអស់</button>
+                     <button @click="activeCategory = 'បោះដុំ'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5" :class="activeCategory === 'បោះដុំ' ? 'bg-white text-purple-700 shadow-sm ring-1 ring-purple-200' : 'text-slate-500 hover:text-purple-700'">
+                       បោះដុំ
+                     </button>
+                     <button @click="activeCategory = 'លក់រាយ'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5" :class="activeCategory === 'លក់រាយ' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-indigo-200' : 'text-slate-500 hover:text-indigo-600'">
+                       លក់រាយ
+                     </button>
+                  </div>
 
-                 <div class="bg-slate-200/50 p-1.5 rounded-xl flex shadow-inner border border-slate-200 flex-1 sm:flex-none">
-                    <button @click="activityFilter = 'all'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all" :class="activityFilter === 'all' ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'">ទាំងអស់</button>
-                    <button @click="activityFilter = 'active'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5" :class="activityFilter === 'active' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-emerald-100' : 'text-slate-500 hover:text-emerald-600'">
-                      <span class="w-2 h-2 rounded-full" :class="activityFilter === 'active' ? 'bg-emerald-500' : 'bg-slate-300'"></span> មានលក់
-                    </button>
-                    <button @click="activityFilter = 'inactive'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5" :class="activityFilter === 'inactive' ? 'bg-white text-rose-600 shadow-sm ring-1 ring-rose-100' : 'text-slate-500 hover:text-rose-600'">
-                      <span class="w-2 h-2 rounded-full" :class="activityFilter === 'inactive' ? 'bg-rose-500' : 'bg-slate-300'"></span> គ្មានលក់
-                    </button>
-                 </div>
+                  <div class="bg-slate-200/50 p-1.5 rounded-xl flex shadow-inner border border-slate-200 flex-1 sm:flex-none">
+                     <button @click="activityFilter = 'all'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all" :class="activityFilter === 'all' ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'">ទាំងអស់</button>
+                     <button @click="activityFilter = 'active'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5" :class="activityFilter === 'active' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-emerald-100' : 'text-slate-500 hover:text-emerald-600'">
+                       <span class="w-2 h-2 rounded-full" :class="activityFilter === 'active' ? 'bg-emerald-500' : 'bg-slate-300'"></span> មានលក់
+                     </button>
+                     <button @click="activityFilter = 'inactive'" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5" :class="activityFilter === 'inactive' ? 'bg-white text-rose-600 shadow-sm ring-1 ring-rose-100' : 'text-slate-500 hover:text-rose-600'">
+                       <span class="w-2 h-2 rounded-full" :class="activityFilter === 'inactive' ? 'bg-rose-500' : 'bg-slate-300'"></span> គ្មានលក់
+                     </button>
+                  </div>
 
-                 <div class="flex gap-2 w-full sm:w-auto">
-                    <button 
-                       @click="executeNativePrint" 
-                       :disabled="displayedData.length === 0"
-                       class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-slate-900/20 flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2v4h10z"></path></svg>
-                       <span>Print</span>
-                    </button>
+                  <div class="flex gap-2 w-full sm:w-auto">
+                     <button 
+                        @click="executeNativePrint" 
+                        :disabled="displayedData.length === 0"
+                        class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-slate-900/20 flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                     >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2v4h10z"></path></svg>
+                        <span>Print</span>
+                     </button>
 
-                    <button 
-                       @click="generatePDF" 
-                       :disabled="processing.active || displayedData.length === 0"
-                       class="flex-1 sm:flex-none bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-rose-500/30 flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                       <svg v-if="processing.active" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                       <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                       <span>ទាញយក PDF</span>
-                    </button>
-                 </div>
+                     <button 
+                        @click="generatePDF" 
+                        :disabled="processing.active || displayedData.length === 0"
+                        class="flex-1 sm:flex-none bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-rose-500/30 flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                     >
+                        <svg v-if="processing.active" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span>ទាញយក PDF</span>
+                     </button>
+                  </div>
               </div>
            </div>
 
@@ -231,7 +231,7 @@
                              <span v-if="item.hasSales" :class="item.category === 'បោះដុំ' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-slate-50 text-slate-700 border-slate-200'" class="px-2 py-0.5 rounded text-[10px] font-bold border">
                                  {{ item.category }}
                              </span>
-                          </div>
+                           </div>
                        </div>
                     </div>
 
@@ -668,7 +668,8 @@ const selectedDateFormatter = (dateStr) => {
 // ✅ UPDATED TO ROUTE TO PAGE INSTEAD OF OPENING MODAL
 const goToAdminDetail = (admin) => {
     if (admin && admin.originalAdminId) {
-        router.push(`/owner/admin-detail/${admin.originalAdminId}`);
+        // ✅ Corrected Route Push Logic
+        router.push({ name: 'OwnerAdminDetail', params: { id: admin.originalAdminId } });
     }
 };
 
@@ -1155,4 +1156,4 @@ const getAppBadgeClass = (unitVal) => {
 @media print {
  .print\:hidden { display: none !important; }
 }
-</style> 
+</style>
