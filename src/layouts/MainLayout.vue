@@ -1,19 +1,8 @@
 <template>
   <div class="flex h-screen bg-[#F0F2F5] font-khmer overflow-hidden relative selection:bg-indigo-500 selection:text-white">
     
-    <Teleport to="body">
-      <div class="fixed top-4 right-4 z-[9999] w-full max-w-sm pointer-events-none flex flex-col gap-2">
-        <div class="pointer-events-auto">
-           <CustomAlert 
-             :show="alert.show" 
-             :type="alert.type" 
-             :title="alert.title" 
-             :message="alert.message" 
-             @close="alert.show = false"
-           />
-        </div>
-      </div>
-    </Teleport>
+    <Toast />
+    <ConfirmDialog ref="confirmDialogRef" />
 
     <div 
       v-if="isSidebarOpen" 
@@ -57,10 +46,10 @@
               @click="isSidebarOpen = false" 
               class="group relative flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-300 overflow-hidden mb-2"
               active-class="bg-white/10 text-white shadow-lg backdrop-blur-md border border-white/10"
-              :class="$route.path === item.path ? 'bg-white/10 text-white shadow-lg backdrop-blur-md border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
+              :class="$route.path.includes(item.path) ? 'bg-white/10 text-white shadow-lg backdrop-blur-md border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
             >
-              <div v-if="$route.path === item.path" class="absolute left-0 top-1/2 -translate-y-1/2 h-2/3 w-1 rounded-r-full" :class="item.glowClass"></div>
-              <div class="text-slate-400 group-hover:text-white transition-colors" :class="{'text-white': $route.path === item.path}" v-html="item.icon"></div>
+              <div v-if="$route.path.includes(item.path)" class="absolute left-0 top-1/2 -translate-y-1/2 h-2/3 w-1 rounded-r-full" :class="item.glowClass"></div>
+              <div class="text-slate-400 group-hover:text-white transition-colors" :class="{'text-white': $route.path.includes(item.path)}" v-html="item.icon"></div>
               <span class="font-bold text-sm relative z-10 mt-0.5">{{ item.label }}</span>
               <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
             </router-link>
@@ -77,7 +66,7 @@
         </div>
 
         <div v-else class="flex items-center gap-2 group relative z-10">
-          <div @click="openProfileModal" class="flex-1 flex items-center gap-3 cursor-pointer min-w-0 p-1.5 rounded-xl hover:bg-white/5 transition-colors">
+          <div @click="isProfileModalOpen = true" class="flex-1 flex items-center gap-3 cursor-pointer min-w-0 p-1.5 rounded-xl hover:bg-white/5 transition-colors">
              <div class="relative shrink-0">
                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 p-[2px] group-hover:scale-105 transition-transform duration-300 shadow-md">
                   <img :src="userPhoto || `https://ui-avatars.com/api/?name=${userName}&background=random`" class="rounded-full w-full h-full object-cover border-2 border-slate-900" alt="Profile">
@@ -89,7 +78,7 @@
                <p class="text-[10px] font-bold text-indigo-300 mt-0.5">{{ userRole }}</p>
              </div>
           </div>
-          <button @click.stop="isLogoutModalOpen = true" class="p-2 shrink-0 rounded-xl text-slate-400 hover:bg-rose-500 hover:text-white transition-all shadow-sm" title="ចាកចេញ">
+          <button @click.stop="handleLogout" class="p-2 shrink-0 rounded-xl text-slate-400 hover:bg-rose-500 hover:text-white transition-all shadow-sm" title="ចាកចេញ">
              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
           </button>
         </div>
@@ -125,7 +114,7 @@
         </div>
       </header>
 
-      <div class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth bg-slate-50/50">
+      <div class="flex-1 overflow-y-auto relative scroll-smooth bg-slate-50/50 p-4 md:p-8">
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-64 bg-indigo-200/20 blur-[120px] -z-10 rounded-full pointer-events-none"></div>
 
         <router-view v-slot="{ Component }">
@@ -144,44 +133,101 @@
       </div>
 
     </main>
+
+    <TransitionRoot appear :show="isProfileModalOpen" as="template">
+      <Dialog as="div" @close="isProfileModalOpen = false" class="relative z-[100]">
+        <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
+          <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0 scale-95" enter-to="opacity-100 scale-100" leave="duration-200 ease-in" leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
+              <DialogPanel class="w-full max-w-md transform overflow-hidden rounded-[2rem] bg-white text-left align-middle shadow-2xl transition-all font-khmer border border-slate-100">
+                <DialogTitle as="h3" class="text-xl font-black text-slate-800 px-6 py-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                  <span>កែប្រែព័ត៌មានគណនី</span>
+                  <button @click="isProfileModalOpen = false" class="p-2 rounded-full hover:bg-slate-200 text-slate-400 transition-colors">
+                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </DialogTitle>
+                
+                <div class="p-6 space-y-5">
+                   <div class="flex justify-center">
+                      <div class="relative group cursor-pointer" @click="$refs.fileInput.click()">
+                         <div class="w-24 h-24 rounded-full overflow-hidden border-4 border-slate-100 shadow-md">
+                            <img :src="profilePreview || userPhoto || `https://ui-avatars.com/api/?name=${userName}`" class="w-full h-full object-cover">
+                         </div>
+                         <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                         </div>
+                         <input ref="fileInput" type="file" class="hidden" accept="image/*" @change="handleProfileImage">
+                      </div>
+                   </div>
+
+                   <div>
+                      <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">ឈ្មោះពេញ</label>
+                      <input v-model="profileForm.fullName" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800">
+                   </div>
+                   
+                   <div>
+                      <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">ឈ្មោះគណនី (Username)</label>
+                      <input v-model="profileForm.username" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800">
+                   </div>
+
+                   <div>
+                      <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">តេឡេក្រាម (Telegram)</label>
+                      <input v-model="profileForm.telegram" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800">
+                   </div>
+
+                   <div>
+                      <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">លេខសម្ងាត់ថ្មី (Password)</label>
+                      <input v-model="profileForm.password" type="text" placeholder="ទុកទទេបើមិនចង់ប្តូរ" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800">
+                   </div>
+                </div>
+
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                   <button @click="isProfileModalOpen = false" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 transition-colors">បោះបង់</button>
+                   <button @click="submitProfileUpdate" :disabled="isUpdatingProfile" class="px-6 py-2.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/30 transition-all disabled:opacity-50 flex items-center gap-2">
+                      <svg v-if="isUpdatingProfile" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                      រក្សាទុក
+                   </button>
+                </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+
   </div>
 </template>
 
 <script setup>
-// ... (Your existing imports and logic) ...
-// Ensure isSidebarOpen is set to false by default
-
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { TransitionRoot, TransitionChild, Dialog, DialogPanel, DialogTitle } from '@headlessui/vue';
-import CustomAlert from '../components/shared/CustomAlert.vue'; 
 import { auth, db } from '@/firebaseConfig'; 
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import axios from 'axios';
 
+// ✅ នាំចូល Toast ថ្មី
+import Toast from '@/components/Toast.vue';
+import ConfirmDialog from '@/components/shared/ConfirmDialog.vue';
+import { useNotificationStore } from '@/stores/notification';
+
 const router = useRouter();
 const route = useRoute();
-const isSidebarOpen = ref(false); // Default is CLOSED on all screens
+const isSidebarOpen = ref(false); 
 const isAuthLoading = ref(true);
 
-// ... (Rest of your script setup code remains the same) ...
+// ✅ បង្កើត Refs សម្រាប់ប្រើប្រាស់
+const confirmDialogRef = ref(null);
+const notification = useNotificationStore();
 
 // Modals
-const isLogoutModalOpen = ref(false);
 const isProfileModalOpen = ref(false);
 const isUpdatingProfile = ref(false);
-
-// Alert State
-const alert = reactive({ show: false, type: 'success', title: '', message: '' });
-
-const triggerAlert = (type, title, message) => {
-    alert.type = type;
-    alert.title = title;
-    alert.message = message;
-    alert.show = true;
-    setTimeout(() => alert.show = false, 3000);
-};
 
 // Reactive User State
 const currentUserData = ref({}); 
@@ -209,7 +255,7 @@ const icons = {
   shield: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>`,
   cog: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`,
   trash: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>`,
-  box: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>` // NEW ICON
+  box: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>` 
 };
 
 // DYNAMIC MENU ITEMS
@@ -295,7 +341,7 @@ const handleProfileImage = (e) => {
 
 const submitProfileUpdate = async () => {
    if (!profileForm.fullName || !profileForm.username) {
-      return triggerAlert('warning', 'សូមបំពេញព័ត៌មាន', 'ឈ្មោះពេញ និងឈ្មោះគណនីមិនអាចទទេបានទេ');
+      return notification.warning('ឈ្មោះពេញ និងឈ្មោះគណនីមិនអាចទទេបានទេ', 'សូមបំពេញព័ត៌មាន');
    }
 
    isUpdatingProfile.value = true;
@@ -322,7 +368,7 @@ const submitProfileUpdate = async () => {
       });
 
       if (res.data.success) {
-         triggerAlert('success', 'ជោគជ័យ', 'ព័ត៌មានគណនីត្រូវបានកែប្រែ');
+         notification.success('ព័ត៌មានគណនីត្រូវបានកែប្រែដោយជោគជ័យ');
          
          userName.value = profileForm.fullName;
          if (profileForm.profileFile) {
@@ -338,25 +384,34 @@ const submitProfileUpdate = async () => {
       }
    } catch (error) {
       console.error("Profile Update Error:", error);
-      triggerAlert('error', 'បរាជ័យ', error.response?.data?.error || 'មានបញ្ហាក្នុងការកែប្រែព័ត៌មាន');
+      notification.error(error.response?.data?.error || 'មានបញ្ហាក្នុងការកែប្រែព័ត៌មាន');
    } finally {
       isUpdatingProfile.value = false;
    }
 };
 
-// CONFIRM LOGOUT
-const confirmLogout = async () => {
-    isLogoutModalOpen.value = false;
-    try {
-        await signOut(auth);
-        triggerAlert('success', 'ជោគជ័យ', 'អ្នកបានចាកចេញដោយជោគជ័យ');
-        setTimeout(() => {
-            router.push('/');
-        }, 800);
-    } catch (error) {
-        triggerAlert('error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការចាកចេញ');
+// ✅ LOGOUT FUNCTION ថ្មី
+const handleLogout = async () => {
+    const confirmed = await confirmDialogRef.value.open(
+        "ចាកចេញពីប្រព័ន្ធ",
+        "តើអ្នកពិតជាចង់ចាកចេញពីគណនីរបស់អ្នកមែនទេ?"
+    );
+
+    if (confirmed) {
+        try {
+            await signOut(auth);
+            notification.success('អ្នកបានចាកចេញដោយជោគជ័យ');
+            
+            setTimeout(() => {
+                router.push('/');
+            }, 800);
+        } catch (error) {
+            console.error("Logout Error:", error);
+            notification.error('មានបញ្ហាក្នុងការចាកចេញ');
+        }
     }
 };
+
 </script>
 
 <style scoped>

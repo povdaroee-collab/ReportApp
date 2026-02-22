@@ -1,19 +1,9 @@
 <template>
   <div class="font-khmer h-full flex flex-col relative bg-[#F4F7FE] min-h-[100dvh]">
     
-    <Teleport to="body">
-      <div class="fixed top-4 right-4 z-[9999] w-full max-w-sm pointer-events-none flex flex-col gap-2">
-        <div class="pointer-events-auto">
-          <CustomAlert 
-            :show="alert.show" 
-            :title="alert.title" 
-            :message="alert.message" 
-            :type="alert.type" 
-            @close="alert.show = false"
-          />
-        </div>
-      </div>
-    </Teleport>
+    <Toast />
+
+    <ConfirmDialog ref="confirmDialogRef" />
 
     <div class="sticky top-0 z-40 bg-[#F4F7FE]/80 backdrop-blur-2xl border-b border-slate-200/60 transition-all px-4 md:px-8 py-5">
       <div class="max-w-[90rem] mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
@@ -112,7 +102,7 @@
                       </span>
                   </div>
 
-                  <button @click.stop="confirmDelete(seller)" class="absolute top-4 right-4 bg-white/20 hover:bg-rose-500 text-white backdrop-blur-md p-2 rounded-full transition-all duration-300 shadow-sm border border-white/30 z-10" title="លុបគណនី">
+                  <button @click.stop="promptDelete(seller)" class="absolute top-4 right-4 bg-white/20 hover:bg-rose-500 text-white backdrop-blur-md p-2 rounded-full transition-all duration-300 shadow-sm border border-white/30 z-10" title="លុបគណនី">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>
               </div>
@@ -159,126 +149,154 @@
     <TransitionRoot appear :show="showModal" as="template">
       <Dialog as="div" @close="closeModal" class="relative z-[90]">
         <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
-          <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-md" />
+          <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
         </TransitionChild>
 
         <div class="fixed inset-0 overflow-y-auto custom-scrollbar">
           <div class="flex min-h-full items-center justify-center p-4">
             <TransitionChild as="template" enter="duration-400 ease-out" enter-from="opacity-0 scale-95 translate-y-10" enter-to="opacity-100 scale-100 translate-y-0" leave="duration-200 ease-in" leave-from="opacity-100 scale-100 translate-y-0" leave-to="opacity-0 scale-95 translate-y-10">
-              <DialogPanel class="w-full max-w-4xl transform overflow-hidden rounded-[2rem] bg-white shadow-2xl transition-all relative">
+              <DialogPanel class="w-full max-w-5xl transform overflow-hidden rounded-[2rem] bg-white shadow-2xl transition-all relative">
                 
-                <div class="bg-gradient-to-r px-8 py-6 flex justify-between items-center relative overflow-hidden" :class="isEditing ? 'from-amber-500 to-orange-500' : 'from-teal-600 to-emerald-600'">
-                  <div class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10"></div>
+                <div class="px-8 py-6 flex justify-between items-center relative overflow-hidden border-b border-slate-100" :class="isEditing ? 'bg-gradient-to-r from-amber-50 to-orange-50' : 'bg-gradient-to-r from-teal-50 to-emerald-50'">
                   <div class="relative z-10 flex items-center gap-4">
-                    <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-sm border border-white/30 shadow-inner">
-                        <svg v-if="isEditing" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                        <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-md" :class="isEditing ? 'bg-gradient-to-br from-amber-500 to-orange-600 shadow-orange-500/30' : 'bg-gradient-to-br from-teal-500 to-emerald-600 shadow-teal-500/30'">
+                        <svg v-if="isEditing" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        <svg v-else class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
                     </div>
                     <div>
-                      <h3 class="text-2xl font-black text-white tracking-tight">{{ isEditing ? 'កែប្រែព័ត៌មាន' : 'ចុះឈ្មោះតំណាងលក់ថ្មី' }}</h3>
-                      <p class="text-white/80 text-[11px] font-bold uppercase tracking-widest mt-0.5">{{ isEditing ? 'Update Seller Profile' : 'Register New Seller' }}</p>
+                      <h3 class="text-2xl font-black text-slate-800 tracking-tight">{{ isEditing ? 'កែប្រែព័ត៌មានតំណាងលក់' : 'ចុះឈ្មោះតំណាងលក់ថ្មី' }}</h3>
+                      <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mt-0.5">{{ isEditing ? 'UPDATE SELLER PROFILE' : 'REGISTER NEW SELLER' }}</p>
                     </div>
                   </div>
-                  <button @click="closeModal" class="bg-white/10 hover:bg-white/30 border border-white/20 text-white rounded-full p-2.5 transition-all z-10 active:scale-95 shadow-sm">
+                  <button @click="closeModal" class="bg-white hover:bg-slate-100 border border-slate-200 text-slate-500 rounded-full p-2.5 transition-all z-10 active:scale-95 shadow-sm">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                   </button>
                 </div>
 
-                <div class="p-8 grid grid-cols-1 lg:grid-cols-5 gap-8 bg-[#F8FAFC]">
-                  <div class="lg:col-span-3 space-y-5 bg-white p-6 rounded-[24px] border border-slate-200/60 shadow-sm">
-                    <div>
-                        <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">ឈ្មោះពេញ (Full Name) <span class="text-rose-500">*</span></label>
-                        <input ref="nameInput" v-model="form.fullName" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-teal-500/10 focus:border-teal-400 outline-none transition-all placeholder-slate-300" placeholder="បញ្ចូលឈ្មោះ...">
+                <div class="p-8 bg-slate-50/50">
+                  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    
+                    <div class="lg:col-span-8 space-y-6">
+                        
+                        <div class="flex items-center justify-between bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-black text-slate-800">កំណត់សិទ្ធិជា Dealer (អ្នកបោះដុំធំ)</p>
+                                    <p class="text-[11px] font-bold text-slate-500 mt-0.5">បើកមុខងារនេះដើម្បីផ្តល់សិទ្ធិជា Dealer ជំនួសឱ្យ Seller ធម្មតា</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="form.isDealer" class="sr-only peer">
+                                <div class="w-14 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-amber-500"></div>
+                            </label>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-[24px] border border-slate-200/60 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-black text-slate-600 uppercase tracking-widest mb-2 ml-1">ឈ្មោះពេញ (Full Name) <span class="text-rose-500">*</span></label>
+                                <input ref="nameInput" v-model="form.fullName" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all placeholder-slate-400" placeholder="បញ្ចូលឈ្មោះពេញ...">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-black text-slate-600 uppercase tracking-widest mb-2 ml-1">ឈ្មោះគណនី (Username) <span class="text-rose-500">*</span></label>
+                                <div class="relative group">
+                                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center font-bold text-slate-400 group-focus-within:text-teal-500 transition-colors">@</span>
+                                    <input v-model="form.username" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all placeholder-slate-400" placeholder="username">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-black text-slate-600 uppercase tracking-widest mb-2 ml-1">លេខសម្ងាត់ (Password) <span class="text-rose-500">*</span></label>
+                                <input v-model="form.password" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all placeholder-slate-400 font-mono" placeholder="យ៉ាងតិច ៦ ខ្ទង់">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-black text-slate-600 uppercase tracking-widest mb-2 ml-1">តេឡេក្រាម (Telegram) <span class="text-rose-500">*</span></label>
+                                <div class="relative group">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 group-focus-within:text-sky-500 transition-colors">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.48-.94-2.4-1.54-1.06-.7-.37-1.09.23-1.72.16-.16 2.87-2.63 2.92-2.85.01-.03.01-.14-.06-.2-.06-.06-.17-.04-.25-.02-.11.02-1.91 1.2-5.39 3.55-.5.34-.95.51-1.35.5-.44-.01-1.29-.25-1.92-.42-.77-.21-1.37-.32-1.31-.68.03-.18.28-.37.76-.56 3.03-1.32 5.06-2.19 6.09-2.62 2.93-1.21 3.53-1.43 3.93-1.43.09 0 .28.01.4.04.1.03.24.1.33.25.08.16.07.32.07.33z"/></svg>
+                                    </span>
+                                    <input v-model="form.telegram" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all placeholder-slate-400" placeholder="username">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-black text-slate-600 uppercase tracking-widest mb-2 ml-1">លេខទូរស័ព្ទ (Phone)</label>
+                                <div class="relative group">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 group-focus-within:text-teal-500 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                    </span>
+                                    <input v-model="form.phoneNumber" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all placeholder-slate-400" placeholder="012 345 678">
+                                </div>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-black text-slate-600 uppercase tracking-widest mb-2 ml-1">អត្តសញ្ញាណប័ណ្ណ (ID Number) <span class="text-rose-500">*</span></label>
+                                <div class="relative group">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 group-focus-within:text-teal-500 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .884-.5 2-2 2h4c-1.5 0-2-1.116-2-2z"></path></svg>
+                                    </span>
+                                    <input v-model="form.idNumber" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all placeholder-slate-400 font-mono tracking-widest" placeholder="XXXXXXXXX">
+                                </div>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-black text-slate-600 uppercase tracking-widest mb-2 ml-1">អាសយដ្ឋាន (Address)</label>
+                                <input v-model="form.address" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all placeholder-slate-400" placeholder="ផ្ទះលេខ, ផ្លូវ, សង្កាត់, ខណ្ឌ, រាជធានី/ខេត្ត...">
+                            </div>
+
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">លេខសម្ងាត់ (Password) <span class="text-rose-500">*</span></label>
-                        <input v-model="form.password" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-teal-500/10 focus:border-teal-400 outline-none transition-all placeholder-slate-300" placeholder="បញ្ចូលលេខសម្ងាត់ (យ៉ាងតិច ៦ ខ្ទង់)">
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">អាសយដ្ឋាន (Address)</label>
-                        <input v-model="form.address" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-teal-500/10 focus:border-teal-400 outline-none transition-all placeholder-slate-300" placeholder="បញ្ចូលអាសយដ្ឋាន...">
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Telegram <span class="text-rose-500">*</span></label>
-                            <div class="relative group">
-                                <span class="absolute inset-y-0 left-0 pl-4 flex items-center font-bold text-slate-400 group-focus-within:text-sky-500 transition-colors">@</span>
-                                <input v-model="form.telegram" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-3.5 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-sky-500/10 focus:border-sky-400 outline-none transition-all placeholder-slate-300" placeholder="username">
+                    <div class="lg:col-span-4 space-y-6">
+                        
+                        <div class="bg-white p-5 rounded-[24px] border border-slate-200/60 shadow-sm flex flex-col h-[230px]">
+                            <label class="block text-[11px] font-black text-slate-600 uppercase tracking-widest mb-3 flex items-center justify-between">
+                                <span>រូបថតផ្ទាល់ខ្លួន <span v-if="!isEditing" class="text-rose-500">*</span></span>
+                                <span v-if="previews.profile" @click.stop="clearImage('profile')" class="text-rose-500 hover:text-rose-700 cursor-pointer flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> លុប</span>
+                            </label>
+                            <div @click="$refs.profileInput.click()" class="flex-1 border-2 border-dashed border-slate-300 hover:border-teal-400 bg-slate-50 hover:bg-teal-50/50 rounded-[1.25rem] flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative group">
+                                <input ref="profileInput" type="file" accept="image/*" class="hidden" @change="e => handleFile(e, 'profile')">
+                                <img v-if="previews.profile" :src="previews.profile" class="w-full h-full object-cover absolute inset-0">
+                                <div v-else class="text-center p-4 group-hover:scale-105 transition-transform">
+                                    <div class="w-12 h-12 bg-white shadow-sm rounded-full flex items-center justify-center mx-auto mb-2 text-slate-400 group-hover:text-teal-500 transition-colors">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 font-bold uppercase tracking-widest">Profile Image</p>
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">លេខទូរស័ព្ទ (Phone)</label>
-                            <div class="relative group">
-                               <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 group-focus-within:text-teal-500 transition-colors">
-                                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                               </span>
-                               <input v-model="form.phoneNumber" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3.5 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-teal-500/10 focus:border-teal-400 outline-none transition-all placeholder-slate-300" placeholder="012 345 678">
+
+                        <div class="bg-white p-5 rounded-[24px] border border-slate-200/60 shadow-sm flex flex-col h-[230px]">
+                            <label class="block text-[11px] font-black text-slate-600 uppercase tracking-widest mb-3 flex items-center justify-between">
+                                <span>រូបថតអត្តសញ្ញាណប័ណ្ណ</span>
+                                <span v-if="previews.id" @click.stop="clearImage('id')" class="text-rose-500 hover:text-rose-700 cursor-pointer flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> លុប</span>
+                            </label>
+                            <div @click="$refs.idInput.click()" class="flex-1 border-2 border-dashed border-slate-300 hover:border-teal-400 bg-slate-50 hover:bg-teal-50/50 rounded-[1.25rem] flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative group">
+                                <input ref="idInput" type="file" accept="image/*" class="hidden" @change="e => handleFile(e, 'id')">
+                                <img v-if="previews.id" :src="previews.id" class="w-full h-full object-cover absolute inset-0">
+                                <div v-else class="text-center p-4 group-hover:scale-105 transition-transform">
+                                    <div class="w-12 h-12 bg-white shadow-sm rounded-full flex items-center justify-center mx-auto mb-2 text-slate-400 group-hover:text-teal-500 transition-colors">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .884-.5 2-2 2h4c-1.5 0-2-1.116-2-2z"></path></svg>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 font-bold uppercase tracking-widest">ID Card Image</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">លេខអត្តសញ្ញាណប័ណ្ណ (ID Number) <span class="text-rose-500">*</span></label>
-                        <div class="relative group">
-                           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 group-focus-within:text-teal-500 transition-colors">
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .884-.5 2-2 2h4c-1.5 0-2-1.116-2-2z"></path></svg>
-                           </span>
-                           <input v-model="form.idNumber" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3.5 text-slate-800 font-black text-sm focus:bg-white focus:ring-4 focus:ring-teal-500/10 focus:border-teal-400 outline-none transition-all placeholder-slate-300 font-mono tracking-widest" placeholder="XXXXXXXXX">
-                        </div>
-                    </div>
 
-                    <div class="flex items-center justify-between bg-amber-50 border border-amber-200/60 p-4 rounded-xl">
-                        <div>
-                            <p class="text-sm font-black text-amber-800">កំណត់ជា Dealer</p>
-                            <p class="text-[10px] font-bold text-amber-600 mt-0.5">បើកដើម្បីផ្តល់សិទ្ធិជាអ្នកបោះដុំធំ</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" v-model="form.isDealer" class="sr-only peer">
-                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                        </label>
-                    </div>
-
-                  </div>
-
-                  <div class="lg:col-span-2 space-y-5">
-                    <div class="bg-white p-5 rounded-[24px] border border-slate-200/60 shadow-sm flex flex-col h-full gap-5">
-                       <div class="flex-1 flex flex-col">
-                           <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">រូបភាពផ្ទាល់ខ្លួន <span v-if="!isEditing" class="text-rose-500">*</span></label>
-                           <div @click="$refs.profileInput.click()" class="flex-1 border-2 border-dashed border-slate-300 hover:border-teal-400 bg-slate-50 hover:bg-teal-50/50 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative group min-h-[140px]">
-                              <input ref="profileInput" type="file" accept="image/*" class="hidden" @change="e => handleFile(e, 'profile')">
-                              <img v-if="previews.profile" :src="previews.profile" class="w-full h-full object-cover absolute inset-0">
-                              <div v-else class="text-center p-4 group-hover:scale-105 transition-transform">
-                                 <div class="w-12 h-12 bg-white shadow-sm rounded-full flex items-center justify-center mx-auto mb-2 text-slate-400 group-hover:text-teal-500 transition-colors">
-                                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                                 </div>
-                                 <p class="text-[11px] text-slate-500 font-bold uppercase tracking-widest">Profile Image</p>
-                              </div>
-                           </div>
-                       </div>
-
-                       <div class="flex-1 flex flex-col">
-                           <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">អត្តសញ្ញាណប័ណ្ណ</label>
-                           <div @click="$refs.idInput.click()" class="flex-1 border-2 border-dashed border-slate-300 hover:border-teal-400 bg-slate-50 hover:bg-teal-50/50 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative group min-h-[140px]">
-                              <input ref="idInput" type="file" accept="image/*" class="hidden" @change="e => handleFile(e, 'id')">
-                              <img v-if="previews.id" :src="previews.id" class="w-full h-full object-cover absolute inset-0">
-                              <div v-else class="text-center p-4 group-hover:scale-105 transition-transform">
-                                 <div class="w-12 h-12 bg-white shadow-sm rounded-full flex items-center justify-center mx-auto mb-2 text-slate-400 group-hover:text-teal-500 transition-colors">
-                                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .884-.5 2-2 2h4c-1.5 0-2-1.116-2-2z"></path></svg>
-                                 </div>
-                                 <p class="text-[11px] text-slate-500 font-bold uppercase tracking-widest">ID Card Image</p>
-                              </div>
-                           </div>
-                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div class="bg-white px-8 py-5 flex items-center justify-end gap-3 border-t border-slate-200/60">
-                  <button @click="closeModal" class="px-6 py-3.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-all text-sm">បោះបង់ (Cancel)</button>
-                  <button @click="submitSeller" :disabled="isSubmitting" class="text-white px-10 py-3.5 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 text-sm min-w-[160px]" :class="isEditing ? 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-500/30' : 'bg-gradient-to-r from-teal-500 to-emerald-600 shadow-teal-500/30'">
-                     <svg v-if="isSubmitting" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                     <span v-else>{{ isEditing ? 'រក្សាទុកការកែប្រែ' : 'បង្កើតគណនី (Save)' }}</span>
+                  <button @click="closeModal" class="px-6 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-all text-sm">បោះបង់ (Cancel)</button>
+                  <button @click="submitSeller" :disabled="isSubmitting" class="text-white px-8 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 text-sm min-w-[160px]" :class="isEditing ? 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-500/30 hover:shadow-orange-500/50' : 'bg-gradient-to-r from-teal-500 to-emerald-600 shadow-teal-500/30 hover:shadow-teal-500/50'">
+                      <svg v-if="isSubmitting" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                      <span v-else>{{ isEditing ? 'រក្សាទុកការកែប្រែ' : 'បង្កើតគណនីឥឡូវនេះ' }}</span>
                   </button>
                 </div>
 
@@ -342,7 +360,7 @@
                       </div>
                       <div class="flex flex-wrap items-center gap-2.5 mt-3">
                          <span class="bg-slate-200 text-slate-600 px-3 py-1 rounded-lg text-xs font-mono font-bold tracking-widest border border-slate-300">ID: {{ selectedSeller?.idNumber || 'N/A' }}</span>
-                         <span v-if="selectedSeller?.telegram" class="text-sky-600 font-bold text-sm bg-sky-50 px-3 py-1 rounded-lg border border-sky-100">@{{ selectedSeller.telegram }}</span>
+                         <span v-if="selectedSeller?.username" class="text-slate-600 font-bold text-sm bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">@{{ selectedSeller.username }}</span>
                       </div>
                    </div>
 
@@ -367,7 +385,17 @@
                          </div>
                       </div>
                       
-                      <div v-if="selectedSeller?.password" class="bg-[#F8FAFC] p-4 rounded-2xl border border-slate-200/60 flex items-center gap-4 sm:col-span-2">
+                      <div class="bg-[#F8FAFC] p-4 rounded-2xl border border-slate-200/60 flex items-center gap-4">
+                         <div class="w-12 h-12 bg-white text-sky-500 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.48-.94-2.4-1.54-1.06-.7-.37-1.09.23-1.72.16-.16 2.87-2.63 2.92-2.85.01-.03.01-.14-.06-.2-.06-.06-.17-.04-.25-.02-.11.02-1.91 1.2-5.39 3.55-.5.34-.95.51-1.35.5-.44-.01-1.29-.25-1.92-.42-.77-.21-1.37-.32-1.31-.68.03-.18.28-.37.76-.56 3.03-1.32 5.06-2.19 6.09-2.62 2.93-1.21 3.53-1.43 3.93-1.43.09 0 .28.01.4.04.1.03.24.1.33.25.08.16.07.32.07.33z"/></svg>
+                         </div>
+                         <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Telegram</p>
+                            <p class="font-bold text-slate-800 font-mono tracking-widest">{{ selectedSeller?.telegram || 'N/A' }}</p>
+                         </div>
+                      </div>
+
+                      <div v-if="selectedSeller?.password" class="bg-[#F8FAFC] p-4 rounded-2xl border border-slate-200/60 flex items-center gap-4">
                          <div class="w-12 h-12 bg-white text-indigo-500 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                          </div>
@@ -408,29 +436,6 @@
       </Dialog>
     </TransitionRoot>
 
-    <TransitionRoot appear :show="confirmModal.show" as="template">
-      <Dialog as="div" @close="confirmModal.show = false" class="relative z-[99999]">
-        <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
-          <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" />
-        </TransitionChild>
-        <div class="fixed inset-0 overflow-y-auto">
-          <div class="flex min-h-full items-center justify-center p-4">
-             <DialogPanel class="w-full max-w-sm transform overflow-hidden rounded-[24px] bg-white p-6 shadow-2xl transition-all text-center border border-slate-100">
-                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-50 mb-4 text-rose-500 border-4 border-rose-100/50">
-                   <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </div>
-                <h3 class="text-xl font-black text-slate-800 mb-2">លុបគណនី?</h3>
-                <p class="text-[13px] font-medium text-slate-500 mb-8 px-4 leading-relaxed">តើអ្នកពិតជាចង់លុបគណនីនេះមែនទេ? សកម្មភាពនេះ<strong class="text-rose-500">មិនអាចត្រឡប់ក្រោយបានទេ</strong>។</p>
-                <div class="flex gap-3">
-                   <button @click="confirmModal.show = false" class="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 active:scale-95 transition-all text-sm shadow-sm">បោះបង់</button>
-                   <button @click="executeDelete" class="flex-1 py-3 rounded-xl text-white font-bold shadow-lg shadow-rose-500/30 bg-rose-500 hover:bg-rose-600 active:scale-95 transition-all text-sm">យល់ព្រមលុប</button>
-                </div>
-             </DialogPanel>
-          </div>
-        </div>
-      </Dialog>
-    </TransitionRoot>
-
   </div>
 </template>
 
@@ -439,12 +444,17 @@ import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router'; 
 import { TransitionRoot, TransitionChild, Dialog, DialogPanel, DialogTitle } from '@headlessui/vue';
 import { db, auth } from '@/firebaseConfig';
-import { collection, query, where, onSnapshot, doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth'; 
 import axios from 'axios';
-import CustomAlert from '../../components/shared/CustomAlert.vue';
+
+// ✅ នាំចូល Toast និង Store
+import Toast from '@/components/Toast.vue';
+import ConfirmDialog from '@/components/shared/ConfirmDialog.vue';
+import { useNotificationStore } from '@/stores/notification';
 
 const router = useRouter(); 
+const notification = useNotificationStore(); // ប្រើ Store សម្រាប់ Notification
 
 const sellers = ref([]);
 const isLoading = ref(true);
@@ -457,19 +467,22 @@ const isOwner = ref(false);
 const isEditing = ref(false);
 const currentSellerId = ref(null);
 const nameInput = ref(null);
+const confirmDialogRef = ref(null); // Ref ទៅ ConfirmDialog
 
-const alert = reactive({ show: false, title: '', message: '', type: 'success' });
-const triggerAlert = (type, title, message) => {
-  alert.type = type; alert.title = title; alert.message = message; alert.show = true;
-  setTimeout(() => alert.show = false, 3000);
-};
-
-const confirmModal = reactive({ show: false, targetSeller: null, isProcessing: false });
-
-// ✅ UPDATED FORM TO INCLUDE PASSWORD AND ISDEALER
+// ✅ UPDATED FORM: Added 'username' field
 const form = reactive({
-  fullName: '', address: '', telegram: '', phoneNumber: '', idNumber: '', password: '', isDealer: false, profileFile: null, idCardFile: null
+  fullName: '', 
+  username: '', // ថ្មី
+  address: '', 
+  telegram: '', 
+  phoneNumber: '', 
+  idNumber: '', 
+  password: '', 
+  isDealer: false, 
+  profileFile: null, 
+  idCardFile: null
 });
+
 const previews = reactive({ profile: null, id: null });
 
 onMounted(() => {
@@ -480,7 +493,6 @@ onMounted(() => {
         const role = userDoc.exists() ? userDoc.data().role : 'user';
         isOwner.value = (role === 'owner');
 
-        // Note: We need to pull all sellers if owner, otherwise only ones created by this admin
         let q = (role === 'admin')
            ? query(collection(db, "users"), where("role", "in", ["seller", "dealer"]), where("createdBy", "==", user.uid))
            : query(collection(db, "users"), where("role", "in", ["seller", "dealer"]));
@@ -525,18 +537,18 @@ const openCreateModal = () => {
   showModal.value = true;
 };
 
-// ✅ POPULATE EDIT FORM WITH DB PASSWORD & DEALER STATUS
 const openEditModal = (seller) => {
   isEditing.value = true;
   currentSellerId.value = seller.id;
   Object.assign(form, {
     fullName: seller.fullName, 
+    username: seller.username || '', // ទាញ username ចាស់មកបង្ហាញ
     address: seller.address, 
     telegram: seller.telegram,
     phoneNumber: seller.phoneNumber, 
     idNumber: seller.idNumber, 
-    password: seller.password || '', // Bind password
-    isDealer: seller.role === 'dealer', // Bind dealer status
+    password: seller.password || '', 
+    isDealer: seller.role === 'dealer', 
     profileFile: null, 
     idCardFile: null
   });
@@ -548,7 +560,7 @@ const openEditModal = (seller) => {
 const closeModal = () => { showModal.value = false; setTimeout(() => { resetForm(); }, 300); };
 
 const resetForm = () => {
-  Object.assign(form, { fullName: '', address: '', telegram: '', phoneNumber: '', idNumber: '', password: '', isDealer: false, profileFile: null, idCardFile: null });
+  Object.assign(form, { fullName: '', username: '', address: '', telegram: '', phoneNumber: '', idNumber: '', password: '', isDealer: false, profileFile: null, idCardFile: null });
   Object.assign(previews, { profile: null, id: null });
 };
 
@@ -559,24 +571,34 @@ const handleFile = (e, type) => {
   else { form.idCardFile = file; previews.id = URL.createObjectURL(file); }
 };
 
-// ✅ SUBMIT WITH NEW FIELDS
+const clearImage = (type) => {
+    if (type === 'profile') {
+        form.profileFile = null;
+        previews.profile = null;
+    } else {
+        form.idCardFile = null;
+        previews.id = null;
+    }
+};
+
 const submitSeller = async () => {
   if (!auth.currentUser) return;
   
-  if (!form.fullName || !form.telegram || (!isEditing.value && !form.profileFile) || !form.idNumber || !form.password) {
-     return triggerAlert('warning', 'សូមត្រួតពិនិត្យ', 'សូមបំពេញព័ត៌មានដែលមានសញ្ញាផ្កាយ (*) និងលេខសម្ងាត់អោយបានគ្រប់គ្រាន់!');
+  // Update validation check to include username
+  if (!form.fullName || !form.username || !form.telegram || (!isEditing.value && !form.profileFile) || !form.idNumber || !form.password) {
+     return notification.error('សូមបំពេញព័ត៌មានដែលមានសញ្ញាផ្កាយ (*) ទាំងអស់ឱ្យបានត្រឹមត្រូវ!', 'សូមត្រួតពិនិត្យ');
   }
 
   isSubmitting.value = true;
   const formData = new FormData();
   formData.append('fullName', form.fullName);
+  formData.append('username', form.username); // បញ្ជូន username
   formData.append('address', form.address);
-  formData.append('username', form.telegram);
   formData.append('telegram', form.telegram);
   formData.append('phoneNumber', form.phoneNumber);
   formData.append('idNumber', form.idNumber);
-  formData.append('password', form.password); // Add password
-  formData.append('role', form.isDealer ? 'dealer' : 'seller'); // Add role
+  formData.append('password', form.password); 
+  formData.append('role', form.isDealer ? 'dealer' : 'seller'); 
   
   if (form.profileFile) formData.append('profileImage', form.profileFile);
   if (form.idCardFile) formData.append('idCardImage', form.idCardFile);
@@ -594,7 +616,7 @@ const submitSeller = async () => {
      });
 
      if (res.data.success) {
-        triggerAlert('success', 'ជោគជ័យ', isEditing.value ? 'បានកែប្រែទិន្នន័យ' : 'បានបង្កើតគណនី');
+        notification.success(isEditing.value ? 'បានកែប្រែទិន្នន័យដោយជោគជ័យ' : 'បានបង្កើតគណនីថ្មីដោយជោគជ័យ');
         if (isEditing.value) {
             closeModal();
         } else {
@@ -605,35 +627,38 @@ const submitSeller = async () => {
   } catch (error) {
      console.error(error);
      if (error.response && error.response.data && error.response.data.error === "ID_EXISTS") {
-         triggerAlert('error', 'បដិសេធ', 'លេខអត្តសញ្ញាណប័ណ្ណនេះមានក្នុងប្រព័ន្ធរួចហើយ!');
+         notification.error('លេខអត្តសញ្ញាណប័ណ្ណនេះមានក្នុងប្រព័ន្ធរួចហើយ!', 'បដិសេធ');
+     } else if (error.response && error.response.data && error.response.data.error === "USERNAME_EXISTS") {
+         notification.error('ឈ្មោះគណនី (Username) នេះមានអ្នកប្រើប្រាស់រួចហើយ!', 'បដិសេធ');
      } else {
-         triggerAlert('error', 'បរាជ័យ', error.response?.data?.message || 'មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ');
+         notification.error(error.response?.data?.message || 'មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ');
      }
   } finally {
      isSubmitting.value = false;
   }
 };
 
-const confirmDelete = (seller) => {
-    confirmModal.targetSeller = seller;
-    confirmModal.show = true;
+const promptDelete = async (seller) => {
+    const confirmed = await confirmDialogRef.value.open(
+        "លុបគណនី?", 
+        `តើអ្នកពិតជាចង់លុបគណនី "${seller.fullName}" មែនទេ?`
+    );
+
+    if (confirmed) {
+        executeDelete(seller.id);
+    }
 };
 
-const executeDelete = async () => {
-    if (!confirmModal.targetSeller) return;
-    confirmModal.isProcessing = true;
+const executeDelete = async (id) => {
     try {
         const token = await auth.currentUser.getIdToken(true);
-        await axios.delete(`https://reportapp-81vf.onrender.com/api/delete-seller/${confirmModal.targetSeller.id}`, {
+        await axios.delete(`https://reportapp-81vf.onrender.com/api/delete-seller/${id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        triggerAlert('success', 'ជោគជ័យ', 'គណនីត្រូវបានលុប');
-        confirmModal.show = false;
+        notification.success('គណនីត្រូវបានលុបចេញពីប្រព័ន្ធ');
     } catch (e) {
         console.error(e);
-        triggerAlert('error', 'បរាជ័យ', 'មិនអាចលុបគណនីបាន');
-    } finally {
-        confirmModal.isProcessing = false;
+        notification.error('មានបញ្ហាក្នុងការលុបគណនី');
     }
 };
 </script>
