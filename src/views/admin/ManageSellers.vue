@@ -681,4 +681,4 @@ const executeDelete = async (id) => {
   -webkit-box-orient: vertical;  
   overflow: hidden;
 }
-</style>
+</style>     
