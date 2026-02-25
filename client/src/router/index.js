@@ -13,12 +13,11 @@ import TrashAdmins from '../views/owner/TrashAdmins.vue'
 import StockManagement from '../views/owner/StockManagement.vue'
 
 // --- Admin Views ---
-import AdminDashboard from '../views/admin/Dashboard.vue'
+import AdminDashboard from '../views/admin/Dashboard.vue' 
 import ManageSellers from '../views/admin/ManageSellers.vue'
 import InputSales from '../views/admin/InputSales.vue' 
 import SellerReports from '../views/admin/SellerReports.vue'
-import SellerSalesDetail from '../views/admin/SellerSalesDetail.vue'
-import SellerSalesHistory from '../views/admin/SellerSalesHistory.vue'
+import SellerSalesDetail from '../views/owner/Detail/SellerSalesDetail.vue'; // សូមកែតម្រូវទីតាំង Path តាមជាក់ស្ដែង
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -65,11 +64,10 @@ const router = createRouter({
           name: 'trash-admins',
           component: TrashAdmins
         },
-        // ✅ កំណត់ Route សម្រាប់ AdminDetail ឱ្យត្រឹមត្រូវ
         {
           path: 'owner/admin-detail/:id',
           name: 'OwnerAdminDetail',
-          component: () => import('../views/owner/AdminDetail.vue'), // ត្រូវប្រាកដថាមាន file នេះ
+          component: () => import('../views/owner/AdminDetail.vue'),
           meta: { requiresAuth: true, role: 'owner' },
           props: true
         },
@@ -93,22 +91,17 @@ const router = createRouter({
           component: InputSales
         },
         { 
-          path: 'admin/seller-sales/:id', 
-          name: 'seller-sales-history',
-          component: SellerSalesHistory,
-          props: true 
-        },
-        { 
           path: 'admin/seller-reports', 
           name: 'seller-reports',
           component: SellerReports 
         },
         {
-          path: 'admin/seller-detail/:id',
-          name: 'SellerSalesDetail',
-          component: SellerSalesDetail,
-          meta: { requiresAuth: true }
-        }
+  path: '/seller/:id/detail',
+  name: 'SellerSalesDetail', // ឈ្មោះនេះត្រូវតែត្រឹមត្រូវ ព្រោះក្នុង AdminDetail.vue យើងហៅឈ្មោះនេះ
+  component: SellerSalesDetail,
+  meta: { requiresAuth: true } // បើប្រព័ន្ធអ្នកមានតម្រូវការ Login
+}
+        // បានលុប Route ប្រវត្តិលក់លម្អិតចេញពីទីនេះរួចរាល់
       ]
     }
   ]

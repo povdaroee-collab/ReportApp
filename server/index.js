@@ -8,7 +8,12 @@ const verifyToken = require('./middleware/authMiddleware');
 const fs = require('fs');
 
 const app = express();
-app.use(cors());
+pp.use(cors({
+    origin: '*', // អនុញ្ញាតឱ្យគ្រប់ Website (localhost) អាចហៅបាន
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // អនុញ្ញាតឱ្យធ្វើការ PUT និងជំនះ Preflight (OPTIONS)
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true
+}));
 app.use(express.json());
 
 // --- 1. FIREBASE CONNECTION ---
@@ -379,7 +384,7 @@ app.post('/api/sales/create', verifyToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 }); 

@@ -20,5 +20,15 @@ export default defineConfig(({ mode }) => {
         '@': fileURLToPath(new URL('./src', import.meta.url))
       },
     },
+
+    server: {
+    proxy: {
+      '/api': {
+        target: 'https://api.sellerorder.fyi',
+        changeOrigin: true,
+        secure: true,
+      }
+    }
+  }
   }
 })

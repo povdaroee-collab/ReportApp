@@ -9,7 +9,13 @@
         <h1 class="text-3xl font-bold bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
           📦 គ្រប់គ្រងស្តុកទំនិញ
         </h1>
-        <p class="text-neutral-400 text-sm mt-1">ប្រព័ន្ធគ្រប់គ្រងឃ្លាំង និងតម្លៃទុន</p>
+        <p class="text-neutral-400 text-sm mt-1 flex items-center gap-2">
+            ប្រព័ន្ធគ្រប់គ្រងឃ្លាំង និងតម្លៃទុន 
+            <span class="flex items-center gap-1 text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Real-time
+            </span>
+        </p>
       </div>
 
       <div class="flex bg-neutral-800 p-1 rounded-xl border border-neutral-700">
@@ -115,7 +121,7 @@
 
             <div>
               <label class="block text-xs text-neutral-400 mb-1">ចំនួនស្តុកបច្ចុប្បន្ន</label>
-              <input v-model.number="form.quantity" type="number" min="0" required class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none">
+              <input v-model.number="form.quantity" type="number" min="0" step="0.01" required class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none">
             </div>
           </div>
 
@@ -220,18 +226,33 @@
           <div class="p-4 flex-1 flex flex-col">
              <h3 class="text-lg font-bold text-white mb-1 truncate" :title="item.name">{{ item.name }}</h3>
              
-             <div class="flex justify-between items-center text-sm text-neutral-400 mb-3">
-               <span>ស្តុកនៅសល់:</span>
-               <span class="text-emerald-400 font-bold bg-emerald-400/10 px-2 py-0.5 rounded">
-                 {{ item.quantity }} {{ translateUnit(item.unit) }}
-               </span>
+             <div class="flex flex-col gap-1 text-sm text-neutral-400 mb-3 border-b border-neutral-700/50 pb-2">
+               
+               <div class="flex justify-between items-center">
+                 <span>ស្តុកធំ (Bulk):</span>
+                 <span class="text-emerald-400 font-bold bg-emerald-400/10 px-2 py-0.5 rounded text-xs" v-html="getFormattedBulkStock(item)">
+                 </span>
+               </div>
+
+               <div class="flex justify-between items-center mt-1">
+                 <span>ស្តុករាយសរុប (Total):</span>
+                 <span class="text-blue-400 font-black bg-blue-400/10 px-2 py-0.5 rounded text-xs border border-blue-400/20">
+                   {{ getExactRetailStock(item) }} {{ translateRetailUnit(item) }}
+                 </span>
+               </div>
+
+               <div v-if="item.stock_reserved > 0" class="flex justify-end mt-1">
+                 <span class="text-[10px] text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded font-bold" title="មានគេចុចបញ្ចូលកន្ត្រក តែមិនទាន់ទូទាត់ប្រាក់">
+                   🔒 កំពុងជាប់កក់: {{ getExactReservedRetailStock(item) }} {{ translateRetailUnit(item) }}
+                 </span>
+               </div>
              </div>
 
              <div v-if="item.unit === 'case'" class="text-xs text-neutral-500 mb-3 bg-neutral-900 p-2 rounded">
                 ១ កេះ = {{ item.itemsPerCase }} ដប/កញ្ចប់
              </div>
 
-             <div class="mt-auto flex justify-between items-end border-t border-neutral-700 pt-3">
+             <div class="mt-auto flex justify-between items-end pt-2">
                 <div>
                    <p class="text-[10px] text-neutral-500">តម្លៃដើម/ឯកតា</p>
                    <p class="text-amber-400 font-bold">{{ formatPrice(item.unitCost, item.currency) }}</p>
@@ -271,9 +292,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, watch, onUnmounted } from 'vue';
 import { db } from '@/firebaseConfig';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import Toast from '@/components/Toast.vue';
 import ConfirmDialog from '@/components/shared/ConfirmDialog.vue';
 import { useNotificationStore } from '@/stores/notification';
@@ -285,13 +306,14 @@ const confirmDialog = ref(null);
 const activeTab = ref('add'); // 'add' or 'list'
 const stockList = ref([]);
 const isEditing = ref(false);
-const duplicateDetected = ref(false); // Flag for smart detection UI
+const duplicateDetected = ref(false); 
 const fileInput = ref(null);
 const currentPage = ref(1);
 const itemsPerPage = 40;
 const isLoading = ref(false);
 const isSaving = ref(false);
 const searchQuery = ref(''); 
+let unsubscribeStocks = null; // ប្រើសម្រាប់បិទ Realtime Listener ពេលចាកចេញ
 
 const form = reactive({
   id: null,
@@ -302,90 +324,81 @@ const form = reactive({
   unit: 'bottle',
   itemsPerCase: 12,
   currency: 'USD',
-  costMode: 'total', // 'total' or 'unit'
+  costMode: 'total',
   inputCost: 0
 });
 
-// --- HELPER: Generate Barcode ---
 const generateBarcode = () => {
   const timestamp = Date.now().toString().slice(-6);
   const random = Math.floor(1000 + Math.random() * 9000);
   return `STK-${timestamp}${random}`;
 };
 
-// --- LIFECYCLE ---
-onMounted(async () => {
-  await fetchStocks();
+// --- 🔥 REALTIME FIREBASE FETCH (onSnapshot) 🔥 ---
+const fetchStocks = () => {
+    isLoading.value = true;
+    try {
+        const q = collection(db, "stocks");
+        // onSnapshot នឹងអានទិន្នន័យដោយស្វ័យប្រវត្តិរាល់ពេលមានអ្នក Update ស្តុក
+        unsubscribeStocks = onSnapshot(q, (querySnapshot) => {
+            stockList.value = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            stockList.value.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+            isLoading.value = false;
+        }, (error) => {
+            console.error("Error fetching stocks realtime: ", error);
+            notification.error("បរាជ័យក្នុងការភ្ជាប់ទិន្នន័យស្តុក"); 
+            isLoading.value = false;
+        });
+    } catch (error) {
+        isLoading.value = false;
+    }
+};
+
+onMounted(() => {
+  fetchStocks();
   if (!isEditing.value) {
       form.barcode = generateBarcode();
   }
 });
 
-// --- 🔥 SMART DUPLICATE DETECTION & AUTO-FILL ---
-watch(() => form.name, (newName) => {
-    // Only proceed if we are in 'add' tab and the user has typed something
-    if (activeTab.value !== 'add' || !newName) return;
+onUnmounted(() => {
+    // ផ្តាច់ការភ្ជាប់ទិន្នន័យ Realtime ពេលបិទ Page ដើម្បីសន្សំសំចៃ Memory
+    if (unsubscribeStocks) unsubscribeStocks();
+});
 
+// --- SMART DUPLICATE DETECTION ---
+watch(() => form.name, (newName) => {
+    if (activeTab.value !== 'add' || !newName) return;
     const trimmedName = newName.trim().toLowerCase();
-    
-    // Find if this product name exists in our local stockList
     const existingProduct = stockList.value.find(item => item.name.toLowerCase() === trimmedName);
 
     if (existingProduct) {
-        // If found, and we aren't already editing THIS exact product
         if (form.id !== existingProduct.id) {
             isEditing.value = true;
             duplicateDetected.value = true;
             
-            // 🔥 POPULATE FORM WITH EXISTING DATA
             form.id = existingProduct.id;
-            // NOTE: We keep form.name as what user typed to avoid cursor jumping
-            form.barcode = existingProduct.barcode; // 🔒 Key: Use existing barcode
+            form.barcode = existingProduct.barcode; 
             form.imagePreview = existingProduct.image;
             form.quantity = existingProduct.quantity;
             form.unit = existingProduct.unit;
             form.itemsPerCase = existingProduct.itemsPerCase || 12;
             form.currency = existingProduct.currency;
-            
-            // Set cost fields (showing Unit Cost by default for updates)
             form.costMode = 'unit';
             form.inputCost = existingProduct.unitCost;
         }
     } else {
-        // If the name DOES NOT exist, check if we were previously in "Duplicate Detected" mode
-        // If so, it means user changed the name to something unique, so we switch back to CREATE mode.
         if (duplicateDetected.value) {
             isEditing.value = false;
             duplicateDetected.value = false;
-            
-            // Reset critical fields for a new product
             form.id = null;
-            form.barcode = generateBarcode(); // 🆕 Generate NEW barcode
-            
-            // Optionally clear other fields or keep them if you want to allow "cloning" data
-            // For safety, let's keep quantity/cost but maybe reset image if you prefer
+            form.barcode = generateBarcode(); 
         }
     }
 });
-
-
-// --- FIREBASE CRUD ---
-const fetchStocks = async () => {
-    isLoading.value = true;
-    try {
-        const querySnapshot = await getDocs(collection(db, "stocks"));
-        stockList.value = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        stockList.value.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-    } catch (error) {
-        console.error("Error fetching stocks: ", error);
-        notification.error("បរាជ័យក្នុងការទាញយកទិន្នន័យ"); 
-    } finally {
-        isLoading.value = false;
-    }
-};
 
 const saveProduct = async () => {
   isSaving.value = true;
@@ -399,7 +412,7 @@ const saveProduct = async () => {
 
   const productData = {
     name: form.name,
-    barcode: form.barcode, // This will be existing barcode if editing, new if creating
+    barcode: form.barcode, 
     image: form.imagePreview,
     quantity: form.quantity,
     unit: form.unit,
@@ -412,30 +425,18 @@ const saveProduct = async () => {
 
   try {
       if (isEditing.value && form.id) {
-        // UPDATE Existing
         const stockRef = doc(db, "stocks", form.id);
         await updateDoc(stockRef, productData);
-        
-        const index = stockList.value.findIndex(p => p.id === form.id);
-        if (index !== -1) {
-            stockList.value[index] = { ...productData, id: form.id };
-        }
-        
         notification.success("បានកែប្រែព័ត៌មានស្តុកដោយជោគជ័យ!");
         isEditing.value = false;
         duplicateDetected.value = false;
-
       } else {
-        // CREATE New
         productData.createdAt = serverTimestamp();
-        const docRef = await addDoc(collection(db, "stocks"), productData);
-        
-        stockList.value.unshift({ ...productData, id: docRef.id });
+        productData.stock_reserved = 0; 
+        await addDoc(collection(db, "stocks"), productData);
         notification.success("បានបង្កើតស្តុកថ្មីដោយជោគជ័យ!");
       }
-
       resetForm();
-
   } catch (error) {
       console.error("Error saving document: ", error);
       notification.error("មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ");
@@ -453,7 +454,6 @@ const confirmAndDelete = async (item) => {
   if (confirmed) {
     try {
         await deleteDoc(doc(db, "stocks", item.id));
-        stockList.value = stockList.value.filter(stock => stock.id !== item.id);
         notification.success("ទិន្នន័យស្តុកត្រូវបានលុបដោយជោគជ័យ!");
     } catch (error) {
         console.error("Error removing document: ", error);
@@ -462,28 +462,20 @@ const confirmAndDelete = async (item) => {
   }
 };
 
-// --- IMAGE HANDLING ---
 const handleImageUpload = (event) => {
   const file = event.target.files[0];
   if (!file) return;
-
   if (file.size > 1.5 * 1024 * 1024) {
     notification.error("សូមមេត្តាជ្រើសរើសរូបភាពដែលមានទំហំក្រោម 1.5MB");
     return;
   }
-
   const reader = new FileReader();
-  reader.onload = (e) => {
-    form.imagePreview = e.target.result;
-  };
+  reader.onload = (e) => { form.imagePreview = e.target.result; };
   reader.readAsDataURL(file);
 };
 
-const triggerFileInput = () => {
-  fileInput.value.click();
-};
+const triggerFileInput = () => { fileInput.value.click(); };
 
-// --- COMPUTED: Cost Calculations ---
 const calculateUnitCost = computed(() => {
   if (form.quantity <= 0) return 0;
   if (form.costMode === 'total') {
@@ -499,7 +491,6 @@ const calculateTotalCost = computed(() => {
   return form.inputCost.toLocaleString() + (form.currency === 'USD' ? ' $' : ' ៛');
 });
 
-// --- HELPER ACTIONS ---
 const resetForm = () => {
   form.id = null;
   form.name = '';
@@ -518,7 +509,7 @@ const resetForm = () => {
 
 const editItem = (item) => {
   isEditing.value = true;
-  duplicateDetected.value = false; // Manual edit
+  duplicateDetected.value = false; 
   activeTab.value = 'add';
   
   form.id = item.id;
@@ -529,18 +520,15 @@ const editItem = (item) => {
   form.unit = item.unit;
   form.itemsPerCase = item.itemsPerCase || 12;
   form.currency = item.currency;
-  
   form.costMode = 'unit';
   form.inputCost = item.unitCost;
   
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// --- SEARCH & PAGINATION LOGIC ---
 const filteredStock = computed(() => {
     if (!searchQuery.value) return stockList.value;
     const lowerQuery = searchQuery.value.toLowerCase();
-    // Filter by Name OR Barcode
     return stockList.value.filter(item => 
         item.name.toLowerCase().includes(lowerQuery) || 
         (item.barcode && item.barcode.toLowerCase().includes(lowerQuery))
@@ -554,14 +542,64 @@ const paginatedStock = computed(() => {
   return filteredStock.value.slice(start, start + itemsPerPage);
 });
 
-watch(searchQuery, () => {
-    currentPage.value = 1;
-});
+watch(searchQuery, () => { currentPage.value = 1; });
 
-// --- FORMATTERS ---
+// --- 🔥 FORMATTERS & CALCULATORS (FIXED FLOATING POINT) 🔥 ---
+
 const translateUnit = (unit) => {
   const map = { bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ' };
   return map[unit] || unit;
+};
+
+const translateRetailUnit = (item) => {
+    if (item.unit === 'case') return 'ដប/កញ្ចប់'; 
+    return translateUnit(item.unit);
+};
+
+// ១. គណនាស្តុករាយសរុបពិតប្រាកដ ដោយប្រើ Math.round() បំបាត់លេខ 198.999999
+const getExactRetailStock = (item) => {
+    const qty = Number(item.quantity) || 0;
+    if (item.unit === 'case') {
+        const perCase = Number(item.itemsPerCase) || 1;
+        return Math.round(qty * perCase); 
+    }
+    return Math.round(qty);
+};
+
+const getExactReservedRetailStock = (item) => {
+    const reserved = Number(item.stock_reserved) || 0;
+    if (item.unit === 'case') {
+        const perCase = Number(item.itemsPerCase) || 1;
+        return Math.round(reserved * perCase);
+    }
+    return Math.round(reserved);
+};
+
+// ២. បង្ហាញស្តុកធំងាយយល់៖ បើលក់ដាច់ ១ដប វានឹងបង្ហាញ "9.95 កេះ (៩ កេះ ១៩ ដប)"
+const getFormattedBulkStock = (item) => {
+    const qty = Number(item.quantity) || 0;
+    
+    if (item.unit !== 'case') {
+        return `${Math.round(qty)} ${translateUnit(item.unit)}`;
+    }
+
+    const perCase = Number(item.itemsPerCase) || 1;
+    const totalRetail = Math.round(qty * perCase);
+    
+    const fullCases = Math.floor(totalRetail / perCase);
+    const remainingRetail = totalRetail % perCase;
+
+    // លេខទសភាគដែល Fixed ចំនួន ២ ខ្ទង់ (ឧ. 9.95)
+    const decimalDisplay = qty.toFixed(2).replace(/\.00$/, ''); 
+    
+    // បកប្រែជាភាសាខ្មែរ (៩ កេះ ១៩ ដប)
+    let readableStr = `${fullCases} កេះ`;
+    if (remainingRetail > 0) {
+        readableStr += ` ${remainingRetail} ${translateRetailUnit(item)}`;
+        return `${decimalDisplay} កេះ <span class="text-[10px] text-slate-500 font-normal ml-1 border-l border-slate-600 pl-1">(${readableStr})</span>`;
+    }
+    
+    return `${decimalDisplay} កេះ`;
 };
 
 const formatPrice = (val, currency) => {
@@ -577,20 +615,10 @@ const formatPrice = (val, currency) => {
   font-family: 'Kantumruy Pro', sans-serif;
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.4s ease-out;
-}
-
-.animate-slide-down {
-  animation: slideDown 0.3s ease-out;
-}
-
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-}
+.animate-fade-in { animation: fadeIn 0.4s ease-out; }
+.animate-slide-down { animation: slideDown 0.3s ease-out; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
@@ -602,17 +630,8 @@ const formatPrice = (val, currency) => {
   to { opacity: 1; transform: translateY(0); }
 }
 
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #171717; 
-}
-::-webkit-scrollbar-thumb {
-  background: #404040; 
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #f59e0b; 
-}
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #171717; }
+::-webkit-scrollbar-thumb { background: #404040; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
 </style>

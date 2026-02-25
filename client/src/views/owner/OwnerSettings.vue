@@ -23,7 +23,7 @@
 
         <div class="bg-slate-100/80 p-1.5 rounded-2xl flex overflow-x-auto no-scrollbar w-full md:w-auto shadow-inner border border-slate-200/50 shrink-0">
            <button 
-             @click="activeTab = 'units'"
+             @click="switchTab('units')"
              class="flex-1 md:flex-none px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all duration-300 whitespace-nowrap relative"
              :class="activeTab === 'units' ? 'text-indigo-600 shadow-md bg-white' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'"
            >
@@ -36,6 +36,13 @@
            >
              កំណត់តម្លៃ និងប្រាក់ទឹកចិត្ត
            </button>
+           <button 
+             @click="switchTab('delivery')"
+             class="flex-1 md:flex-none px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all duration-300 whitespace-nowrap relative"
+             :class="activeTab === 'delivery' ? 'text-indigo-600 shadow-md bg-white' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'"
+           >
+             តម្លៃដឹកជញ្ជូន
+           </button>
         </div>
       </div>
     </div>
@@ -43,7 +50,7 @@
     <div class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 relative">
       <div class="absolute top-10 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-indigo-200/40 blur-[120px] rounded-full pointer-events-none -z-10"></div>
 
-      <div class="max-w-[95%] mx-auto space-y-4">
+      <div class="max-w-[95%] xl:max-w-[85rem] mx-auto space-y-4 pb-20">
         
         <div v-if="activeTab === 'units'" class="animate-fade-in space-y-4">
             <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex justify-between items-center max-w-5xl mx-auto">
@@ -112,7 +119,7 @@
                             class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-slate-800 font-bold focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
                         >
                         
-                        <div v-if="showProductDropdown && filteredProducts.length > 0" class="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto z-50 p-1.5">
+                        <div v-if="showProductDropdown && filteredProducts.length > 0" class="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto z-50 p-1.5 custom-scrollbar">
                             <div 
                                 v-for="prod in filteredProducts" 
                                 :key="prod.id" 
@@ -156,24 +163,26 @@
                 </div>
 
                 <div class="p-5 md:p-6">
-                    <form @submit.prevent="savePrices" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <form @submit.prevent="savePrices" class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
                         
-                        <div class="bg-indigo-50/40 p-5 rounded-2xl border border-indigo-100">
-                            <div class="flex items-center gap-2 mb-4 border-b border-indigo-100 pb-3">
-                                <div class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center shadow-sm">🛍️</div>
-                                <h4 class="text-base font-black text-indigo-900">តម្លៃលក់រាយ (Retail)</h4>
+                        <div class="bg-indigo-50/40 p-5 rounded-2xl border border-indigo-100 h-full flex flex-col">
+                            <div class="flex items-center justify-between mb-4 border-b border-indigo-100 pb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center shadow-sm">🛍️</div>
+                                    <h4 class="text-base font-black text-indigo-900">តម្លៃលក់រាយ (Retail)</h4>
+                                </div>
                             </div>
                             
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <label class="block text-[11px] font-black text-indigo-600/80 mb-1.5">កំណត់តម្លៃលក់ចេញ និងខ្នាត</label>
+                                    <label class="block text-[11px] font-black text-indigo-600/80 mb-1.5">តម្លៃលក់ចេញ & ខ្នាត</label>
                                     <div class="flex shadow-sm rounded-xl">
                                         <div class="bg-slate-100 border border-r-0 border-indigo-200 px-3 py-2.5 rounded-l-xl flex items-center font-black text-slate-500">
                                             {{ selectedProduct.currency === 'USD' ? '$' : '៛' }}
                                         </div>
                                         <input 
                                             v-model.number="priceForm.retailPrice" 
-                                            type="number" step="0.01" min="0" required
+                                            type="number" step="any" min="0" required
                                             class="w-full bg-white border-y border-indigo-200 px-3 py-2.5 text-slate-800 font-bold text-sm outline-none focus:bg-indigo-50/30"
                                             placeholder="0.00"
                                         >
@@ -187,14 +196,14 @@
                                 </div>
 
                                 <div>
-                                    <label class="block text-[11px] font-black text-rose-500 mb-1.5">ប្រាក់លើកទឹកចិត្ត (Seller Bonus)</label>
+                                    <label class="block text-[11px] font-black text-rose-500 mb-1.5">ប្រាក់ទឹកចិត្ត (Seller Bonus)</label>
                                     <div class="flex shadow-sm rounded-xl">
                                         <div class="bg-rose-50 border border-r-0 border-rose-200 px-3 py-2.5 rounded-l-xl flex items-center font-black text-rose-400">
                                             {{ selectedProduct.currency === 'USD' ? '$' : '៛' }}
                                         </div>
                                         <input 
                                             v-model.number="priceForm.sellerIncentive" 
-                                            type="number" step="0.01" min="0"
+                                            type="number" step="any" min="0"
                                             class="w-full bg-white border border-rose-200 rounded-r-xl px-3 py-2.5 text-rose-700 font-bold text-sm outline-none focus:bg-rose-50/30"
                                             placeholder="0.00"
                                         >
@@ -202,7 +211,7 @@
                                 </div>
                             </div>
 
-                            <div class="flex justify-between items-center px-4 py-2.5 rounded-xl border bg-white shadow-sm" :class="retailProfit > 0 ? 'border-emerald-200' : 'border-slate-200'">
+                            <div class="mt-auto flex justify-between items-center px-4 py-2.5 rounded-xl border bg-white shadow-sm" :class="retailProfit > 0 ? 'border-emerald-200' : 'border-slate-200'">
                                 <div class="flex items-center gap-2">
                                     <span class="text-[10px] font-black uppercase tracking-wider" :class="retailProfit > 0 ? 'text-emerald-600' : 'text-slate-500'">ប្រាក់ចំណេញ (Profit)</span>
                                     <span class="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">ក្នុង ១{{ translateHardcodedUnit(priceForm.retailUnit) }}</span>
@@ -213,59 +222,73 @@
                             </div>
                         </div>
 
-                        <div class="bg-amber-50/40 p-5 rounded-2xl border border-amber-100">
-                            <div class="flex items-center gap-2 mb-4 border-b border-amber-100 pb-3">
-                                <div class="w-8 h-8 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center shadow-sm">📦</div>
-                                <h4 class="text-base font-black text-amber-900">តម្លៃលក់ដុំ (Wholesale)</h4>
+                        <div class="bg-amber-50/40 p-5 rounded-2xl border border-amber-100 h-full flex flex-col relative">
+                            
+                            <div class="flex items-center justify-between mb-4 border-b border-amber-100 pb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center shadow-sm">📦</div>
+                                    <h4 class="text-base font-black text-amber-900">តម្លៃលក់ដុំ (Wholesale)</h4>
+                                </div>
                             </div>
                             
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label class="block text-[11px] font-black text-amber-600/80 mb-1.5">កំណត់តម្លៃលក់ចេញ និងខ្នាត</label>
-                                    <div class="flex shadow-sm rounded-xl">
-                                        <div class="bg-slate-100 border border-r-0 border-amber-200 px-3 py-2.5 rounded-l-xl flex items-center font-black text-slate-500">
-                                            {{ selectedProduct.currency === 'USD' ? '$' : '៛' }}
-                                        </div>
-                                        <input 
-                                            v-model.number="priceForm.wholesalePrice" 
-                                            type="number" step="0.01" min="0" required
-                                            class="w-full bg-white border-y border-amber-200 px-3 py-2.5 text-slate-800 font-bold text-sm outline-none focus:bg-amber-50/30"
-                                            placeholder="0.00"
-                                        >
-                                        <select v-model="priceForm.wholesaleUnit" class="bg-white border border-l-0 border-amber-200 rounded-r-xl px-2 py-2.5 text-sm font-bold text-amber-700 outline-none cursor-pointer hover:bg-amber-50">
-                                            <option value="case">១ កេះ</option>
-                                            <option value="bottle">១ ដប</option>
-                                            <option value="pack">១ កញ្ចប់</option>
-                                            <option value="can">១ កំប៉ុង</option>
-                                        </select>
-                                    </div>
-                                </div>
+                            <div class="space-y-3 mb-4 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
+                                <div v-for="(tier, index) in priceForm.wholesaleTiers" :key="tier.id" class="bg-white p-3 rounded-xl border relative shadow-sm transition-all" :class="index === 0 ? 'border-amber-300' : 'border-slate-200'">
+                                    
+                                    <button v-if="priceForm.wholesaleTiers.length > 1" type="button" @click="removeWholesaleTier(index)" class="absolute -top-2 -right-2 w-5 h-5 bg-rose-100 hover:bg-rose-500 text-rose-500 hover:text-white rounded-full flex items-center justify-center shadow-sm transition-colors border border-white z-10">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
 
-                                <div>
-                                    <label class="block text-[11px] font-black text-orange-500 mb-1.5">ប្រាក់លើកទឹកចិត្ត (Dealer Bonus)</label>
-                                    <div class="flex shadow-sm rounded-xl">
-                                        <div class="bg-orange-50 border border-r-0 border-orange-200 px-3 py-2.5 rounded-l-xl flex items-center font-black text-orange-400">
-                                            {{ selectedProduct.currency === 'USD' ? '$' : '៛' }}
+                                    <div class="grid grid-cols-12 gap-2">
+                                        <div class="col-span-12 xl:col-span-4">
+                                            <label class="block text-[9px] font-black text-slate-500 mb-1 tracking-wider uppercase">{{ index === 0 ? 'លក់ចាប់ពី' : 'លក្ខខណ្ឌទី ' + (index+1) + ' (ចាប់ពី)' }}</label>
+                                            <div class="flex items-center shadow-sm rounded-lg overflow-hidden border border-slate-200 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/20 transition-all">
+                                                <input 
+                                                    v-model.number="tier.minQty" 
+                                                    type="number" min="0" step="any"
+                                                    class="w-full bg-slate-50 px-2 py-2 text-xs font-black text-slate-800 outline-none text-center focus:bg-white" 
+                                                >
+                                                <select v-model="tier.unit" class="bg-slate-100 border-l border-slate-200 px-1 py-2 text-[11px] font-bold text-slate-600 outline-none cursor-pointer hover:bg-slate-200 transition-colors">
+                                                    <option value="case">កេះ</option>
+                                                    <option value="bottle">ដប</option>
+                                                    <option value="pack">កញ្ចប់</option>
+                                                    <option value="can">កំប៉ុង</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                        <input 
-                                            v-model.number="priceForm.dealerIncentive" 
-                                            type="number" step="0.01" min="0"
-                                            class="w-full bg-white border border-orange-200 rounded-r-xl px-3 py-2.5 text-orange-700 font-bold text-sm outline-none focus:bg-orange-50/30"
-                                            placeholder="0.00"
-                                        >
+
+                                        <div class="col-span-6 xl:col-span-4">
+                                            <label class="block text-[9px] font-black text-amber-600 mb-1 tracking-wider uppercase">តម្លៃ / {{ translateHardcodedUnit(tier.unit) }}</label>
+                                            <div class="flex items-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/20 transition-all shadow-sm">
+                                                <span class="pl-2 text-[10px] font-black text-slate-400">{{ selectedProduct.currency === 'USD' ? '$' : '៛' }}</span>
+                                                <input v-model.number="tier.price" type="number" step="any" min="0" required class="w-full bg-transparent px-2 py-2 text-xs font-black text-slate-800 outline-none">
+                                            </div>
+                                        </div>
+
+                                        <div class="col-span-6 xl:col-span-4">
+                                            <label class="block text-[9px] font-black text-orange-500 mb-1 tracking-wider uppercase">Bonus / {{ translateHardcodedUnit(tier.unit) }}</label>
+                                            <div class="flex items-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden focus-within:border-orange-400 focus-within:ring-1 focus-within:ring-orange-400/20 transition-all shadow-sm">
+                                                <span class="pl-2 text-[10px] font-black text-slate-400">{{ selectedProduct.currency === 'USD' ? '$' : '៛' }}</span>
+                                                <input v-model.number="tier.incentive" type="number" step="any" min="0" class="w-full bg-transparent px-2 py-2 text-xs font-black text-orange-600 outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center">
+                                        <span class="text-[9px] font-black uppercase text-slate-400">ប្រាក់ចំណេញ ក្នុង១{{ translateHardcodedUnit(tier.unit) }} :</span>
+                                        <span class="text-xs font-black bg-slate-50 px-2 py-0.5 rounded shadow-sm" :class="calculateTierProfit(tier) > 0 ? 'text-emerald-600 border border-emerald-100' : 'text-rose-600 border border-rose-100'">
+                                            {{ calculateTierProfit(tier) > 0 ? '+' : '' }}{{ formatPrice(calculateTierProfit(tier), selectedProduct.currency) }}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="flex justify-between items-center px-4 py-2.5 rounded-xl border bg-white shadow-sm" :class="wholesaleProfit > 0 ? 'border-emerald-200' : 'border-slate-200'">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-[10px] font-black uppercase tracking-wider" :class="wholesaleProfit > 0 ? 'text-emerald-600' : 'text-slate-500'">ប្រាក់ចំណេញ (Profit)</span>
-                                    <span class="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">ក្នុង ១{{ translateHardcodedUnit(priceForm.wholesaleUnit) }}</span>
-                                </div>
-                                <p class="text-lg font-black" :class="wholesaleProfit > 0 ? 'text-emerald-600' : (wholesaleProfit < 0 ? 'text-rose-600' : 'text-slate-600')">
-                                    {{ wholesaleProfit > 0 ? '+' : '' }}{{ formatPrice(wholesaleProfit, selectedProduct.currency) }}
-                                </p>
+                            <div class="mt-auto pt-2 border-t border-amber-200 flex justify-center">
+                                <button type="button" @click="addWholesaleTier" class="px-5 py-2 bg-white border border-amber-300 text-amber-600 rounded-xl text-xs font-bold hover:bg-amber-50 hover:text-amber-700 shadow-sm transition-colors flex items-center gap-1.5 active:scale-95">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                    បន្ថែមលក្ខខណ្ឌថ្មី
+                                </button>
                             </div>
+
                         </div>
 
                         <div class="xl:col-span-2 pt-4 border-t border-slate-200 flex justify-end gap-3 mt-2">
@@ -273,7 +296,7 @@
                             <button type="submit" :disabled="isSavingPrice" class="px-8 py-2.5 rounded-xl bg-slate-800 text-white font-bold shadow-md hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 text-sm">
                                 <svg v-if="isSavingPrice" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                 <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                រក្សាទុកតម្លៃ (Save)
+                                រក្សាទុកការកំណត់
                             </button>
                         </div>
                     </form>
@@ -290,6 +313,152 @@
 
         </div>
 
+        <div v-if="activeTab === 'delivery'" class="animate-fade-in space-y-4">
+            
+            <div class="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-md max-w-4xl mx-auto">
+                <div class="flex items-center gap-4 mb-6 border-b border-slate-100 pb-4">
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-black text-slate-800">តម្លៃសេវាដឹកជញ្ជូន (Delivery Fees)</h2>
+                        <p class="text-xs font-bold text-slate-500 mt-0.5">កំណត់តម្លៃដឹកជញ្ជូនទៅកាន់អតិថិជនតាមតំបន់</p>
+                    </div>
+                </div>
+
+                <div v-if="isLoadingDelivery" class="py-10 text-center flex flex-col items-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-blue-600 mb-4"></div>
+                    <p class="text-xs font-bold text-slate-400">កំពុងទាញយក...</p>
+                </div>
+
+                <form v-else @submit.prevent="saveDeliverySettings" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <div class="bg-sky-50/30 rounded-3xl p-6 border-2 border-sky-100 relative shadow-sm hover:shadow-md transition-shadow">
+                            <div class="absolute -top-3 -right-3 w-10 h-10 bg-sky-100 rounded-full flex items-center justify-center text-xl shadow-sm border border-white">🏙️</div>
+                            <h3 class="font-black text-lg text-sky-900 leading-tight mb-1">ទីតាំង ភ្នំពេញ</h3>
+                            <p class="text-[10px] text-sky-600/70 font-bold mb-4">តម្លៃដឹកក្នុងរាជធានី</p>
+                            
+                            <div class="mb-5 flex items-center gap-3">
+                                <span class="text-xs font-black text-slate-500 uppercase tracking-widest">រូបិយប័ណ្ណ៖</span>
+                                <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                                    <button type="button" @click="deliveryForm.phnomPenh.currency = 'USD'" :class="deliveryForm.phnomPenh.currency === 'USD' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-500'" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all">USD ($)</button>
+                                    <button type="button" @click="deliveryForm.phnomPenh.currency = 'KHR'" :class="deliveryForm.phnomPenh.currency === 'KHR' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-500'" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all">KHR (៛)</button>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div class="bg-white p-4 rounded-2xl border border-sky-100 shadow-sm border-l-4 border-l-sky-400">
+                                    <p class="text-xs font-black text-slate-600 mb-2">១. ថ្លៃដឹកជញ្ជូនស្តង់ដារ (ធម្មតា)</p>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-bold text-slate-500 w-24">រាល់ការកម្ម៉ង់</span>
+                                        <div class="relative flex-1">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none font-black text-sky-500">{{ deliveryForm.phnomPenh.currency === 'USD' ? '$' : '៛' }}</div>
+                                            <input v-model.number="deliveryForm.phnomPenh.baseFee" type="number" step="any" min="0" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-slate-800 font-bold focus:bg-white focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 outline-none">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between pl-1 mt-2">
+                                    <span class="text-xs font-black text-sky-700">បើកលក្ខខណ្ឌប្រូម៉ូសិនទី២</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" v-model="deliveryForm.phnomPenh.hasCondition" class="sr-only peer">
+                                        <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sky-500"></div>
+                                    </label>
+                                </div>
+
+                                <div v-if="deliveryForm.phnomPenh.hasCondition" class="bg-white p-4 rounded-2xl border border-amber-100 shadow-sm border-l-4 border-l-amber-400 animate-slide-down">
+                                    <p class="text-xs font-black text-amber-600 mb-3">២. លក្ខខណ្ឌទី២ (ឧ. ទិញច្រើន ដឹកហ្វ្រី)</p>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-bold text-slate-600 w-24">ទិញចាប់ពី</span>
+                                            <div class="relative flex-1">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none font-black text-amber-500">{{ deliveryForm.phnomPenh.currency === 'USD' ? '$' : '៛' }}</div>
+                                                <input v-model.number="deliveryForm.phnomPenh.conditionMinAmount" type="number" step="any" min="0" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-slate-800 font-bold focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 outline-none">
+                                            </div>
+                                            <span class="text-xs font-bold text-slate-500">ឡើង</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-bold text-slate-600 w-24">ថ្លៃដឹកគិតត្រឹម</span>
+                                            <div class="relative flex-1">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none font-black text-emerald-500">{{ deliveryForm.phnomPenh.currency === 'USD' ? '$' : '៛' }}</div>
+                                                <input v-model.number="deliveryForm.phnomPenh.conditionFee" type="number" step="any" min="0" required class="w-full bg-emerald-50 border border-emerald-200 rounded-xl pl-8 pr-3 py-2 text-emerald-700 font-black focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-emerald-50/30 rounded-3xl p-6 border-2 border-emerald-100 relative shadow-sm hover:shadow-md transition-shadow">
+                            <div class="absolute -top-3 -right-3 w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-xl shadow-sm border border-white">🗺️</div>
+                            <h3 class="font-black text-lg text-emerald-900 leading-tight mb-1">ទីតាំង តាមបណ្ដាខេត្ត</h3>
+                            <p class="text-[10px] text-emerald-600/70 font-bold mb-4">តម្លៃដឹកក្រៅរាជធានី</p>
+                            
+                            <div class="mb-5 flex items-center gap-3">
+                                <span class="text-xs font-black text-slate-500 uppercase tracking-widest">រូបិយប័ណ្ណ៖</span>
+                                <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                                    <button type="button" @click="deliveryForm.provincial.currency = 'USD'" :class="deliveryForm.provincial.currency === 'USD' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500'" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all">USD ($)</button>
+                                    <button type="button" @click="deliveryForm.provincial.currency = 'KHR'" :class="deliveryForm.provincial.currency === 'KHR' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500'" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all">KHR (៛)</button>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div class="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm border-l-4 border-l-emerald-400">
+                                    <p class="text-xs font-black text-slate-600 mb-2">១. ថ្លៃដឹកជញ្ជូនស្តង់ដារ (ធម្មតា)</p>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-bold text-slate-500 w-24">រាល់ការកម្ម៉ង់</span>
+                                        <div class="relative flex-1">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none font-black text-emerald-500">{{ deliveryForm.provincial.currency === 'USD' ? '$' : '៛' }}</div>
+                                            <input v-model.number="deliveryForm.provincial.baseFee" type="number" step="any" min="0" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-slate-800 font-bold focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between pl-1 mt-2">
+                                    <span class="text-xs font-black text-emerald-700">បើកលក្ខខណ្ឌប្រូម៉ូសិនទី២</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" v-model="deliveryForm.provincial.hasCondition" class="sr-only peer">
+                                        <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                                    </label>
+                                </div>
+
+                                <div v-if="deliveryForm.provincial.hasCondition" class="bg-white p-4 rounded-2xl border border-amber-100 shadow-sm border-l-4 border-l-amber-400 animate-slide-down">
+                                    <p class="text-xs font-black text-amber-600 mb-3">២. លក្ខខណ្ឌទី២ (ឧ. ទិញច្រើន ចុះថ្លៃដឹក)</p>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-bold text-slate-600 w-24">ទិញចាប់ពី</span>
+                                            <div class="relative flex-1">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none font-black text-amber-500">{{ deliveryForm.provincial.currency === 'USD' ? '$' : '៛' }}</div>
+                                                <input v-model.number="deliveryForm.provincial.conditionMinAmount" type="number" step="any" min="0" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-slate-800 font-bold focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 outline-none">
+                                            </div>
+                                            <span class="text-xs font-bold text-slate-500">ឡើង</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-bold text-slate-600 w-24">ថ្លៃដឹកគិតត្រឹម</span>
+                                            <div class="relative flex-1">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none font-black text-emerald-500">{{ deliveryForm.provincial.currency === 'USD' ? '$' : '៛' }}</div>
+                                                <input v-model.number="deliveryForm.provincial.conditionFee" type="number" step="any" min="0" required class="w-full bg-emerald-50 border border-emerald-200 rounded-xl pl-8 pr-3 py-2 text-emerald-700 font-black focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="flex justify-end pt-6 border-t border-slate-200">
+                        <button type="submit" :disabled="isSavingDelivery" class="px-10 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-3 text-base">
+                            <svg v-if="isSavingDelivery" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                            រក្សាទុកការកំណត់
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
       </div>
     </div>
 
@@ -301,7 +470,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed, onUnmounted } from 'vue';
 import { db } from '@/firebaseConfig';
-import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, setDoc, getDoc, query } from 'firebase/firestore';
 import Toast from '@/components/Toast.vue'; 
 import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'; 
 import { useNotificationStore } from '@/stores/notification';
@@ -309,17 +478,20 @@ import { useNotificationStore } from '@/stores/notification';
 // --- MAIN SETUP ---
 const notification = useNotificationStore();
 const confirmDialog = ref(null);
-const activeTab = ref('units'); // 'units', 'prices'
+const activeTab = ref('units'); 
 
-// --- TAB 1: UNITS STATE & LOGIC (Unchanged) ---
+const switchTab = (tabName) => {
+    activeTab.value = tabName;
+    if (tabName === 'prices') fetchProducts();
+    if (tabName === 'delivery') fetchDeliverySettings();
+};
+
+// --- TAB 1: UNITS ---
 const isLoadingUnits = ref(true);
 const isSavingUnit = ref(false);
-const isDeletingUnit = ref(false);
 const showAddModal = ref(false);
 const units = ref([]);
-const deleteModal = reactive({ show: false, id: null, label: '' });
 const newUnit = ref({ label: '', color: 'cyan' });
-const availableColors = ['cyan', 'blue', 'indigo', 'purple', 'emerald', 'amber', 'rose', 'slate'];
 
 const getColorClass = (color) => {
   const map = {
@@ -342,7 +514,6 @@ const fetchUnits = async () => {
     const snap = await getDocs(q);
     units.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => a.label.localeCompare(b.label, 'km'));
   } catch (error) {
-    console.error("Error fetching units", error);
     notification.error('មិនអាចទាញយកទិន្នន័យឯកតាបានទេ');
   } finally {
     isLoadingUnits.value = false;
@@ -350,20 +521,14 @@ const fetchUnits = async () => {
 };
 
 const saveUnit = async () => {
-  if (!newUnit.value.label.trim()) {
-      notification.error('ឈ្មោះឯកតាមិនអាចទទេបានទេ', 'សូមបំពេញព័ត៌មាន');
-      return;
-  }
+  if (!newUnit.value.label.trim()) return notification.error('ឈ្មោះឯកតាមិនអាចទទេបានទេ', 'សូមបំពេញព័ត៌មាន');
   isSavingUnit.value = true;
   try {
     const unitName = newUnit.value.label.trim();
-    const exists = units.value.find(u => u.value === unitName);
-    if (exists) {
-        notification.error('ឈ្មោះឯកតានេះមានក្នុងបញ្ជីរួចហើយ', 'មានរួចហើយ');
+    if (units.value.find(u => u.value === unitName)) {
         isSavingUnit.value = false;
-        return;
+        return notification.error('ឈ្មោះឯកតានេះមានក្នុងបញ្ជីរួចហើយ', 'មានរួចហើយ');
     }
-
     const unitData = { label: unitName, value: unitName, color: newUnit.value.color, createdAt: new Date().toISOString() };
     const docRef = await addDoc(collection(db, 'settings_units'), unitData);
     units.value.push({ id: docRef.id, ...unitData });
@@ -372,29 +537,21 @@ const saveUnit = async () => {
     showAddModal.value = false;
     newUnit.value = { label: '', color: 'cyan' };
     notification.success('ឯកតាត្រូវបានបន្ថែម');
-  } catch (error) {
-    notification.error('មិនអាចរក្សាទុកបានទេ');
-  } finally {
-    isSavingUnit.value = false;
-  }
+  } catch (error) { notification.error('មិនអាចរក្សាទុកបានទេ'); } 
+  finally { isSavingUnit.value = false; }
 };
 
 const confirmDeleteUnit = async (id, label) => {
-    const confirmed = await confirmDialog.value.open("លុបឯកតា?", `តើអ្នកពិតជាចង់លុបឯកតា "${label}" មែនទេ?`);
-    if (confirmed) executeDeleteUnit(id);
+    if (await confirmDialog.value.open("លុបឯកតា?", `តើអ្នកពិតជាចង់លុបឯកតា "${label}" មែនទេ?`)) {
+        try {
+            await deleteDoc(doc(db, 'settings_units', id));
+            units.value = units.value.filter(u => u.id !== id);
+            notification.success('ឯកតាត្រូវបានលុបចេញ');
+        } catch (error) { notification.error('មិនអាចលុបទិន្នន័យបានទេ'); }
+    }
 };
 
-const executeDeleteUnit = async (id) => {
-  try {
-    await deleteDoc(doc(db, 'settings_units', id));
-    units.value = units.value.filter(u => u.id !== id);
-    notification.success('ឯកតាត្រូវបានលុបចេញ');
-  } catch (error) {
-    notification.error('មិនអាចលុបទិន្នន័យបានទេ');
-  }
-};
-
-// --- TAB 2: PRICES & INCENTIVES STATE & LOGIC ---
+// --- TAB 2: PRICES & INCENTIVES (TIERED WHOLESALE) ---
 const products = ref([]);
 const isFetchingProducts = ref(false);
 const productSearchQuery = ref('');
@@ -404,11 +561,11 @@ const isSavingPrice = ref(false);
 
 const priceForm = reactive({
     retailPrice: 0,
-    retailUnit: 'bottle',     // Hardcoded default
-    wholesalePrice: 0,
-    wholesaleUnit: 'case',    // Hardcoded default
+    retailUnit: 'bottle',     
     sellerIncentive: 0, 
-    dealerIncentive: 0  
+    
+    // Updated for Tiers
+    wholesaleTiers: [] 
 });
 
 const fetchProducts = async () => {
@@ -417,91 +574,82 @@ const fetchProducts = async () => {
     try {
         const snap = await getDocs(collection(db, 'stocks'));
         products.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-        console.error("Error fetching products", error);
-        notification.error('មិនអាចទាញយកទិន្នន័យស្តុកបានទេ');
-    } finally {
-        isFetchingProducts.value = false;
-    }
+    } catch (error) { notification.error('មិនអាចទាញយកទិន្នន័យស្តុកបានទេ'); } 
+    finally { isFetchingProducts.value = false; }
 };
 
 const filteredProducts = computed(() => {
     if (!productSearchQuery.value) return products.value.slice(0, 10); 
     const q = productSearchQuery.value.toLowerCase();
-    return products.value.filter(p => 
-        p.name.toLowerCase().includes(q) || 
-        (p.barcode && p.barcode.toLowerCase().includes(q))
-    );
+    return products.value.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
 });
 
 const selectProduct = (prod) => {
     selectedProduct.value = prod;
     productSearchQuery.value = prod.name;
     
-    // Load existing values, or set smart defaults
     priceForm.retailPrice = prod.retailPrice || 0;
-    // Default retail to bottle if not set
     priceForm.retailUnit = prod.retailUnit || 'bottle';
-    
-    priceForm.wholesalePrice = prod.wholesalePrice || 0;
-    // Default wholesale to case if not set
-    priceForm.wholesaleUnit = prod.wholesaleUnit || 'case';
-
     priceForm.sellerIncentive = prod.sellerIncentive || 0;
-    priceForm.dealerIncentive = prod.dealerIncentive || 0;
+    
+    if (prod.wholesaleTiers && Array.isArray(prod.wholesaleTiers) && prod.wholesaleTiers.length > 0) {
+        priceForm.wholesaleTiers = JSON.parse(JSON.stringify(prod.wholesaleTiers));
+    } else {
+        priceForm.wholesaleTiers = [{
+            id: Date.now(),
+            minQty: 1, 
+            price: prod.wholesalePrice || 0,
+            incentive: prod.dealerIncentive || 0,
+            unit: prod.wholesaleUnit || 'case' 
+        }];
+    }
     
     showProductDropdown.value = false;
 };
 
-// ✅ HELPER: Normalize Cost based on selected unit vs original bought unit
+// Functions for managing tiers
+const addWholesaleTier = () => {
+    priceForm.wholesaleTiers.push({
+        id: Date.now() + Math.random(),
+        minQty: 2, 
+        price: 0,
+        incentive: 0,
+        unit: 'case' 
+    });
+};
+
+const removeWholesaleTier = (index) => {
+    priceForm.wholesaleTiers.splice(index, 1);
+    if (priceForm.wholesaleTiers.length === 0) {
+        priceForm.wholesaleTiers.push({ id: Date.now(), minQty: 1, price: 0, incentive: 0, unit: 'case' });
+    }
+};
+
 const getNormalizedCost = (sellingUnit) => {
     if (!selectedProduct.value) return 0;
-    
     const baseCost = selectedProduct.value.unitCost || 0;
-    const baseUnit = selectedProduct.value.unit; // The unit it was BOUGHT in
-    const conversion = selectedProduct.value.itemsPerCase || 12; // Safeguard, default 12 if not set
+    const baseUnit = selectedProduct.value.unit; 
+    const conversion = selectedProduct.value.itemsPerCase || 12; 
 
-    // 1. Same unit (Buy in Box, Sell in Box / Buy in Bottle, Sell in Bottle)
     if (sellingUnit === baseUnit) return baseCost;
-
-    // 2. Bought by 'Case' (កេះ), but selling by 'Bottle/Pack/Can' (ដប/កញ្ចប់) => Divide cost by itemsPerCase
-    if (baseUnit === 'case' && (sellingUnit === 'bottle' || sellingUnit === 'pack' || sellingUnit === 'can')) {
-        return baseCost / conversion;
-    }
-
-    // 3. Bought by 'Bottle/Pack/Can' (ដប/កញ្ចប់), but selling by 'Case' (កេះ) => Multiply cost by itemsPerCase
-    if ((baseUnit === 'bottle' || baseUnit === 'pack' || baseUnit === 'can') && sellingUnit === 'case') {
-        return baseCost * conversion;
-    }
-
-    // Fallback
+    if (baseUnit === 'case' && ['bottle','pack','can'].includes(sellingUnit)) return baseCost / conversion;
+    if (['bottle','pack','can'].includes(baseUnit) && sellingUnit === 'case') return baseCost * conversion;
     return baseCost;
 };
 
-// ✅ Calculate NET Profits (Price - NormalizedCost - Incentive)
 const retailProfit = computed(() => {
-    if (!selectedProduct.value) return 0;
-    const cost = getNormalizedCost(priceForm.retailUnit);
-    const incentive = priceForm.sellerIncentive || 0;
-    return priceForm.retailPrice - cost - incentive;
+    return priceForm.retailPrice - getNormalizedCost(priceForm.retailUnit) - (priceForm.sellerIncentive || 0);
 });
 
-const wholesaleProfit = computed(() => {
-    if (!selectedProduct.value) return 0;
-    const cost = getNormalizedCost(priceForm.wholesaleUnit);
-    const incentive = priceForm.dealerIncentive || 0;
-    return priceForm.wholesalePrice - cost - incentive;
-});
+// Calculate profit for a specific tier using its specific unit
+const calculateTierProfit = (tier) => {
+    const cost = getNormalizedCost(tier.unit);
+    return (tier.price || 0) - cost - (tier.incentive || 0);
+};
 
 const cancelPriceEdit = () => {
-    selectedProduct.value = null;
-    productSearchQuery.value = '';
-    priceForm.retailPrice = 0;
-    priceForm.wholesalePrice = 0;
-    priceForm.sellerIncentive = 0;
-    priceForm.dealerIncentive = 0;
-    priceForm.retailUnit = 'bottle';
-    priceForm.wholesaleUnit = 'case';
+    selectedProduct.value = null; productSearchQuery.value = '';
+    Object.assign(priceForm, { retailPrice: 0, sellerIncentive: 0, retailUnit: 'bottle', wholesaleTiers: [] });
 };
 
 const savePrices = async () => {
@@ -509,102 +657,118 @@ const savePrices = async () => {
     isSavingPrice.value = true;
     
     try {
-        const stockRef = doc(db, 'stocks', selectedProduct.value.id);
+        const sortedTiers = [...priceForm.wholesaleTiers];
+        
         const updates = {
-            retailPrice: Number(priceForm.retailPrice),
-            retailUnit: priceForm.retailUnit, // Save the hardcoded unit selected
-            wholesalePrice: Number(priceForm.wholesalePrice),
-            wholesaleUnit: priceForm.wholesaleUnit, // Save the hardcoded unit selected
-            sellerIncentive: Number(priceForm.sellerIncentive),
-            dealerIncentive: Number(priceForm.dealerIncentive), 
+            retailPrice: Number(priceForm.retailPrice), 
+            retailUnit: priceForm.retailUnit, 
+            sellerIncentive: Number(priceForm.sellerIncentive), 
+            
+            wholesaleTiers: sortedTiers, 
+            
             priceUpdatedAt: new Date().toISOString()
         };
-        
-        await updateDoc(stockRef, updates);
+
+        await updateDoc(doc(db, 'stocks', selectedProduct.value.id), updates);
         
         const idx = products.value.findIndex(p => p.id === selectedProduct.value.id);
-        if (idx !== -1) {
-            products.value[idx] = { ...products.value[idx], ...updates };
-        }
+        if (idx !== -1) products.value[idx] = { ...products.value[idx], ...updates };
 
         notification.success('ការកំណត់ត្រូវបានរក្សាទុកដោយជោគជ័យ');
         cancelPriceEdit(); 
-
     } catch (error) {
-        console.error("Error updating price", error);
+        console.error(error);
         notification.error('មិនអាចរក្សាទុកទិន្នន័យបានទេ');
     } finally {
         isSavingPrice.value = false;
     }
 };
 
-const closeDropdown = (e) => {
-    if (!e.target.closest('.relative')) {
-        showProductDropdown.value = false;
-    }
-};
-
-const switchTab = (tabName) => {
-    activeTab.value = tabName;
-    if (tabName === 'prices') {
-        fetchProducts();
-    }
-};
-
-onMounted(() => {
-    fetchUnits();
-    document.addEventListener('click', closeDropdown);
+// --- TAB 3: DELIVERY SETTINGS ---
+const isLoadingDelivery = ref(false);
+const isSavingDelivery = ref(false);
+const deliveryForm = reactive({
+    phnomPenh: { currency: 'USD', baseFee: 1.5, hasCondition: false, conditionMinAmount: 50, conditionFee: 0 },
+    provincial: { currency: 'USD', baseFee: 2.0, hasCondition: false, conditionMinAmount: 100, conditionFee: 1.0 }
 });
 
-onUnmounted(() => {
-    document.removeEventListener('click', closeDropdown);
-});
+const fetchDeliverySettings = async () => {
+    isLoadingDelivery.value = true;
+    try {
+        const docRef = doc(db, 'settings', 'delivery_fees');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.phnomPenh) Object.assign(deliveryForm.phnomPenh, data.phnomPenh);
+            if (data.provincial) Object.assign(deliveryForm.provincial, data.provincial);
+        }
+    } catch (error) { notification.error("មិនអាចទាញយកទិន្នន័យសេវាដឹកជញ្ជូនបានទេ"); } 
+    finally { isLoadingDelivery.value = false; }
+};
 
-// --- FORMATTERS ---
+const saveDeliverySettings = async () => {
+    isSavingDelivery.value = true;
+    try {
+        await setDoc(doc(db, 'settings', 'delivery_fees'), {
+            phnomPenh: {
+                currency: deliveryForm.phnomPenh.currency,
+                baseFee: Number(deliveryForm.phnomPenh.baseFee) || 0,
+                hasCondition: Boolean(deliveryForm.phnomPenh.hasCondition),
+                conditionMinAmount: Number(deliveryForm.phnomPenh.conditionMinAmount) || 0,
+                conditionFee: Number(deliveryForm.phnomPenh.conditionFee) || 0
+            },
+            provincial: {
+                currency: deliveryForm.provincial.currency,
+                baseFee: Number(deliveryForm.provincial.baseFee) || 0,
+                hasCondition: Boolean(deliveryForm.provincial.hasCondition),
+                conditionMinAmount: Number(deliveryForm.provincial.conditionMinAmount) || 0,
+                conditionFee: Number(deliveryForm.provincial.conditionFee) || 0
+            },
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        notification.success('លក្ខខណ្ឌសេវាដឹកជញ្ជូនត្រូវបានរក្សាទុក');
+    } catch (error) { notification.error("មិនអាចរក្សាទុកការកំណត់នេះបានទេ"); } 
+    finally { isSavingDelivery.value = false; }
+};
+
+
+// --- GENERAL UTILS ---
+const closeDropdown = (e) => { if (!e.target.closest('.relative')) showProductDropdown.value = false; };
+onMounted(() => { fetchUnits(); document.addEventListener('click', closeDropdown); });
+onUnmounted(() => { document.removeEventListener('click', closeDropdown); });
+
 const formatPrice = (val, currency) => {
-    if (val === undefined || val === null) return '0.00';
-    return Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (currency === 'USD' ? ' $' : ' ៛');
+    if (val === undefined || val === null) return '0.0000';
+    return Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }); 
 };
-
 const translateHardcodedUnit = (unit) => {
   const map = { bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ' };
   return map[unit] || unit;
 };
 
-// Original translator for the database units display
 const translateUnit = (unit) => {
   const map = { bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ' };
+  if (units.value && units.value.length > 0) {
+      const found = units.value.find(u => u.value === unit);
+      if (found) return found.label;
+  }
   return map[unit] || unit;
 };
-
 </script>
 
 <style scoped>
 .font-khmer { font-family: 'Battambong', 'Kantumruy Pro', sans-serif; }
-
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
-
 .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-@keyframes slideUp { 
-    from { opacity: 0; transform: translateY(20px) scale(0.98); } 
-    to { opacity: 1; transform: translateY(0) scale(1); } 
-}
-
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .animate-fade-in { animation: fadeIn 0.3s ease-out; }
-@keyframes fadeIn { 
-    from { opacity: 0; } 
-    to { opacity: 1; } 
-}
-
-.animate-slide-down { animation: slideDown 0.3s ease-out forwards; }
-@keyframes slideDown { 
-    from { opacity: 0; transform: translateY(-10px); } 
-    to { opacity: 1; transform: translateY(0); } 
-}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.animate-slide-down { animation: slideDown 0.3s ease-out forwards; transform-origin: top; }
+@keyframes slideDown { from { opacity: 0; transform: scaleY(0.9); } to { opacity: 1; transform: scaleY(1); } }
 </style>
