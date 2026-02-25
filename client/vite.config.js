@@ -12,8 +12,8 @@ export default defineConfig(({ mode }) => {
     ],
     // នេះគឺជាកន្លែងវេទមន្ត! 🌟
     // Netlify តែងតែមាន variable ឈ្មោះ NETLIFY=true ពេលកំពុង Build
-    // ដូច្នេះបើ Deploy លើ Netlify វាប្រើ '/' រីឯ GitHub Pages ប្រើ '/ReportApp/'
-    base: process.env.NETLIFY ? '/' : '/ReportApp/',
+    // ដូច្នេះបើ Deploy លើ Netlify វាប្រើ '/' រីឯ GitHub Pages ប្រើ '/sellerorder/'
+    base: process.env.NETLIFY ? '/' : '/sellerorder/',
     
     resolve: {
       alias: {
