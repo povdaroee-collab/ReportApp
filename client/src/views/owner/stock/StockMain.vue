@@ -4,7 +4,7 @@
     <Toast />
     <ConfirmDialog ref="confirmDialogRef" />
 
-    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-4">
       <div>
         <h1 class="text-3xl font-bold bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
           📦 គ្រប់គ្រងស្តុកទំនិញ
@@ -18,15 +18,21 @@
       </div>
 
       <div class="flex flex-wrap justify-center bg-neutral-800 p-1.5 rounded-xl border border-neutral-700 gap-1 shadow-inner">
-        <button @click="activeTab = 'add'" :class="activeTab === 'add' ? 'bg-gradient-to-r from-amber-400 to-yellow-600 text-black shadow-lg' : 'text-neutral-400 hover:text-white hover:bg-neutral-700'" class="px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300">
-          ➕ បញ្ចូលស្តុកថ្មី
+        <button @click="activeTab = 'add'" :class="activeTab === 'add' ? 'bg-gradient-to-r from-amber-400 to-yellow-600 text-black shadow-lg' : 'text-neutral-400 hover:text-white hover:bg-neutral-700'" class="px-4 md:px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all duration-300">
+          ➕ បញ្ចូលស្តុក
         </button>
-        <button @click="activeTab = 'list'" :class="activeTab === 'list' ? 'bg-gradient-to-r from-amber-400 to-yellow-600 text-black shadow-lg' : 'text-neutral-400 hover:text-white hover:bg-neutral-700'" class="px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 flex items-center gap-2">
+        
+        <button @click="activeTab = 'list'" :class="activeTab === 'list' ? 'bg-gradient-to-r from-amber-400 to-yellow-600 text-black shadow-lg' : 'text-neutral-400 hover:text-white hover:bg-neutral-700'" class="px-4 md:px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 flex items-center gap-2">
           📋 បញ្ជីស្តុក <span class="bg-neutral-900/50 px-2 py-0.5 rounded-md text-[10px]">{{ stockList.length }}</span>
         </button>
-        <button @click="activeTab = 'inout'" :class="activeTab === 'inout' ? 'bg-gradient-to-r from-amber-400 to-yellow-600 text-black shadow-lg' : 'text-neutral-400 hover:text-white hover:bg-neutral-700'" class="px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 flex items-center gap-2">
+        
+        <button @click="activeTab = 'inout'" :class="activeTab === 'inout' ? 'bg-gradient-to-r from-amber-400 to-yellow-600 text-black shadow-lg' : 'text-neutral-400 hover:text-white hover:bg-neutral-700'" class="px-4 md:px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 flex items-center gap-2">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m-4 4l4-4m0 6H4m0 0l4 4m-4-4l-4 4"></path></svg>
-          នាំចូល / ដកចេញ
+          នាំចូល/ដកចេញ
+        </button>
+
+        <button @click="activeTab = 'trash'" :class="activeTab === 'trash' ? 'bg-rose-600 text-white shadow-lg' : 'text-rose-400 hover:text-rose-300 hover:bg-rose-500/10'" class="px-4 md:px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 flex items-center gap-2 ml-1 border border-rose-900/50">
+          🗑️ ធុងសម្រាម <span v-if="deletedStocks.length > 0" class="bg-rose-500 text-white px-2 py-0.5 rounded-md text-[10px]">{{ deletedStocks.length }}</span>
         </button>
       </div>
     </div>
@@ -55,13 +61,21 @@
             :currentPage="currentPage" 
             :totalPages="totalPages" 
             @edit="editItem" 
-            @delete="confirmAndDelete" 
+            @delete="moveToTrash" 
+            @update-image="handleUpdateImageOnly"
             @page-change="p => currentPage = p" 
         />
 
         <StockInOut 
             v-else-if="activeTab === 'inout'"
             :products="stockList"
+        />
+
+        <StockTrash 
+            v-else-if="activeTab === 'trash'"
+            :deletedStocks="deletedStocks"
+            @restore="restoreFromTrash"
+            @hard-delete="permanentDelete"
         />
     </div>
 
@@ -76,15 +90,18 @@ import Toast from '@/components/Toast.vue';
 import ConfirmDialog from '@/components/shared/ConfirmDialog.vue';
 import { useNotificationStore } from '@/stores/notification';
 
+// នាំចូលឯកសារតូចៗ
 import StockAdd from './StockAdd.vue';
 import StockList from './StockList.vue';
-import StockInOut from './StockInOut.vue'; // នាំចូល File ថ្មី
+import StockInOut from './StockInOut.vue';
+import StockTrash from './StockTrash.vue'; // នាំចូល File ថ្មី
 
 const notification = useNotificationStore();
 const confirmDialogRef = ref(null);
 
-const activeTab = ref('inout'); // អាចដូរទៅលំនាំដើម 'list' វិញបាន
+const activeTab = ref('list'); 
 const stockList = ref([]);
+const deletedStocks = ref([]); // State ថ្មីសម្រាប់ផ្ទុកទំនិញដែលបានលុប
 const isEditing = ref(false);
 const duplicateDetected = ref(false); 
 const currentPage = ref(1);
@@ -105,7 +122,12 @@ const generateBarcode = () => `STK-${Date.now().toString().slice(-6)}${Math.floo
 const fetchStocks = () => {
     isLoading.value = true;
     unsubscribeStocks = onSnapshot(collection(db, "stocks"), (snap) => {
-        stockList.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        const rawDocs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // ញែកទិន្នន័យជា ២ ចំណែក
+        stockList.value = rawDocs.filter(item => item.isDeleted !== true).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        deletedStocks.value = rawDocs.filter(item => item.isDeleted === true).sort((a, b) => (b.deletedAt?.seconds || 0) - (a.deletedAt?.seconds || 0));
+        
         isLoading.value = false;
     }, () => {
         notification.error("បរាជ័យក្នុងការភ្ជាប់ទិន្នន័យស្តុក"); 
@@ -116,6 +138,7 @@ const fetchStocks = () => {
 onMounted(() => { fetchStocks(); if (!isEditing.value) form.barcode = generateBarcode(); });
 onUnmounted(() => { if (unsubscribeStocks) unsubscribeStocks(); });
 
+// Smart Duplicate Detection (ត្រួតពិនិត្យតែក្នងស្តុកដែលកំពុង Active ប៉ុណ្ណោះ)
 watch(() => form.name, (newName) => {
     if (activeTab.value !== 'add' || !newName) return;
     const existing = stockList.value.find(item => item.name.toLowerCase() === newName.trim().toLowerCase());
@@ -136,7 +159,9 @@ const saveProduct = async () => {
   const productData = {
     name: form.name, barcode: form.barcode, image: form.imagePreview, quantity: form.quantity,
     unit: form.unit, itemsPerCase: form.unit === 'case' ? form.itemsPerCase : null,
-    currency: form.currency, unitCost: finalUnitCost, totalCost: finalUnitCost * form.quantity, updatedAt: serverTimestamp()
+    currency: form.currency, unitCost: finalUnitCost, totalCost: finalUnitCost * form.quantity, 
+    updatedAt: serverTimestamp(),
+    isDeleted: false 
   };
 
   try {
@@ -153,13 +178,52 @@ const saveProduct = async () => {
   finally { isSaving.value = false; }
 };
 
-const confirmAndDelete = async (item) => {
-  if (await confirmDialogRef.value.open("លុបស្តុក?", `តើអ្នកពិតជាចង់លុប "${item.name}" មែនទេ?`)) {
+// Update Image from Modal
+const handleUpdateImageOnly = async ({ id, image }) => {
     try {
-        await deleteDoc(doc(db, "stocks", item.id));
-        notification.success("ទិន្នន័យស្តុកត្រូវបានលុបដោយជោគជ័យ!");
-    } catch (error) { notification.error("បរាជ័យក្នុងការលុប"); }
+        await updateDoc(doc(db, "stocks", id), { image: image, updatedAt: serverTimestamp() });
+        notification.success("រូបភាពត្រូវបានផ្លាស់ប្ដូរដោយជោគជ័យ!");
+    } catch (error) {
+        notification.error("បរាជ័យក្នុងការផ្លាស់ប្ដូររូបភាព");
+    }
+};
+
+// Soft Delete (លាក់ចូលធុងសម្រាម)
+const moveToTrash = async (item) => {
+  if (await confirmDialogRef.value.open("បញ្ជូនទៅធុងសម្រាម?", `តើអ្នកចង់បញ្ជូន "${item.name}" ទៅធុងសម្រាមមែនទេ? \n\n(ទំនិញនេះនឹងលែងអាចលក់បាន ប៉ុន្តែអ្នកអាចទាញយកមកវិញបាននៅផ្ទាំងធុងសម្រាម)`)) {
+    try {
+        await updateDoc(doc(db, "stocks", item.id), { 
+            isDeleted: true,
+            deletedAt: serverTimestamp() 
+        });
+        notification.success("ទំនិញត្រូវបានបញ្ជូនទៅធុងសម្រាម!");
+    } catch (error) { notification.error("បរាជ័យក្នុងការបញ្ជូនទៅធុងសម្រាម"); }
   }
+};
+
+// 🔥 RESTORE ពីធុងសម្រាមមកវិញ 🔥
+const restoreFromTrash = async (item) => {
+    try {
+        await updateDoc(doc(db, "stocks", item.id), { 
+            isDeleted: false 
+            // អាចលុប field deletedAt ចោលក៏បាន តែទុក false ក៏គ្រប់គ្រាន់ដែរ
+        });
+        notification.success(`បានស្តារទំនិញ "${item.name}" មកវិញដោយជោគជ័យ!`);
+    } catch (error) {
+        notification.error("បរាជ័យក្នុងការទាញទិន្នន័យមកវិញ");
+    }
+};
+
+// 🔥 លុបជារៀងរហូត (Hard Delete) 🔥
+const permanentDelete = async (item) => {
+    if (await confirmDialogRef.value.open("⚠️ លុបជារៀងរហូត?", `តើអ្នកពិតជាចង់លុបទំនិញ "${item.name}" ជារៀងរហូតមែនទេ?\n\nទិន្នន័យដែលលុបហើយ មិនអាចទាញយកមកវិញបានឡើយ!`)) {
+        try {
+            await deleteDoc(doc(db, "stocks", item.id));
+            notification.success("ទិន្នន័យត្រូវបានលុបចោលជារៀងរហូត!");
+        } catch (error) {
+            notification.error("បរាជ័យក្នុងការលុប");
+        }
+    }
 };
 
 const handleImageUpload = (e) => {

@@ -15,7 +15,8 @@ import TrashAdmins from "../views/owner/TrashAdmins.vue";
 // --- Admin Views ---
 import AdminDashboard from "../views/admin/Dashboard.vue";
 import ManageSellers from "../views/admin/ManageSellers.vue";
-import InputSales from "../views/admin/InputSales.vue";
+//import InputSales from "../views/admin/InputSales.vue";
+import InputSales from '../views/admin/InputSales/InputSalesMain.vue';
 import SellerReports from "../views/admin/SellerReports.vue";
 import SellerSalesDetail from "../views/owner/Detail/SellerSalesDetail.vue";
 import AccountMain from "../views/owner/account/AccountMain.vue";
