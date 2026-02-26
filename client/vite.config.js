@@ -10,10 +10,9 @@ export default defineConfig(({ mode }) => {
       vue(),
       vueDevTools(),
     ],
-    // នេះគឺជាកន្លែងវេទមន្ត! 🌟
-    // Netlify តែងតែមាន variable ឈ្មោះ NETLIFY=true ពេលកំពុង Build
-    // ដូច្នេះបើ Deploy លើ Netlify វាប្រើ '/' រីឯ GitHub Pages ប្រើ '/sellerorder/'
-    base: process.env.NETLIFY ? '/' : '/sellerorder/',
+    
+    // ដូរមកជា '/' ធម្មតាវិញ ព្រោះអ្នកភ្ជាប់ Custom Domain រួចហើយ
+    base: '/', 
     
     resolve: {
       alias: {
@@ -22,13 +21,13 @@ export default defineConfig(({ mode }) => {
     },
 
     server: {
-    proxy: {
-      '/api': {
-        target: 'https://api.sellerorder.fyi',
-        changeOrigin: true,
-        secure: true,
+      proxy: {
+        '/api': {
+          target: 'https://api.sellerorder.fyi',
+          changeOrigin: true,
+          secure: true,
+        }
       }
     }
-  }
   }
 })
