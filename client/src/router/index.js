@@ -17,7 +17,9 @@ import AdminDashboard from '../views/admin/Dashboard.vue'
 import ManageSellers from '../views/admin/ManageSellers.vue'
 import InputSales from '../views/admin/InputSales.vue' 
 import SellerReports from '../views/admin/SellerReports.vue'
-import SellerSalesDetail from '../views/owner/Detail/SellerSalesDetail.vue'; // សូមកែតម្រូវទីតាំង Path តាមជាក់ស្ដែង
+import SellerSalesDetail from '../views/owner/Detail/SellerSalesDetail.vue'; 
+import AccountMain from '../views/owner/account/AccountMain.vue';
+
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -100,7 +102,13 @@ const router = createRouter({
   name: 'SellerSalesDetail', // ឈ្មោះនេះត្រូវតែត្រឹមត្រូវ ព្រោះក្នុង AdminDetail.vue យើងហៅឈ្មោះនេះ
   component: SellerSalesDetail,
   meta: { requiresAuth: true } // បើប្រព័ន្ធអ្នកមានតម្រូវការ Login
-}
+},
+{
+  path: '/app/owner/account', // ត្រូវប្រាកដថា path នេះដូចគ្នាជាមួយ MainLayout
+  name: 'OwnerAccount',
+  component: AccountMain,
+  meta: { requiresAuth: true } // ដាក់តាមទម្រង់ Route ចាស់ៗរបស់អ្នក
+},
         // បានលុប Route ប្រវត្តិលក់លម្អិតចេញពីទីនេះរួចរាល់
       ]
     }

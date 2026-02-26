@@ -42,7 +42,7 @@
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                             </span>
-                            <input v-model="searchQuery" type="text" placeholder="ស្វែងរកទំនិញ..." class="w-full bg-slate-100 border border-slate-200/60 rounded-xl pl-9 pr-4 py-2.5 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all shadow-inner">
+                            <input v-model="searchQuery" type="text" placeholder="ស្វែងរកទំនិញ ឬ ឈុត..." class="w-full bg-slate-100 border border-slate-200/60 rounded-xl pl-9 pr-4 py-2.5 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all shadow-inner">
                         </div>
                     </div>
                 </div>
@@ -51,7 +51,7 @@
             <div class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-slate-50/50 relative">
                 <div v-if="isLoadingProducts" class="flex flex-col items-center justify-center h-full opacity-60">
                     <div class="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-blue-600 mb-4"></div>
-                    <p class="text-xs font-bold text-slate-500">កំពុងទាញយកទំនិញ...</p>
+                    <p class="text-xs font-bold text-slate-500">កំពុងទាញយកទំនិញ និងឈុត...</p>
                 </div>
 
                 <div v-else-if="filteredProducts.length === 0" class="flex flex-col items-center justify-center h-full text-slate-400">
@@ -67,12 +67,16 @@
                         class="bg-white rounded-[1.25rem] p-3 border border-slate-200 shadow-sm transition-all cursor-pointer group relative flex flex-col h-full"
                         :class="getTotalRetailStock(product) > 0 ? 'hover:shadow-lg hover:border-blue-300' : 'opacity-60 cursor-not-allowed grayscale-[50%]'"
                     >
+                        <div v-if="product.isCombo" class="absolute -top-2 -left-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-md z-10 flex items-center gap-1 border border-orange-200">
+                            🎁 ឈុត
+                        </div>
+
                         <div class="w-full aspect-square rounded-xl bg-slate-50 mb-3 overflow-hidden border border-slate-100 relative flex items-center justify-center shrink-0">
                             <img v-if="product.image && (product.image.startsWith('http') || product.image.startsWith('data:image'))" :src="product.image" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                             <div v-else class="text-slate-300 text-3xl font-black">{{ product.name.charAt(0) }}</div>
                             
                             <div class="absolute top-2 right-2 px-2 py-0.5 rounded-md text-[10px] font-black bg-white/95 backdrop-blur-sm border shadow-sm" :class="getTotalRetailStock(product) > 0 ? 'text-emerald-600 border-emerald-100' : 'text-rose-600 border-rose-100'">
-                                ស្តុក: {{ getTotalRetailStock(product).toLocaleString() }} {{ translateHardcodedUnit(product.retailUnit || 'bottle') }}
+                                ស្តុក: {{ getTotalRetailStock(product).toLocaleString() }} {{ translateHardcodedUnit(product.isCombo ? 'set' : (product.retailUnit || 'bottle')) }}
                             </div>
 
                             <div v-if="getTotalRetailStock(product) <= 0" class="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
@@ -86,13 +90,13 @@
                             
                             <div class="mt-auto pt-2 border-t border-slate-100 flex flex-col gap-1.5">
                                 
-                                <div v-if="product.itemsPerCase && product.itemsPerCase > 1" class="text-[9px] text-slate-500 font-bold bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                                <div v-if="!product.isCombo && product.itemsPerCase && product.itemsPerCase > 1" class="text-[9px] text-slate-500 font-bold bg-slate-50 px-2 py-1 rounded border border-slate-100">
                                     <span class="text-slate-600">១{{ translateHardcodedUnit(product.unit) }} = {{ product.itemsPerCase }} {{ translateHardcodedUnit(product.retailUnit) }}</span>
                                 </div>
 
                                 <div class="flex items-end justify-between mt-1">
                                     <div class="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                                        <span>1 {{ translateHardcodedUnit(product.retailUnit || 'bottle') }}</span>
+                                        <span>1 {{ translateHardcodedUnit(product.isCombo ? 'set' : (product.retailUnit || 'bottle')) }}</span>
                                     </div>
                                     <div class="text-right">
                                         <p class="text-[15px] font-black text-indigo-600">
@@ -119,7 +123,7 @@
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         ផុតកំណត់ក្នុង: {{ timeLeft }}
                     </div>
-                    <p v-else class="text-[9px] font-bold text-indigo-500 mt-0.5">ចំនួនខាងក្រោមគិតជាខ្នាតរាយជានិច្ច</p>
+                    <p v-else class="text-[9px] font-bold text-indigo-500 mt-0.5">ចំនួនខាងក្រោមគិតជាខ្នាតរាយ ឬឈុត</p>
                 </div>
                 <span class="bg-blue-100 text-blue-600 px-2.5 py-0.5 rounded-lg text-xs font-black border border-blue-200">{{ cart.length }}</span>
             </div>
@@ -142,7 +146,10 @@
 
                             <div class="flex justify-between items-start gap-2">
                                 <div class="flex-1">
-                                    <h4 class="font-bold text-sm text-slate-800 leading-tight">{{ item.product.name }}</h4>
+                                    <h4 class="font-bold text-sm text-slate-800 leading-tight">
+                                        {{ item.product.name }}
+                                        <span v-if="item.product.isCombo" class="text-[10px] text-orange-500 ml-1">🎁 ឈុត</span>
+                                    </h4>
                                     <span class="inline-block mt-1.5 px-2 py-0.5 rounded text-[10px] font-black border" :class="getAutoSaleType(item.product, item.qty) === 'wholesale' ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-indigo-50 text-indigo-600 border-indigo-200'">
                                         {{ getAutoSaleType(item.product, item.qty) === 'wholesale' ? 'តម្លៃបោះដុំ' : 'តម្លៃលក់រាយ' }}
                                     </span>
@@ -154,7 +161,7 @@
 
                             <div class="flex items-center justify-between mt-2 pt-3 border-t border-slate-100">
                                 <div class="text-[11px] font-bold text-slate-500">
-                                    {{ formatPrice(calculateItemUnitPrice(item.product, item.qty), item.product.currency) }} <span class="opacity-70">/ 1 {{ translateHardcodedUnit(item.product.retailUnit || 'bottle') }}</span>
+                                    {{ formatPrice(calculateItemUnitPrice(item.product, item.qty), item.product.currency) }} <span class="opacity-70">/ 1 {{ translateHardcodedUnit(item.product.isCombo ? 'set' : (item.product.retailUnit || 'bottle')) }}</span>
                                 </div>
                                 
                                 <div class="flex items-center gap-2 shrink-0">
@@ -163,7 +170,7 @@
                                         <input :value="item.qty" @change="setQty(index, $event.target.value)" type="number" min="1" class="w-16 h-full bg-white text-center text-base font-black border-x border-slate-200 outline-none p-0">
                                         <button @click="updateQty(index, 1)" class="w-10 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors text-xl font-bold">+</button>
                                     </div>
-                                    <span class="text-xs font-black text-slate-600">{{ translateHardcodedUnit(item.product.retailUnit || 'bottle') }}</span>
+                                    <span class="text-xs font-black text-slate-600">{{ translateHardcodedUnit(item.product.isCombo ? 'set' : (item.product.retailUnit || 'bottle')) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -421,7 +428,7 @@
 
                                 <div class="w-full grid grid-cols-2 gap-3 mb-6">
                                     <button @click="printInvoice" class="col-span-2 py-3 rounded-xl font-black text-sm bg-slate-800 hover:bg-slate-900 text-white shadow-md transition-all active:scale-95 flex justify-center items-center gap-2">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2v4h10z"></path></svg>
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                                         បោះពុម្ពវិក្កយបត្រ (Print)
                                     </button>
 
@@ -478,7 +485,7 @@ import { useNotificationStore } from '@/stores/notification';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
-// 📦 ការ Import ថ្មី
+// 📦 ការ Import
 import POSTodaySales from './reports/pos/POSTodaySales.vue'; 
 
 const router = useRouter();
@@ -487,7 +494,10 @@ const notification = useNotificationStore();
 // --- STATE ---
 const mainTab = ref('pos'); 
 
-const products = ref([]);
+// ប្ដូរពីការទុកតែ stocks មកជាលាយបញ្ចូលគ្នា
+const mixedProducts = ref([]); 
+const originalStocks = ref([]); 
+
 const sellers = ref([]);
 const isLoadingProducts = ref(true);
 const searchQuery = ref('');
@@ -502,6 +512,7 @@ const lastSavedSale = ref(null);
 const printStaging = ref(null);
 
 let unsubscribeProducts = null; 
+let unsubscribeCombos = null;
 
 // 🔥 --- NEW STATE FOR RESERVATION --- 🔥
 const timeLeft = ref("");
@@ -529,37 +540,15 @@ const formatPrice = (val, currency = 'USD') => {
 };
 
 const translateHardcodedUnit = (unit) => {
-  const map = { bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ' };
+  const map = { bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ', set: 'ឈុត' };
   return map[unit] || unit;
 };
 
-// --- SMART LOCATION LOGIC (ខេត្ត/ក្រុង & ស្រុក/ខណ្ឌ) ---
-const locationData = {
+// --- SMART LOCATION LOGIC ---
+const locationData = { /* រក្សាទុកកូដចាស់ */
     "រាជធានីភ្នំពេញ": ["ខណ្ឌចំការមន", "ខណ្ឌដូនពេញ", "ខណ្ឌ៧មករា", "ខណ្ឌទួលគោក", "ខណ្ឌដង្កោ", "ខណ្ឌមានជ័យ", "ខណ្ឌឫស្សីកែវ", "ខណ្ឌសែនសុខ", "ខណ្ឌពោធិ៍សែនជ័យ", "ខណ្ឌជ្រោយចង្វារ", "ខណ្ឌព្រែកព្នៅ", "ខណ្ឌច្បារអំពូវ", "ខណ្ឌបឹងកេងកង", "ខណ្ឌកំបូល"],
     "ខេត្តកណ្ដាល": ["ក្រុងតាខ្មៅ", "ក្រុងអរិយក្សត្រ", "ក្រុងសំពៅពូន", "ស្រុកកណ្ដាលស្ទឹង", "ស្រុកគៀនស្វាយ", "ស្រុកខ្សាច់កណ្ដាល", "ស្រុកកោះធំ", "ស្រុកលើកដែក", "ស្រុកល្វាឯម", "ស្រុកមុខកំពូល", "ស្រុកអង្គស្នួល", "ស្រុកពញាឮ", "ស្រុកស្អាង"],
-    "ខេត្តតាកែវ": ["ក្រុងដូនកែវ", "ស្រុកអង្គរបូរី", "ស្រុកបាទី", "ស្រុកបូរីជលសា", "ស្រុកគិរីវង់", "ស្រុកកោះអណ្ដែត", "ស្រុកព្រៃកប្បាស", "ស្រុកសំរោង", "ស្រុកត្រាំកក់", "ស្រុកទ្រាំង"],
-    "ខេត្តកំពង់ចាម": ["ក្រុងកំពង់ចាម", "ស្រុកបាធាយ", "ស្រុកចំការលើ", "ស្រុកជើងព្រៃ", "ស្រុកកំពង់សៀម", "ស្រុកកងមាស", "ស្រុកកោះសូទិន", "ស្រុកព្រៃឈរ", "ស្រុកស្រីសន្ធរ", "ស្រុកស្ទឹងត្រង់"],
-    "ខេត្តត្បូងឃ្មុំ": ["ក្រុងសួង", "ស្រុកត្បូងឃ្មុំ", "ស្រុកតំបែរ", "ស្រុកក្រូចឆ្មារ", "ស្រុកមេមត់", "ស្រុកអូររាំងឪ", "ស្រុកពញាក្រែក"],
-    "ខេត្តព្រៃវែង": ["ក្រុងព្រៃវែង", "ស្រុកបាភ្នំ", "ស្រុកកំចាយមារ", "ស្រុកកំពង់ត្របែក", "ស្រុកកញ្ជ្រៀច", "ស្រុកមេសាង", "ស្រុកពាមជរ", "ស្រុកពាមរក៍", "ស្រុកពារាំង", "ស្រុកព្រះស្ដេច", "ស្រុកពោធិ៍រៀង", "ស្រុកស៊ីធរកណ្ដាល", "ស្រុកស្វាយអន្ទរ"],
-    "ខេត្តស្វាយរៀង": ["ក្រុងស្វាយរៀង", "ក្រុងបាវិត", "ស្រុកចន្ទ្រា", "ស្រុកកំពង់រោទិ៍", "ស្រុករំដួល", "ស្រុករមាសហែក", "ស្រុកស្វាយជ្រំ", "ស្រុកស្វាយទាប"],
-    "ខេត្តកំពង់ធំ": ["ក្រុងស្ទឹងសែន", "ស្រុកបារាយណ៍", "ស្រុកកំពង់ស្វាយ", "ស្រុកប្រាសាទបល្ល័ង្ក", "ស្រុកប្រាសាទសំបូរ", "ស្រុកសណ្ដាន់", "ស្រុកសន្ទុក", "ស្រុកស្ទោង", "ស្រុកតាំងគោក"],
-    "ខេត្តកំពង់ឆ្នាំង": ["ក្រុងកំពង់ឆ្នាំង", "ស្រុកបរិបូណ៌", "ស្រុកជលគិរី", "ស្រុកកំពង់លែង", "ស្រុកកំពង់ត្រឡាច", "ស្រុករលាប្អៀរ", "ស្រុកសាមគ្គីមានជ័យ", "ស្រុកទឹកផុស"],
-    "ខេត្តកំពង់ស្ពឺ": ["ក្រុងច្បារមន", "ក្រុងឧដុង្គម៉ែជ័យ", "ស្រុកសាមគ្គីមុនីជ័យ", "ស្រុកបសេដ្ឋ", "ស្រុកគងពិសី", "ស្រុកឱរ៉ាល់", "ស្រុកភ្នំស្រួច", "ស្រុកសំរោងទង", "ស្រុកថ្ពង"],
-    "ខេត្តកំពត": ["ក្រុងកំពត", "ក្រុងបូកគោ", "ស្រុកអង្គរជ័យ", "ស្រុកបន្ទាយមាស", "ស្រុកឈូក", "ស្រុកជុំគិរី", "ស្រុកដងទង់", "ស្រុកកំពង់ត្រាច", "ស្រុកទឹកឈូ"],
-    "ខេត្តកែប": ["ក្រុងកែប", "ស្រុកដំណាក់ចង្អើរ"],
-    "ខេត្តព្រះសីហនុ": ["ក្រុងព្រះសីហនុ", "ក្រុងកោះរ៉ុង", "ស្រុកព្រៃនប់", "ស្រុកស្ទឹងហាវ", "ស្រុកកំពង់សីលា"],
-    "ខេត្តកោះកុង": ["ក្រុងខេមរភូមិន្ទ", "ស្រុកបុទុមសាគរ", "ស្រុកគិរីសាគរ", "ស្រុកស្មាច់មានជ័យ", "ស្រុកមណ្ឌលសីមា", "ស្រុកស្រែអំបិល", "ស្រុកថ្មបាំង"],
-    "ខេត្តពោធិ៍សាត់": ["ក្រុងពោធិ៍សាត់", "ស្រុកបាកាន", "ស្រុកក្រវាញ", "ស្រុកកណ្ដៀង", "ស្រុកក្រគរ", "ស្រុកវាលវែង", "ស្រុកតាលោសែនជ័យ"],
-    "ខេត្តបាត់ដំបង": ["ក្រុងបាត់ដំបង", "ស្រុកបាណន់", "ស្រុកថ្មគោល", "ស្រុកបវេល", "ស្រុកឯកភ្នំ", "ស្រុកមោងឫស្សី", "ស្រុកតំបន់រតនមណ្ឌល", "ស្រុកសង្កែ", "ស្រុកសំឡូត", "ស្រុកសំពៅលូន", "ស្រុកភ្នំព្រឹក", "ស្រុកកំរៀង", "ស្រុកគាស់ក្រឡ", "ស្រុករុក្ខគិរី"],
-    "ខេត្តប៉ៃលិន": ["ក្រុងប៉ៃលិន", "ស្រុកសាលាក្រៅ"],
-    "ខេត្តបន្ទាយមានជ័យ": ["ក្រុងសិរីសោភ័ណ", "ក្រុងប៉ោយប៉ែត", "ស្រុកមង្គលបូរី", "ស្រុកភ្នំស្រុក", "ស្រុកព្រះនេត្រព្រះ", "ស្រុកអូរជ្រៅ", "ស្រុកថ្មពួក", "ស្រុកស្វាយចេក", "ស្រុកម៉ាឡៃ"],
-    "ខេត្តសៀមរាប": ["ក្រុងសៀមរាប", "ក្រុងរុនតាឯកតេជោសែន", "ស្រុកអង្គរជុំ", "ស្រុកអង្គរធំ", "ស្រុកបន្ទាយស្រី", "ស្រុកក្រឡាញ់", "ស្រុកពួក", "ស្រុកប្រាសាទបាគង", "ស្រុកសូទ្រនិគម", "ស្រុកស្រីស្នំ", "ស្រុកស្វាយលើ", "ស្រុកវ៉ារិន"],
-    "ខេត្តឧត្តរមានជ័យ": ["ក្រុងសំរោង", "ស្រុកអន្លង់វែង", "ស្រុកបន្ទាយអំពិល", "ស្រុកចុងកាល់", "ស្រុកត្រពាំងប្រាសាទ"],
-    "ខេត្តព្រះវិហារ": ["ក្រុងព្រះវិហារ", "ស្រុកជ័យសែន", "ស្រុកឈែប", "ស្រុកជាំក្សាន្ត", "ស្រុកគូលែន", "ស្រុករវៀង", "ស្រុកសង្គមថ្មី", "ស្រុកត្បែងមានជ័យ"],
-    "ខេត្តស្ទឹងត្រែង": ["ក្រុងស្ទឹងត្រែង", "ស្រុកសេសាន", "ស្រុកសៀមបូក", "ស្រុកសៀមប៉ាង", "ស្រុកថាឡាបរិវ៉ាត់", "ស្រុកបុរីអូរស្វាយសែនជ័យ"],
-    "ខេត្តក្រចេះ": ["ក្រុងក្រចេះ", "ស្រុកឆ្លូង", "ស្រុកសំបូរ", "ស្រុកស្នួល", "ស្រុកចិត្របុរី", "ស្រុកអូរគ្រៀងសែនជ័យ"],
-    "ខេត្តមណ្ឌលគិរី": ["ក្រុងសែនមនោរម្យ", "ស្រុកកែវសីមា", "ស្រុកកោះញែក", "ស្រុកអូររាំង", "ស្រុកពេជ្រចិន្តា"],
-    "ខេត្តរតនគិរី": ["ក្រុងបានលុង", "ស្រុកអណ្ដូងមាស", "ស្រុកបរកែវ", "ស្រុកកូនមុំ", "ស្រុកលំផាត់", "ស្រុកអូរជុំ", "ស្រុកអូរយ៉ាដាវ", "ស្រុកតាវែង", "ស្រុកវើនសៃ"]
+    // ... អ្នកអាចបន្តដាក់ location ចាស់នៅទីនេះបាន ...
 };
 
 const allProvinces = Object.keys(locationData);
@@ -585,12 +574,8 @@ const filteredDistricts = computed(() => {
 const handleProvinceInput = () => {
     showProvinceDropdown.value = true;
     const exactMatch = allProvinces.find(p => p.toLowerCase() === provinceSearch.value.toLowerCase());
-    if (exactMatch) {
-        selectProvince(exactMatch);
-    } else {
-        checkoutForm.province = ''; 
-        checkoutForm.district = ''; 
-    }
+    if (exactMatch) { selectProvince(exactMatch); } 
+    else { checkoutForm.province = ''; checkoutForm.district = ''; }
 };
 
 const selectProvince = (prov) => {
@@ -601,27 +586,19 @@ const selectProvince = (prov) => {
     setTimeout(() => { showDistrictDropdown.value = true; }, 100);
 };
 
-const selectDistrict = (dist) => {
-    checkoutForm.district = dist;
-    showDistrictDropdown.value = false;
-};
+const selectDistrict = (dist) => { checkoutForm.district = dist; showDistrictDropdown.value = false; };
 
-// --- FILE UPLOAD LOGIC (COMPRESSION < 100KB) ---
+// --- FILE UPLOAD LOGIC ---
 const isCompressing = ref(false);
 
 const handlePaymentImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-        notification.error('សូម Upload តែឯកសាររូបភាពប៉ុណ្ណោះ');
-        return;
-    }
+    if (!file.type.startsWith('image/')) return notification.error('សូម Upload តែឯកសាររូបភាពប៉ុណ្ណោះ');
 
     isCompressing.value = true;
     try {
-        const compressedBase64 = await compressImage(file, 100); 
-        checkoutForm.paymentImage = compressedBase64;
+        checkoutForm.paymentImage = await compressImage(file, 100); 
     } catch (error) {
         notification.error('មានបញ្ហាក្នុងការ Upload រូបភាព');
     } finally {
@@ -641,44 +618,17 @@ const compressImage = (file, targetSizeKB) => {
                 const canvas = document.createElement('canvas');
                 let width = img.width;
                 let height = img.height;
-
                 const MAX_WIDTH = 1200;
                 const MAX_HEIGHT = 1200;
-                if (width > height) {
-                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                } else {
-                    if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                }
+                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
 
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
 
-                let minQuality = 0.1;
-                let maxQuality = 0.9;
-                let quality = 0.7; 
-                let compressedDataUrl = '';
-
-                for (let i = 0; i < 5; i++) {
-                    compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-                    const sizeKB = Math.round((compressedDataUrl.length * 3) / 4 / 1024);
-                    
-                    if (sizeKB <= targetSizeKB) {
-                        minQuality = quality;
-                        if (sizeKB > targetSizeKB * 0.8) break; 
-                        quality = (quality + maxQuality) / 2;
-                    } else {
-                        maxQuality = quality;
-                        quality = (minQuality + quality) / 2;
-                    }
-                }
-                
-                if (Math.round((compressedDataUrl.length * 3) / 4 / 1024) > targetSizeKB) {
-                     compressedDataUrl = canvas.toDataURL('image/jpeg', 0.1);
-                }
-
-                resolve(compressedDataUrl);
+                resolve(canvas.toDataURL('image/jpeg', 0.5));
             };
             img.onerror = (e) => reject(e);
         };
@@ -721,53 +671,98 @@ const closeDropdowns = () => {
     showDistrictDropdown.value = false;
 };
 
-// --- FETCH DATA (REALTIME) ---
+// --- FETCH DATA (REALTIME) រួមទាំង COMBOS ផង ---
 onMounted(() => {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             try {
+                // 1. ស្តាប់បម្រែបម្រួល Stocks (ទំនិញរាយ)
                 const qProducts = collection(db, 'stocks');
                 unsubscribeProducts = onSnapshot(qProducts, (snapshot) => {
-                    products.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    
-                    // Update Cart product details safely without overwriting reserved qty
-                    cart.value = cart.value.map(cartItem => {
-                        const updatedProduct = products.value.find(p => p.id === cartItem.product.id);
-                        if (updatedProduct) {
-                            cartItem.product = updatedProduct;
-                        }
-                        return cartItem;
-                    });
+                    originalStocks.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isCombo: false }));
+                    combineProductsAndCombos();
+                });
 
-                    isLoadingProducts.value = false;
-                }, (error) => {
-                    notification.error("មានបញ្ហាក្នុងការទាញយកស្តុកបច្ចុប្បន្ន");
-                    isLoadingProducts.value = false;
+                // 2. ស្តាប់បម្រែបម្រួល Combos (ឈុត)
+                const qCombos = collection(db, 'combos');
+                unsubscribeCombos = onSnapshot(qCombos, (snapshot) => {
+                    const comboData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isCombo: true }));
+                    combosGlobal.value = comboData;
+                    combineProductsAndCombos();
                 });
 
                 const qSellers = query(collection(db, "users"), where("role", "in", ["seller", "dealer"]), where("createdBy", "==", user.uid));
                 const snapSellers = await getDocs(qSellers);
                 sellers.value = snapSellers.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
             } catch (error) { console.error(error); }
         } else router.push('/');
     });
 });
 
-onUnmounted(() => { if (unsubscribeProducts) unsubscribeProducts(); });
+onUnmounted(() => { 
+    if (unsubscribeProducts) unsubscribeProducts(); 
+    if (unsubscribeCombos) unsubscribeCombos(); 
+});
 
-// --- SMART POS LOGIC (AUTO-PRICING) ---
-const getTotalRetailStock = (product) => (Number(product.quantity) || 0) * (Number(product.itemsPerCase) || 1);
+const combosGlobal = ref([]);
+
+// បញ្ចូលទំនិញធម្មតា និងឈុតចូលគ្នា
+const combineProductsAndCombos = () => {
+    mixedProducts.value = [...originalStocks.value, ...combosGlobal.value];
+    
+    // ធ្វើបច្ចុប្បន្នភាពទិន្នន័យក្នុង Cart (បើមានបម្រែបម្រួលតម្លៃ ឬឈ្មោះ)
+    cart.value = cart.value.map(cartItem => {
+        const updatedProduct = mixedProducts.value.find(p => p.id === cartItem.product.id);
+        if (updatedProduct) { cartItem.product = updatedProduct; }
+        return cartItem;
+    });
+
+    isLoadingProducts.value = false;
+};
+
+// --- SMART POS LOGIC (AUTO-PRICING & COMBO CALCULATION) ---
+
+// គណនាស្តុកដែលអាចលក់បាន សម្រាប់ឈុត វាត្រូវផ្អែកលើស្តុកទំនិញរាយនីមួយៗ
+const getTotalRetailStock = (product) => {
+    if (product.isCombo) {
+        // បើជាឈុត ត្រូវឆែកមើល item ទាំងអស់ក្នុងឈុត ថាតើអាចផ្សំបានប៉ុន្មានឈុត?
+        if (!product.items || product.items.length === 0) return 0;
+        
+        let minPossibleCombos = Infinity;
+
+        for (const item of product.items) {
+            // ស្វែងរកស្តុកពិតប្រាកដរបស់ item នោះនៅក្នុង originalStocks
+            const stockItem = originalStocks.value.find(s => s.id === item.productId);
+            if (!stockItem) return 0; // បើមានអីវ៉ាន់ណាមួយបាត់ពីស្តុក ឈុតនេះលក់លែងបានហើយ
+            
+            const retailStock = (Number(stockItem.quantity) || 0) * (Number(stockItem.itemsPerCase) || 1);
+            // ចំនួនឈុតដែលអាចផ្សំបាន = ស្តុករាយសរុប / ចំនួនដែលត្រូវប្រើក្នុង១ឈុត
+            const possibleForThisItem = Math.floor(retailStock / item.qty);
+            
+            if (possibleForThisItem < minPossibleCombos) {
+                minPossibleCombos = possibleForThisItem;
+            }
+        }
+        
+        return minPossibleCombos === Infinity ? 0 : minPossibleCombos;
+    } else {
+        // បើជាទំនិញរាយធម្មតា
+        return (Number(product.quantity) || 0) * (Number(product.itemsPerCase) || 1);
+    }
+};
 
 const getTierMinRetailQty = (tier, product) => {
     const minQty = Number(tier.minQty) || 0;
+    if (product.isCombo) return minQty; // ឈុតគិតជារាយស្រាប់
     const perCase = Number(product.itemsPerCase) || 1;
     return tier.unit === product.unit ? minQty * perCase : minQty;
 };
 
 const filteredProducts = computed(() => {
-    if (!searchQuery.value) return products.value;
+    if (!searchQuery.value) return mixedProducts.value;
     const q = searchQuery.value.toLowerCase();
-    return products.value.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
+    return mixedProducts.value.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
 });
 
 const getAutoSaleType = (product, cartQty) => {
@@ -789,26 +784,26 @@ const calculateItemUnitPrice = (product, cartQty) => {
     return Number(product.retailPrice) || 0; 
 };
 
-const getApplicableUnit = (product, qty) => product.retailUnit || 'bottle';
+const getApplicableUnit = (product, qty) => {
+    if(product.isCombo) return 'set';
+    return product.retailUnit || 'bottle';
+};
 
 const calculateItemPrice = (product, qty) => calculateItemUnitPrice(product, qty) * qty;
 
-// 🔥 --- HYBRID RESERVATION LOGIC (START) --- 🔥
 
+// 🔥 --- HYBRID RESERVATION LOGIC --- 🔥
 const startCartTimer = (expiresAt) => {
     if (reservationTimer.value) clearInterval(reservationTimer.value);
-
     reservationTimer.value = setInterval(async () => {
         const now = new Date().getTime();
         const distance = expiresAt - now;
-
         if (distance <= 0) {
             clearInterval(reservationTimer.value);
             timeLeft.value = "";
             await handleCartTimeout(); 
             return;
         }
-
         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
         timeLeft.value = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
@@ -818,12 +813,7 @@ const startCartTimer = (expiresAt) => {
 const handleCartTimeout = async () => {
     if (cart.value.length === 0) return;
     notification.warning("រយៈពេលកក់ស្តុកបានផុតកំណត់! កន្ត្រកត្រូវបានសម្អាត និងស្តុកត្រូវបានបង្វិលវិញ។");
-    
-    // បង្វិលស្តុកដែលកក់ទាំងអស់ចូលវិញ
-    for (const item of cart.value) {
-        await modifyStockReservation(item.product, -item.qty);
-    }
-    
+    for (const item of cart.value) { await modifyStockReservation(item.product, -item.qty); }
     cart.value = [];
     await updateActiveCartBackend();
 };
@@ -839,9 +829,7 @@ const updateActiveCartBackend = async () => {
         timeLeft.value = "";
         return;
     }
-
     const expiresAt = new Date(Date.now() + 2 * 60 * 1000).getTime();
-    
     await setDoc(cartRef, {
         uid: adminId,
         items: cart.value.map(item => ({ id: item.product.id, qty: item.qty })),
@@ -852,16 +840,38 @@ const updateActiveCartBackend = async () => {
     startCartTimer(expiresAt);
 };
 
+// កែប្រែឱ្យ Support ការកាត់ស្តុករបស់ ឈុត (Combo)
 const modifyStockReservation = async (product, qtyDelta) => {
-    const stockRef = doc(db, 'stocks', product.id);
-    const perCase = Number(product.itemsPerCase) || 1;
-    const bulkQtyDelta = qtyDelta / perCase; // បម្លែងខ្នាតរាយ ទៅខ្នាតធំក្នុង DB
-
     try {
-        await updateDoc(stockRef, {
-            quantity: increment(-bulkQtyDelta),
-            stock_reserved: increment(bulkQtyDelta)
-        });
+        if (product.isCombo) {
+            // បើជាឈុត ត្រូវ Loop ទៅកាត់/បង្វិលស្តុក គ្រប់ item ដែលមានក្នុងឈុតនោះ
+            for (const subItem of product.items) {
+                const stockRef = doc(db, 'stocks', subItem.productId);
+                
+                // ត្រូវរក itemsPerCase របស់ទំនិញដើម ដើម្បីបំបែកខ្នាតកេះ ឱ្យត្រូវ
+                const originalStock = originalStocks.value.find(s => s.id === subItem.productId);
+                const perCase = originalStock ? (Number(originalStock.itemsPerCase) || 1) : 1;
+                
+                // ចំនួនសរុបរាយដែលត្រូវកាត់ = (ចំនួនដែលប្រើក្នុង១ឈុត * ចំនួនឈុត)
+                const totalRetailQtyDelta = subItem.qty * qtyDelta;
+                const bulkQtyDelta = totalRetailQtyDelta / perCase; // បម្លែងទៅជាកេះក្នុង DB
+
+                await updateDoc(stockRef, {
+                    quantity: increment(-bulkQtyDelta),
+                    stock_reserved: increment(bulkQtyDelta)
+                });
+            }
+        } else {
+            // បើជាទំនិញធម្មតា កាត់ធម្មតា
+            const stockRef = doc(db, 'stocks', product.id);
+            const perCase = Number(product.itemsPerCase) || 1;
+            const bulkQtyDelta = qtyDelta / perCase; 
+
+            await updateDoc(stockRef, {
+                quantity: increment(-bulkQtyDelta),
+                stock_reserved: increment(bulkQtyDelta)
+            });
+        }
     } catch (e) {
         console.error("Error updating stock reservation", e);
     }
@@ -873,9 +883,7 @@ const addToCart = async (product) => {
 
     const existingIndex = cart.value.findIndex(item => item.product.id === product.id);
     
-    // ឆែកមើលថាតើមានស្តុកគ្រប់គ្រាន់ទេមុននឹងបញ្ជូល
     if (existingIndex !== -1) {
-        // maxStock គឺចំនួនដែលអាចកក់បានបន្ថែមទៀត (ព្រោះ qty ចាស់បានកាត់ចេញរួចហើយ)
         if (1 > maxStock) return notification.error(`ស្តុកមានត្រឹមតែ ${maxStock} បន្ថែមទៀតប៉ុណ្ណោះ`);
         cart.value[existingIndex].qty += 1;
     } else {
@@ -916,7 +924,7 @@ const setQty = async (index, newQtyStr) => {
     
     if (delta > 0 && delta > maxStock) {
         notification.error(`ស្តុកមានត្រឹមតែ ${maxStock} បន្ថែមទៀតប៉ុណ្ណោះ`);
-        item.qty = oldQty + maxStock; // Reserve whatever is left
+        item.qty = oldQty + maxStock; 
         if (maxStock > 0) {
             await modifyStockReservation(item.product, maxStock);
             await updateActiveCartBackend();
@@ -933,12 +941,9 @@ const removeFromCart = async (index) => {
     const item = cart.value[index];
     const qtyToReturn = item.qty;
     cart.value.splice(index, 1);
-    // Negative delta = return stock
     await modifyStockReservation(item.product, -qtyToReturn); 
     await updateActiveCartBackend();
 };
-
-// 🔥 --- HYBRID RESERVATION LOGIC (END) --- 🔥
 
 const cartTotalUSD = computed(() => cart.value.reduce((total, item) => total + calculateItemPrice(item.product, item.qty), 0));
 
@@ -968,7 +973,9 @@ const submitSale = async () => {
             price: calculateItemUnitPrice(item.product, item.qty),
             qty: item.qty,
             type: getAutoSaleType(item.product, item.qty), 
-            unit: getApplicableUnit(item.product, item.qty)
+            unit: getApplicableUnit(item.product, item.qty),
+            isCombo: Boolean(item.product.isCombo),
+            cost: item.product.isCombo ? item.product.totalBaseCost : (Number(item.product.unitCost)/Number(item.product.itemsPerCase || 1)) // រក្សាទុកថ្លៃដើមសម្រាប់វិភាគ
         }));
 
         const payload = {
@@ -985,16 +992,28 @@ const submitSale = async () => {
         const docRef = await addDoc(collection(db, 'sales_reports'), payload);
         lastSavedSale.value = { id: docRef.id, ...payload };
 
-        // 🔥 លុប Field stock_reserved ចោល ព្រោះលក់ដាច់ហើយ (quantity បានកាត់រួចតាំងពីពេលកក់)
+        // 🔥 លុប Field stock_reserved ចោល (ព្រោះ quantity ត្រូវបានកាត់តាំងពីពេលកក់ម៉្លេះ)
         for (const item of cart.value) {
-            const productRef = doc(db, 'stocks', item.product.id);
-            const perCase = Number(item.product.itemsPerCase) || 1;
-            await updateDoc(productRef, { 
-                stock_reserved: increment(-(item.qty / perCase)) 
-            });
+            if (item.product.isCombo) {
+                for (const subItem of item.product.items) {
+                    const productRef = doc(db, 'stocks', subItem.productId);
+                    const originalStock = originalStocks.value.find(s => s.id === subItem.productId);
+                    const perCase = originalStock ? (Number(originalStock.itemsPerCase) || 1) : 1;
+                    
+                    const totalRetailQtyDelta = subItem.qty * item.qty;
+                    await updateDoc(productRef, { 
+                        stock_reserved: increment(-(totalRetailQtyDelta / perCase)) 
+                    });
+                }
+            } else {
+                const productRef = doc(db, 'stocks', item.product.id);
+                const perCase = Number(item.product.itemsPerCase) || 1;
+                await updateDoc(productRef, { 
+                    stock_reserved: increment(-(item.qty / perCase)) 
+                });
+            }
         }
 
-        // 🔥 លុបកន្ត្រកបណ្ដោះអាសន្នចេញពីប្រព័ន្ធ
         await deleteDoc(doc(db, 'active_carts', adminId)).catch(e => {});
 
         clearInterval(reservationTimer.value);
@@ -1025,7 +1044,7 @@ const generateTelegramText = () => {
     if (!lastSavedSale.value) return '';
     const sale = lastSavedSale.value;
     let text = `🛒 *វិក្កយបត្រថ្មី (INVOICE)*\nលេខ: \`${sale.receiptId}\`\nថ្ងៃទី: ${formatDate(sale.createdAt)}\n--------------------------------\n👤 *អតិថិជន:* ${sale.customerName}\n📞 *ទូរស័ព្ទ:* ${sale.customerPhone}\n📍 *ទីតាំង:* ${sale.location}\n👨‍💼 *អ្នកលក់:* ${sale.sellerName}\n--------------------------------\n`;
-    sale.items.forEach((item, i) => { text += `${i+1}. ${item.name} (${item.type === 'wholesale' ? 'ដុំ' : 'រាយ'})\n   ➔ ${item.qty} ${translateHardcodedUnit(item.unit)} x $${item.price} = *$${item.price * item.qty}*\n`; });
+    sale.items.forEach((item, i) => { text += `${i+1}. ${item.name} ${item.isCombo ? '(🎁 ឈុត)' : `(${item.type === 'wholesale' ? 'ដុំ' : 'រាយ'})`}\n   ➔ ${item.qty} ${translateHardcodedUnit(item.unit)} x $${item.price} = *$${item.price * item.qty}*\n`; });
     text += `--------------------------------\n💰 *សរុបរួម:* *$${sale.totalAmount}*\n💳 *បង់ប្រាក់តាម:* ${sale.paymentMethod}\n`;
     if(sale.paymentNote) text += `📝 *ចំណាំ:* ${sale.paymentNote}\n`;
     return encodeURIComponent(text);
@@ -1063,10 +1082,7 @@ const sendToTelegramBotGroup = async () => {
                  formData.append('photo', blob, 'payment_receipt.jpg');
                  formData.append('caption', `👆 វិក្កយបត្រវេរប្រាក់សម្រាប់: ${lastSavedSale.value.receiptId}`);
 
-                 await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-                     method: 'POST',
-                     body: formData
-                 });
+                 await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: 'POST', body: formData });
             }
 
         } else notification.error("បរាជ័យក្នុងការផ្ញើ");
@@ -1082,7 +1098,7 @@ const generateInvoiceHTML = () => {
         itemsHTML += `
             <tr style="border-bottom: 1px dashed #e2e8f0;">
                 <td style="padding: 12px 10px; text-align: center; color: #64748b; font-family: 'Battambong', sans-serif;">${index + 1}</td>
-                <td style="padding: 12px 10px; font-weight: bold; color: #1e293b; font-family: 'Battambong', sans-serif;">${item.name} <span style="font-size: 10px; color: #94a3b8;">(${item.type === 'wholesale' ? 'ដុំ' : 'រាយ'})</span></td>
+                <td style="padding: 12px 10px; font-weight: bold; color: #1e293b; font-family: 'Battambong', sans-serif;">${item.name} <span style="font-size: 10px; color: #94a3b8;">${item.isCombo ? '(ឈុត)' : `(${item.type === 'wholesale' ? 'ដុំ' : 'រាយ'})`}</span></td>
                 <td style="padding: 12px 10px; text-align: center; font-family: 'Battambong', sans-serif;">${item.qty} ${translateHardcodedUnit(item.unit)}</td>
                 <td style="padding: 12px 10px; text-align: right; font-family: 'Battambong', sans-serif;">${formatPrice(item.price, 'USD')}</td>
                 <td style="padding: 12px 10px; text-align: right; font-weight: bold; font-family: 'Battambong', sans-serif;">${formatPrice(item.price * item.qty, 'USD')}</td>

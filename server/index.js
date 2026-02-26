@@ -8,7 +8,7 @@ const verifyToken = require('./middleware/authMiddleware');
 const fs = require('fs');
 
 const app = express();
-pp.use(cors({
+app.use(cors({
     origin: '*', // អនុញ្ញាតឱ្យគ្រប់ Website (localhost) អាចហៅបាន
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // អនុញ្ញាតឱ្យធ្វើការ PUT និងជំនះ Preflight (OPTIONS)
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
