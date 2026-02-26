@@ -2,7 +2,7 @@
   <div class="h-[100dvh] flex flex-col bg-[#F8FAFC] overflow-hidden font-khmer relative">
     <Teleport to="body"><div class="fixed top-4 right-4 z-[9999] w-full max-w-sm pointer-events-none flex flex-col gap-2"><div class="pointer-events-auto"><Toast /></div></div></Teleport>
 
-    <div class="bg-white px-4 md:px-6 pt-3 pb-0 border-b border-slate-200/60 flex items-center gap-6 shadow-sm relative z-50 shrink-0">
+    <div class="bg-white px-4 md:px-6 pt-3 pb-0 border-b border-slate-200/60 flex items-center gap-6 shadow-sm relative z-[40] shrink-0">
         <button @click="mainTab = 'pos'" class="pb-3 text-sm font-black border-b-2 transition-all flex items-center gap-2" :class="mainTab === 'pos' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg> ប្រព័ន្ធបញ្ជូលការលក់ (POS)
         </button>
@@ -11,7 +11,8 @@
         </button>
     </div>
 
-    <div v-show="mainTab === 'pos'" class="flex-1 overflow-hidden flex flex-col md:flex-row relative">
+    <div v-show="mainTab === 'pos'" class="flex-1 overflow-hidden flex relative">
+        
         <div class="flex-1 flex flex-col h-full bg-[#F4F7FE] relative overflow-hidden">
             <div class="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 p-4 shadow-sm z-20 shrink-0">
                 <div class="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -31,7 +32,7 @@
                 </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-slate-50/50 relative">
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-slate-50/50 relative pb-24 md:pb-6">
                 <div v-if="isLoadingProducts" class="flex flex-col items-center justify-center h-full opacity-60">
                     <div class="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-blue-600 mb-4"></div>
                     <p class="text-xs font-bold text-slate-500">កំពុងទាញយកទំនិញ និងឈុត...</p>
@@ -40,8 +41,8 @@
                     <svg class="w-16 h-16 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                     <p class="font-bold">រកមិនឃើញទំនិញទេ</p>
                 </div>
-                <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5 pb-20 max-w-[100rem] mx-auto">
-                    <div v-for="product in filteredProducts" :key="product.id" @click="addToCart(product)" class="bg-white rounded-[1.25rem] p-3 border border-slate-200 shadow-sm transition-all cursor-pointer group relative flex flex-col h-full" :class="getTotalRetailStock(product) > 0 ? 'hover:shadow-lg hover:border-blue-300' : 'opacity-60 cursor-not-allowed grayscale-[50%]'">
+                <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5 max-w-[100rem] mx-auto">
+                    <div v-for="product in filteredProducts" :key="product.id" @click="addToCart(product)" class="bg-white rounded-[1.25rem] p-3 border border-slate-200 shadow-sm transition-all cursor-pointer group relative flex flex-col h-full" :class="getTotalRetailStock(product) > 0 ? 'hover:shadow-lg hover:border-blue-300 active:scale-95' : 'opacity-60 cursor-not-allowed grayscale-[50%]' ">
                         <div v-if="product.isCombo" class="absolute -top-2 -left-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-md z-10 flex items-center gap-1 border border-orange-200">🎁 ឈុត</div>
                         <div class="w-full aspect-square rounded-xl bg-slate-50 mb-3 overflow-hidden border border-slate-100 relative flex items-center justify-center shrink-0">
                             <img v-if="product.image && (product.image.startsWith('http') || product.image.startsWith('data:image'))" :src="product.image" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
@@ -65,26 +66,40 @@
             </div>
         </div>
 
-        <div class="w-[360px] xl:w-[420px] bg-slate-50 border-l border-slate-200 shadow-[-10px_0_30px_rgba(0,0,0,0.04)] flex flex-col h-full z-30 relative shrink-0">
-            <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0 shadow-sm z-20">
+        <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
+            <div v-if="showMobileCart" @click="showMobileCart = false" class="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[45]"></div>
+        </transition>
+
+        <div 
+            :class="showMobileCart ? 'translate-y-0' : 'translate-y-full md:translate-y-0'"
+            class="fixed md:static inset-x-0 bottom-0 h-[85vh] md:h-full w-full md:w-[360px] xl:w-[420px] bg-slate-50 md:border-l border-slate-200 shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.2)] md:shadow-[-10px_0_30px_rgba(0,0,0,0.04)] flex flex-col z-[50] md:z-30 transition-transform duration-300 ease-in-out rounded-t-[2rem] md:rounded-none shrink-0"
+        >
+            <div class="p-4 md:p-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0 shadow-sm z-20 rounded-t-[2rem] md:rounded-none pt-6 md:pt-4">
+                <div class="absolute top-2.5 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-slate-200 rounded-full md:hidden"></div>
                 <div class="flex flex-col">
                     <h2 class="text-lg font-black text-slate-800 flex items-center gap-2"><svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg> កន្ត្រកទំនិញ</h2>
                     <div v-if="timeLeft" class="mt-1 flex items-center gap-1.5 text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md w-fit animate-pulse"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> ផុតកំណត់ក្នុង: {{ timeLeft }}</div>
                     <p v-else class="text-[9px] font-bold text-indigo-500 mt-0.5">ចំនួនខាងក្រោមគិតជាខ្នាតរាយ ឬឈុត</p>
                 </div>
-                <span class="bg-blue-100 text-blue-600 px-2.5 py-0.5 rounded-lg text-xs font-black border border-blue-200">{{ cart.length }}</span>
+                
+                <div class="flex items-center gap-3">
+                    <span class="bg-blue-100 text-blue-600 px-2.5 py-0.5 rounded-lg text-xs font-black border border-blue-200">{{ cart.length }}</span>
+                    <button @click="showMobileCart = false" class="md:hidden w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
             </div>
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-4">
-                <div v-if="cart.length === 0" class="h-full flex flex-col items-center justify-center text-slate-400 opacity-60 min-h-[300px]">
+                <div v-if="cart.length === 0" class="h-full flex flex-col items-center justify-center text-slate-400 opacity-60 min-h-[250px]">
                     <svg class="w-20 h-20 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                     <p class="font-bold text-sm">មិនទាន់មានទំនិញក្នុងកន្ត្រកទេ</p>
-                    <p class="text-[10px] mt-1">សូមចុចលើទំនិញខាងឆ្វេងដើម្បីបញ្ជូល</p>
+                    <p class="text-[10px] mt-1">សូមចុចលើទំនិញដើម្បីបញ្ជូល</p>
                 </div>
                 <div v-else class="block">
                     <div class="space-y-3 mb-4">
-                        <div v-for="(item, index) in cart" :key="item.product.id" class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2 relative group hover:border-blue-400 transition-colors animate-slide-down">
-                            <button @click="removeFromCart(index)" class="absolute -top-2.5 -right-2.5 w-7 h-7 bg-rose-100 text-rose-600 hover:bg-rose-500 hover:text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md border-2 border-white z-10"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                        <div v-for="(item, index) in cart" :key="item.product.id" class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2 relative group hover:border-blue-400 transition-colors">
+                            <button @click="removeFromCart(index)" class="absolute -top-2.5 -right-2.5 w-7 h-7 bg-rose-100 text-rose-600 hover:bg-rose-500 hover:text-white rounded-full flex items-center justify-center shadow-md border-2 border-white z-10"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg></button>
                             <div class="flex justify-between items-start gap-2">
                                 <div class="flex-1">
                                     <h4 class="font-bold text-sm text-slate-800 leading-tight">{{ item.product.name }} <span v-if="item.product.isCombo" class="text-[10px] text-orange-500 ml-1">🎁 ឈុត</span></h4>
@@ -111,6 +126,28 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="md:hidden fixed bottom-6 left-0 right-0 px-4 flex justify-center pointer-events-none z-[35]">
+            <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0 translate-y-10" enter-to-class="opacity-100 translate-y-0" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-10">
+                <button 
+                    v-if="!showMobileCart && cart.length > 0" 
+                    @click="showMobileCart = true" 
+                    class="pointer-events-auto w-full max-w-sm bg-slate-800 text-white p-4 rounded-[1.5rem] shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center justify-between active:scale-95 transition-transform"
+                >
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center relative">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                            <span class="absolute -top-2 -right-2 bg-rose-500 text-white w-6 h-6 flex items-center justify-center rounded-full text-xs font-black border-2 border-slate-800 animate-pulse">{{ cart.length }}</span>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-[10px] text-slate-300 font-bold uppercase tracking-wider">មើលកន្ត្រកទំនិញ</p>
+                            <p class="text-sm font-black">{{ formatPrice(cartTotalUSD, 'USD') }}</p>
+                        </div>
+                    </div>
+                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                </button>
+            </transition>
         </div>
 
         <CheckoutModal :show="isCheckoutModalOpen" :cartLength="cart.length" :cartTotalUSD="cartTotalUSD" :sellers="sellers" :isSubmitting="isSubmitting" @close="isCheckoutModalOpen = false" @confirm="submitSale" />
@@ -148,6 +185,8 @@ const notification = useNotificationStore();
 
 // --- STATE ---
 const mainTab = ref('pos'); 
+const showMobileCart = ref(false); // សម្រាប់បញ្ជា Drawer លើទូរស័ព្ទ
+
 const mixedProducts = ref([]); 
 const originalStocks = ref([]); 
 const combosGlobal = ref([]);
@@ -281,7 +320,7 @@ const updateActiveCartBackend = async () => {
     if (!auth.currentUser) return;
     const adminId = auth.currentUser.uid;
     const cartRef = doc(db, 'active_carts', adminId);
-    if (cart.value.length === 0) { await deleteDoc(cartRef).catch(e => {}); clearInterval(reservationTimer.value); timeLeft.value = ""; return; }
+    if (cart.value.length === 0) { await deleteDoc(cartRef).catch(e => {}); clearInterval(reservationTimer.value); timeLeft.value = ""; showMobileCart.value = false; return; }
     const expiresAt = new Date(Date.now() + 2 * 60 * 1000).getTime();
     await setDoc(cartRef, { uid: adminId, items: cart.value.map(item => ({ id: item.product.id, qty: item.qty })), expiresAt, status: "PENDING" }, { merge: true });
     startCartTimer(expiresAt);
@@ -380,7 +419,6 @@ const submitSale = async (formData) => {
         const docRef = await addDoc(collection(db, 'sales_reports'), payload);
         lastSavedSale.value = { id: docRef.id, ...payload };
 
-        // Remove stock_reserved
         for (const item of cart.value) {
             if (item.product.isCombo) {
                 for (const subItem of item.product.items) {
@@ -395,7 +433,7 @@ const submitSale = async (formData) => {
 
         await deleteDoc(doc(db, 'active_carts', adminId)).catch(e => {});
         clearInterval(reservationTimer.value); timeLeft.value = "";
-        isCheckoutModalOpen.value = false; isSuccessModalOpen.value = true;
+        isCheckoutModalOpen.value = false; showMobileCart.value = false; isSuccessModalOpen.value = true;
 
     } catch (error) { notification.error("មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ"); } 
     finally { isSubmitting.value = false; }
