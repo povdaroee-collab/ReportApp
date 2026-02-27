@@ -56,19 +56,23 @@
 
         <div class="bg-slate-100/80 p-1.5 rounded-2xl flex overflow-x-auto no-scrollbar w-full md:w-auto shadow-inner border border-slate-200/50 shrink-0">
            <button 
+           v-if="userRole === 'superadmin'"
              @click="switchTab('prices')"
              class="flex-1 md:flex-none px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all duration-300 whitespace-nowrap relative"
              :class="activeTab === 'prices' ? 'text-indigo-600 shadow-md bg-white' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'"
            >
              កំណត់តម្លៃ និងប្រាក់ទឹកចិត្ត
            </button>
+
            <button 
+             v-if="userRole === 'superadmin'" 
              @click="switchTab('combos')"
              class="flex-1 md:flex-none px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all duration-300 whitespace-nowrap relative"
              :class="activeTab === 'combos' ? 'text-indigo-600 shadow-md bg-white' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'"
            >
              គ្រប់គ្រងការលក់ (ឈុត)
            </button>
+
            <button 
              @click="switchTab('delivery')"
              class="flex-1 md:flex-none px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all duration-300 whitespace-nowrap relative"
@@ -246,7 +250,7 @@
                                 <div class="bg-white p-4 rounded-xl border border-amber-200 shadow-sm relative">
                                     <div class="flex items-center justify-between mb-4 border-b border-amber-100 pb-2">
                                         <p class="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded">
-                                            ※ លក្ខខណ្ឌទី១៖ បោះដុំជា <span class="font-black text-amber-800">ខ្នាត ដប</span>
+                                            ※ លក្ខខណ្ឌទី១៖ លក់ជា <span class="font-black text-amber-800">ខ្នាត ដប (រាយ)</span>
                                         </p>
                                         <button type="button" @click="addBottleTier" class="text-[10px] bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-bold hover:bg-amber-500 hover:text-white transition-colors flex items-center gap-1">
                                             + បន្ថែម
@@ -286,7 +290,7 @@
                                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b border-blue-100 pb-2">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <p class="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded">
-                                                ※ លក្ខខណ្ឌទី២៖ បោះដុំជា <span class="font-black text-blue-800">ខ្នាត កេះ</span>
+                                                ※ លក្ខខណ្ឌទី២៖ លក់ជា <span class="font-black text-blue-800">ខ្នាត កេះ (ដុំ)</span>
                                             </p>
                                             <p class="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200">
                                                 <span class="text-blue-600">១កេះ</span> = <span class="text-emerald-600">{{ selectedProduct.itemsPerCase || 1 }} ដប</span>
@@ -336,14 +340,14 @@
                                 v-if="hasPriceSet(selectedProduct)" 
                                 type="button" 
                                 @click="showDeleteModal = true" 
-                                class="w-full sm:w-auto sm:mr-auto px-6 py-2.5 rounded-xl border bg-white border-rose-200 text-rose-500 font-bold hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 shadow-sm transition-all text-sm flex items-center justify-center gap-2 active:scale-95"
+                                class="w-full sm:w-auto sm:mr-auto px-6 py-2.5 rounded-xl border bg-rose-50 border-rose-200 text-rose-600 font-bold hover:bg-rose-500 hover:text-white transition-colors text-sm flex items-center justify-center gap-2"
                             >
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 លុបការកំណត់នេះចោល
                             </button>
 
                             <div class="flex gap-3 w-full sm:w-auto">
-                                <button type="button" @click="cancelPriceEdit" class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl border bg-white border-slate-300 text-slate-600 font-bold shadow-sm hover:bg-slate-50 transition-colors text-sm">បោះបង់ (Cancel)</button>
+                                <button type="button" @click="cancelPriceEdit" class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl border bg-white border-slate-300 text-slate-600 font-bold hover:bg-slate-50 transition-colors text-sm">បោះបង់</button>
                                 <button type="submit" :disabled="isSavingPrice" class="flex-1 sm:flex-none px-8 py-2.5 rounded-xl bg-slate-800 text-white font-bold shadow-md hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 text-sm">
                                     <svg v-if="isSavingPrice" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                     <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -513,7 +517,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed, onUnmounted } from 'vue';
-import { db } from '@/firebaseConfig';
+import { db, auth } from '@/firebaseConfig'; // ✅ បន្ថែម auth នៅទីនេះ
 import { collection, doc, updateDoc, setDoc, getDoc, query, where, onSnapshot, deleteField } from 'firebase/firestore';
 import Toast from '@/components/Toast.vue'; 
 import { useNotificationStore } from '@/stores/notification';
@@ -521,6 +525,7 @@ import ManageCombos from './ManageCombos.vue';
 
 const notification = useNotificationStore();
 const activeTab = ref('prices'); 
+const userRole = ref(''); // ✅ បង្កើតអញ្ញាតសម្រាប់ផ្ទុក Role
 
 const switchTab = (tabName) => {
     activeTab.value = tabName;
@@ -737,7 +742,25 @@ const formatQty = (val) => {
 // --- GENERAL UTILS ---
 const closeDropdown = (e) => { if (!e.target.closest('.relative')) showProductDropdown.value = false; };
 
-onMounted(() => { 
+onMounted(async () => { 
+    // ✅ ទាញយក Role របស់អ្នកប្រើប្រាស់
+    if (auth.currentUser) {
+        try {
+            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            if (snap.exists()) {
+                userRole.value = snap.data().role;
+                
+                // ✅ បន្ថែមលក្ខខណ្ឌនៅទីនេះ៖ បើជា Owner ធម្មតា ឱ្យបើក Tab ដឹកជញ្ជូនមុនគេ
+                if (userRole.value !== 'superadmin') {
+                    activeTab.value = 'delivery'; 
+                    fetchDeliverySettings(); // ទាញយកទិន្នន័យដឹកជញ្ជូនមកបង្ហាញ
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching user role:", error);
+        }
+    }
+
     fetchProducts(); 
     document.addEventListener('click', closeDropdown); 
 });
