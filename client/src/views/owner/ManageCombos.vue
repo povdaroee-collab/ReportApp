@@ -42,7 +42,7 @@
                                 type="text" 
                                 v-model="productSearchTerm"
                                 @focus="showProductDropdown = true"
-                                placeholder="-- វាយស្វែងរកទំនិញ --" 
+                                placeholder="-- វាយស្វែងរកទំនិញសកម្ម --" 
                                 class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 shadow-sm"
                             >
                             <div v-if="showProductDropdown && filteredProducts.length > 0" class="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 shadow-xl rounded-xl max-h-48 overflow-y-auto custom-scrollbar p-1">
@@ -53,7 +53,7 @@
                                     class="p-2 hover:bg-indigo-50 rounded-lg cursor-pointer transition-colors"
                                 >
                                     <div class="text-xs font-bold text-slate-800">{{ prod.name }}</div>
-                                    <div class="text-[10px] text-slate-500 font-mono">ថ្លៃដើម: {{ prod.unitCost.toFixed(3) }}$</div>
+                                    <div class="text-[10px] text-slate-500 font-mono">ថ្លៃដើម: {{ prod.unitCost.toFixed(3) }}$ | ស្តុក: {{ prod.retailQty }}</div>
                                 </div>
                             </div>
                         </div>
@@ -175,9 +175,16 @@
             </div>
 
             <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
-                <div v-for="combo in paginatedCombos" :key="combo.id" class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col group">
+                <div v-for="combo in paginatedCombos" :key="combo.id" 
+                     class="bg-white rounded-3xl border shadow-sm overflow-hidden flex flex-col group relative transition-all"
+                     :class="isComboUsable(combo) ? 'border-slate-100 hover:shadow-md' : 'border-rose-300 bg-rose-50/30'">
                     
-                    <div class="bg-slate-50 p-4 border-b border-slate-100 flex justify-between items-start">
+                    <div v-if="!isComboUsable(combo)" class="absolute top-0 left-0 right-0 bg-rose-500 text-white text-[10px] font-black tracking-widest text-center py-1 z-10 flex items-center justify-center gap-1 shadow-sm">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        ឈុតនេះមិនអាចប្រើបានទេ (សូមពិនិត្យទំនិញ)
+                    </div>
+
+                    <div class="bg-slate-50 p-4 border-b border-slate-100 flex justify-between items-start relative z-0" :class="{'pt-7': !isComboUsable(combo)}">
                         <div class="flex items-center gap-3">
                             <img v-if="combo.image" :src="combo.image" class="w-12 h-12 rounded-xl object-cover border border-slate-200 bg-white" />
                             <div v-else class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-300 flex items-center justify-center border border-indigo-100/50"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>
@@ -193,10 +200,23 @@
                     </div>
                     
                     <div class="p-4 flex-1">
-                        <ul class="space-y-1 mb-4 h-20 overflow-y-auto custom-scrollbar">
-                            <li v-for="(item, i) in combo.items" :key="i" class="text-[11px] font-bold text-slate-600 flex justify-between items-center border-b border-slate-50 py-1 last:border-0">
-                                <span class="truncate pr-2" :title="item.name">- {{ item.name }}</span>
-                                <span class="text-slate-400 shrink-0">x{{ item.qty }}</span>
+                        <ul class="space-y-2 mb-4 h-24 overflow-y-auto custom-scrollbar">
+                            <li v-for="(item, i) in combo.items" :key="i" class="flex flex-col border-b border-slate-50 pb-1.5 last:border-0">
+                                <div class="flex justify-between items-start w-full">
+                                    <span class="text-[11px] font-bold text-slate-600 truncate pr-2" :title="item.name">- {{ item.name }}</span>
+                                    <span class="text-[11px] font-bold text-slate-400 shrink-0">x{{ item.qty }}</span>
+                                </div>
+                                
+                                <div v-if="!checkComboItemStatus(item).isValid" class="mt-0.5 ml-2">
+                                    <span class="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded"
+                                          :class="{
+                                              'bg-rose-100 text-rose-600 border border-rose-200': checkComboItemStatus(item).type === 'HARD_DELETE' || checkComboItemStatus(item).type === 'SOFT_DELETE_NO_STOCK',
+                                              'bg-amber-100 text-amber-700 border border-amber-200': checkComboItemStatus(item).type === 'SOFT_DELETE_STOCK' || checkComboItemStatus(item).type === 'OUT_OF_STOCK'
+                                          }">
+                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                        {{ checkComboItemStatus(item).text }}
+                                    </span>
+                                </div>
                             </li>
                         </ul>
                         
@@ -212,9 +232,9 @@
                         </div>
                     </div>
                     
-                    <div class="bg-slate-800 text-white px-5 py-3 flex justify-between items-center text-xs font-bold">
+                    <div class="bg-slate-800 text-white px-5 py-3 flex justify-between items-center text-xs font-bold" :class="{'bg-rose-900': !isComboUsable(combo)}">
                         <span>ថ្លៃដើមសរុប (Cost):</span>
-                        <span class="text-rose-300 font-black text-sm">{{ combo.totalBaseCost }}$</span>
+                        <span class="font-black text-sm" :class="!isComboUsable(combo) ? 'text-rose-200' : 'text-rose-300'">{{ combo.totalBaseCost }}$</span>
                     </div>
                 </div>
             </div>
@@ -271,7 +291,8 @@ import { useNotificationStore } from '@/stores/notification';
 const notification = useNotificationStore();
 
 // ================= STATE =================
-const availableProducts = ref([]);
+const allProductsDict = ref({}); // រក្សាទុកទិន្នន័យទំនិញទាំងអស់ (ទាំងលុប និងមិនលុប) សម្រាប់ផ្ទៀងផ្ទាត់
+const availableProducts = ref([]); // ទំនិញដែលអាចជ្រើសរើសចូលឈុតបាន (Active ប៉ុណ្ណោះ)
 const combos = ref([]);
 const isLoadingCombos = ref(true);
 const isSaving = ref(false);
@@ -280,7 +301,7 @@ const isEditing = ref(false);
 // Search & Pagination
 const comboSearchQuery = ref('');
 const currentPage = ref(1);
-const itemsPerPage = 60; // បង្ហាញ 60 ក្នុងមួយទំព័រ
+const itemsPerPage = 60;
 
 // Image Upload
 const comboImage = ref(null);
@@ -306,7 +327,6 @@ const form = reactive({
     wholesaleTiers: [{ minQty: 2, price: 0, incentive: 0 }]
 });
 
-// Click outside directive implementation for Dropdown
 const vClickOutside = {
     mounted(el, binding) {
         el.clickOutsideEvent = function (event) {
@@ -323,7 +343,7 @@ const totalComboBaseCost = computed(() => {
 });
 
 const filteredProducts = computed(() => {
-    if (!productSearchTerm.value) return availableProducts.value.slice(0, 50); // Show max 50 default
+    if (!productSearchTerm.value) return availableProducts.value.slice(0, 50); 
     const q = productSearchTerm.value.toLowerCase();
     return availableProducts.value.filter(p => p.name.toLowerCase().includes(q));
 });
@@ -343,15 +363,36 @@ const paginatedCombos = computed(() => {
 // ================= ACTIONS =================
 onMounted(async () => {
     try {
-        // Fetch Valid Products (Calculate base cost per retail unit)
+        // 1. Fetch All Stocks (រួមទាំងទំនិញដែលបាន Soft Delete ចូលធុងសម្រាម)
         const pSnap = await getDocs(collection(db, 'stocks'));
-        availableProducts.value = pSnap.docs.map(d => {
+        const tempDict = {};
+        const available = [];
+
+        pSnap.docs.forEach(d => {
             const data = d.data();
             const baseCost = Number(data.unitCost || 0) / Number(data.itemsPerCase || 1);
-            return { id: d.id, name: data.name || data.productName, unitCost: baseCost };
+            const retailQty = Math.round((Number(data.quantity) || 0) * Number(data.itemsPerCase || 1));
+
+            const productObj = {
+                id: d.id,
+                name: data.name || data.productName,
+                unitCost: baseCost,
+                isDeleted: data.isDeleted || false, // ឆែកមើលក្រែងវាត្រូវលុបចូលធុងសម្រាម
+                retailQty: retailQty
+            };
+
+            tempDict[d.id] = productObj;
+
+            // សម្រាប់ Form ជ្រើសរើស (ខាងឆ្វេង) បង្ហាញតែទំនិញដែល Active ប៉ុណ្ណោះ
+            if (!productObj.isDeleted) {
+                available.push(productObj);
+            }
         });
 
-        // Fetch Combos
+        allProductsDict.value = tempDict;
+        availableProducts.value = available;
+
+        // 2. Fetch Combos
         const cSnap = await getDocs(collection(db, 'combos'));
         combos.value = cSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     } catch (e) {
@@ -360,6 +401,37 @@ onMounted(async () => {
         isLoadingCombos.value = false;
     }
 });
+
+// 🔥 SMART VALIDATION: ពិនិត្យមើលស្ថានភាពទំនិញក្នុងឈុត (ខ្វះស្តុក ឬ លុបចោល)
+const checkComboItemStatus = (item) => {
+    const prod = allProductsDict.value[item.productId];
+
+    // ករណីទី១: រកមិនឃើញទិន្នន័យទាល់តែសោះ (លុបជាអចិន្ត្រៃយ៍ពី Database)
+    if (!prod) {
+        return { isValid: false, type: 'HARD_DELETE', text: 'លុបជាអចិន្ត្រៃយ៍ (គ្មានទិន្នន័យ)' };
+    }
+
+    // ករណីទី២: ត្រូវបានលុបចូលធុងសម្រាម (isDeleted: true)
+    if (prod.isDeleted) {
+        if (prod.retailQty > 0) {
+            return { isValid: false, type: 'SOFT_DELETE_STOCK', text: `លុបបណ្ដោះអាសន្ន (សល់ ${prod.retailQty})` };
+        } else {
+            return { isValid: false, type: 'SOFT_DELETE_NO_STOCK', text: 'លុបបណ្ដោះអាសន្ន (អស់ស្តុក)' };
+        }
+    }
+
+    // ករណីទី៣: ទំនិញសកម្មធម្មតា ប៉ុន្តែអស់ពីស្តុក
+    if (prod.retailQty <= 0) { // អាចប្ដូរទៅ `prod.retailQty < item.qty` បើចង់ឆែកចំនួនជាក់លាក់
+         return { isValid: false, type: 'OUT_OF_STOCK', text: 'អស់ពីស្តុក' };
+    }
+
+    return { isValid: true };
+};
+
+// ឆែកមើលថាឈុតទាំងមូលអាចប្រើបាន ឬអត់
+const isComboUsable = (combo) => {
+    return combo.items.every(item => checkComboItemStatus(item).isValid);
+};
 
 // Image Compressor (~100KB)
 const handleImageUpload = (event) => {
@@ -375,7 +447,7 @@ const handleImageUpload = (event) => {
             const canvas = document.createElement('canvas');
             let width = img.width;
             let height = img.height;
-            const MAX_WIDTH = 400; // Resize to max 400px width
+            const MAX_WIDTH = 400; 
 
             if (width > MAX_WIDTH) {
                 height = Math.round((height * MAX_WIDTH) / width);
@@ -387,7 +459,6 @@ const handleImageUpload = (event) => {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Compress to WebP format to ensure < 100KB
             comboImage.value = canvas.toDataURL('image/webp', 0.8); 
         };
         img.src = e.target.result;
@@ -403,7 +474,7 @@ const selectProductForCombo = (prod) => {
 const addProductToCombo = () => {
     const selectedProd = availableProducts.value.find(p => p.name === productSearchTerm.value);
     
-    if (!selectedProd || qtyToAdd.value < 1) return notification.warning("សូមស្វែងរក និងជ្រើសរើសទំនិញឱ្យបានត្រឹមត្រូវ");
+    if (!selectedProd || qtyToAdd.value < 1) return notification.warning("សូមស្វែងរក និងជ្រើសរើសទំនិញសកម្មឱ្យបានត្រឹមត្រូវ");
     
     const existing = form.items.find(i => i.productId === selectedProd.id);
     if (existing) {

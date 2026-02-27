@@ -47,10 +47,15 @@
                                 {{ getExactRetailStock(item) }} {{ translateRetailUnit(item) }}
                             </span>
                         </div>
+                        <div v-if="item.stock_reserved > 0" class="flex justify-end mt-1">
+                            <span class="text-[10px] text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded font-bold" title="មានគេចុចបញ្ចូលកន្ត្រក តែមិនទាន់ទូទាត់ប្រាក់">
+                                🔒 កំពុងជាប់កក់: {{ getExactReservedRetailStock(item) }} {{ translateRetailUnit(item) }}
+                            </span>
+                        </div>
                     </div>
 
-                    <div v-if="item.unit === 'case'" class="text-xs text-neutral-500 mb-3 bg-neutral-900 p-2 rounded border border-neutral-800">
-                        ១ កេះ = {{ item.itemsPerCase }} ដប/កញ្ចប់
+                    <div v-if="item.unit === 'case'" class="text-xs text-neutral-500 mb-3 bg-neutral-900 p-2 rounded border border-neutral-800 flex justify-between">
+                        <span>១ កេះ = <strong class="text-amber-400">{{ item.itemsPerCase }}</strong> ដប/កញ្ចប់</span>
                     </div>
 
                     <div class="mt-auto flex justify-between items-end pt-2">
@@ -59,8 +64,8 @@
                             <p class="text-amber-400 font-bold">{{ formatPrice(item.unitCost, item.currency) }}</p>
                         </div>
                         <div class="flex gap-2">
-                            <button @click="openImageModal(item)" class="p-2 bg-neutral-700 hover:bg-blue-600 text-white rounded-lg transition-colors shadow-sm" title="ប្ដូររូបភាព">
-                                🖼️
+                            <button @click="openEditModal(item)" class="p-2 bg-neutral-700 hover:bg-blue-600 text-white rounded-lg transition-colors shadow-sm" title="កែប្រែរហ័ស">
+                                ✏️
                             </button>
                             <button @click="$emit('delete', item)" class="p-2 bg-neutral-700 hover:bg-rose-600 text-rose-300 hover:text-white rounded-lg transition-colors shadow-sm" title="បញ្ជូនទៅធុងសម្រាម">
                                 🗑️
@@ -78,27 +83,27 @@
         </div>
 
         <transition name="modal-fade">
-            <div v-if="isImageModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click.self="closeImageModal">
+            <div v-if="isEditModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click.self="closeEditModal">
                 <div class="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-md shadow-2xl flex flex-col overflow-hidden animate-slide-up">
                     
-                    <div class="p-4 border-b border-neutral-800 flex justify-between items-center bg-neutral-800/50">
+                    <div class="p-4 border-b border-neutral-800 flex justify-between items-center bg-neutral-800/50 shrink-0">
                         <h3 class="text-white font-bold flex items-center gap-2">
-                            🖼️ ប្ដូររូបភាពទំនិញ
+                            ✏️ កែប្រែទិន្នន័យរហ័ស
                         </h3>
-                        <button @click="closeImageModal" class="text-neutral-400 hover:text-rose-500 transition-colors">
+                        <button @click="closeEditModal" class="text-neutral-400 hover:text-rose-500 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
 
-                    <div class="p-6">
-                        <p class="text-sm text-neutral-300 font-bold mb-4 line-clamp-1">ទំនិញ: <span class="text-amber-400">{{ selectedItemForImage?.name }}</span></p>
+                    <div class="p-6 overflow-y-auto custom-scrollbar max-h-[70vh]">
+                        <p class="text-sm text-neutral-300 font-bold mb-4 line-clamp-1">ទំនិញ: <span class="text-amber-400">{{ selectedItem?.name }}</span></p>
                         
                         <div 
-                            class="relative h-48 w-full rounded-xl border-2 border-dashed border-neutral-600 hover:border-amber-400 transition-colors flex flex-col items-center justify-center cursor-pointer bg-neutral-800 group overflow-hidden"
+                            class="relative h-48 w-full rounded-xl border-2 border-dashed border-neutral-600 hover:border-amber-400 transition-colors flex flex-col items-center justify-center cursor-pointer bg-neutral-800 group overflow-hidden mb-5"
                             @click="$refs.fileInputModal.click()"
                         >
-                            <img v-if="newImagePreview" :src="newImagePreview" class="absolute inset-0 w-full h-full object-cover">
-                            <img v-else-if="selectedItemForImage?.image" :src="selectedItemForImage.image" class="absolute inset-0 w-full h-full object-cover opacity-50 grayscale group-hover:grayscale-0 transition-all">
+                            <img v-if="editForm.imagePreview" :src="editForm.imagePreview" class="absolute inset-0 w-full h-full object-cover">
+                            <img v-else-if="selectedItem?.image" :src="selectedItem.image" class="absolute inset-0 w-full h-full object-cover opacity-50 grayscale group-hover:grayscale-0 transition-all">
                             
                             <div class="text-center p-4 relative z-10 bg-black/40 rounded-lg backdrop-blur-sm group-hover:scale-105 transition-transform">
                                 <div class="text-3xl mb-1">📷</div>
@@ -106,13 +111,54 @@
                             </div>
                             <input type="file" ref="fileInputModal" class="hidden" accept="image/*" @change="handleModalImageUpload">
                         </div>
+
+                        <div v-if="selectedItem?.unit === 'case'" class="bg-neutral-800 p-4 rounded-xl border border-neutral-700 mb-5">
+                            <label class="block text-xs font-bold text-amber-500 mb-2">📦 ចំនួនរាយក្នុង ១ កេះ</label>
+                            <div class="flex gap-2">
+                                <input v-model.number="editForm.itemsPerCase" type="number" min="1" class="w-full bg-neutral-900 border border-neutral-600 rounded-lg px-4 py-3 text-white font-bold focus:border-amber-500 outline-none transition-all">
+                                <div class="flex items-center px-4 bg-neutral-900 border border-neutral-600 rounded-lg text-sm text-neutral-400 shrink-0">
+                                    ដប/កញ្ចប់
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-neutral-800 p-4 rounded-xl border border-neutral-700">
+                            <div class="flex justify-between items-center mb-3">
+                                <label class="block text-xs font-bold text-emerald-400">💰 តម្លៃទិញចូល (Cost)</label>
+                                <div class="flex gap-1 bg-neutral-900 p-1 rounded-lg">
+                                    <button type="button" @click="editForm.costMode = 'unit'" :class="editForm.costMode === 'unit' ? 'bg-neutral-700 text-white' : 'text-neutral-500'" class="px-2 py-1.5 rounded text-[10px] font-bold transition-all">១ ឯកតា</button>
+                                    <button type="button" @click="editForm.costMode = 'total'" :class="editForm.costMode === 'total' ? 'bg-neutral-700 text-white' : 'text-neutral-500'" class="px-2 py-1.5 rounded text-[10px] font-bold transition-all">សរុប</button>
+                                </div>
+                            </div>
+
+                            <div class="relative mb-3">
+                                <div class="absolute left-4 top-3 text-amber-500 font-bold">
+                                    {{ selectedItem?.currency === 'USD' ? '$' : '៛' }}
+                                </div>
+                                <input v-model.number="editForm.inputCost" type="number" step="any" min="0" required class="w-full bg-neutral-900 border border-neutral-600 rounded-lg pl-8 pr-4 py-3 text-white font-bold focus:border-amber-500 outline-none transition-all">
+                            </div>
+
+                            <div class="text-[11px] text-neutral-400 bg-neutral-900/50 p-3 rounded-lg border border-neutral-700/50 flex flex-col gap-2">
+                                <div class="flex justify-between items-center">
+                                    <span>តម្លៃដើម/ឯកតា (Unit Cost):</span>
+                                    <span class="text-amber-400 font-bold text-sm">{{ formatPrice(editCalculatedUnitCost, selectedItem?.currency) }}</span>
+                                </div>
+                                <div class="w-full h-px bg-neutral-700/50"></div>
+                                <div class="flex justify-between items-center">
+                                    <span>តម្លៃសរុប (Total Cost):</span>
+                                    <span class="text-emerald-400 font-bold text-sm">{{ formatPrice(editCalculatedTotalCost, selectedItem?.currency) }}</span>
+                                </div>
+                                <p class="text-[9px] text-neutral-500 italic text-center mt-1">* ផ្អែកលើស្តុកបច្ចុប្បន្ន: {{ selectedItem?.quantity }} {{ translateUnit(selectedItem?.unit) }}</p>
+                            </div>
+                        </div>
+
                     </div>
 
-                    <div class="p-4 border-t border-neutral-800 bg-neutral-800/30 flex gap-3">
-                        <button @click="closeImageModal" class="flex-1 py-2.5 rounded-xl text-neutral-400 font-bold bg-neutral-800 hover:text-white transition-colors">បោះបង់</button>
-                        <button @click="saveNewImage" :disabled="!newImagePreview || isSavingImage" class="flex-1 py-2.5 rounded-xl bg-amber-500 text-black font-black hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2">
-                            <span v-if="isSavingImage" class="animate-spin h-4 w-4 border-2 border-black border-t-transparent rounded-full"></span>
-                            រក្សាទុករូបភាព
+                    <div class="p-4 border-t border-neutral-800 bg-neutral-800/30 flex gap-3 shrink-0">
+                        <button @click="closeEditModal" class="flex-1 py-3 rounded-xl text-neutral-400 font-bold bg-neutral-800 hover:text-white transition-colors text-sm">បោះបង់</button>
+                        <button @click="saveQuickEdit" :disabled="isSaving || (selectedItem?.unit === 'case' && editForm.itemsPerCase < 1)" class="flex-1 py-3 rounded-xl bg-amber-500 text-black font-black hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 text-sm shadow-md shadow-amber-500/20">
+                            <span v-if="isSaving" class="animate-spin h-4 w-4 border-2 border-black border-t-transparent rounded-full"></span>
+                            រក្សាទុកការកែប្រែ
                         </button>
                     </div>
 
@@ -124,7 +170,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, reactive, computed } from 'vue';
+import { db } from '@/firebaseConfig';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useNotificationStore } from '@/stores/notification';
 
 const props = defineProps({
@@ -135,27 +183,56 @@ const props = defineProps({
     totalPages: Number
 });
 
-const emit = defineEmits(['update:searchQuery', 'delete', 'page-change', 'update-image']);
+const emit = defineEmits(['update:searchQuery', 'delete', 'page-change']);
 const notification = useNotificationStore();
 
-// --- IMAGE MODAL LOGIC ---
-const isImageModalOpen = ref(false);
-const selectedItemForImage = ref(null);
-const newImagePreview = ref(null);
-const isSavingImage = ref(false);
+// --- QUICK EDIT MODAL LOGIC ---
+const isEditModalOpen = ref(false);
+const selectedItem = ref(null);
+const isSaving = ref(false);
 const fileInputModal = ref(null);
 
-const openImageModal = (item) => {
-    selectedItemForImage.value = item;
-    newImagePreview.value = null;
-    isImageModalOpen.value = true;
+const editForm = reactive({
+    imagePreview: null,
+    itemsPerCase: 1,
+    costMode: 'unit', // 'unit' or 'total'
+    inputCost: 0
+});
+
+const openEditModal = (item) => {
+    selectedItem.value = item;
+    
+    // Reset Data
+    editForm.imagePreview = null; 
+    editForm.itemsPerCase = item.itemsPerCase || 1; 
+    editForm.costMode = 'unit'; // Default view
+    editForm.inputCost = item.unitCost || 0; // Load current unit cost
+    
+    isEditModalOpen.value = true;
 };
 
-const closeImageModal = () => {
-    isImageModalOpen.value = false;
-    selectedItemForImage.value = null;
-    newImagePreview.value = null;
+const closeEditModal = () => {
+    isEditModalOpen.value = false;
+    selectedItem.value = null;
+    editForm.imagePreview = null;
 };
+
+// Calculations for Cost Preview
+const editCalculatedUnitCost = computed(() => {
+    if (!selectedItem.value || selectedItem.value.quantity <= 0) return 0;
+    if (editForm.costMode === 'total') {
+        return editForm.inputCost / selectedItem.value.quantity;
+    }
+    return editForm.inputCost;
+});
+
+const editCalculatedTotalCost = computed(() => {
+    if (!selectedItem.value) return 0;
+    if (editForm.costMode === 'unit') {
+        return editForm.inputCost * selectedItem.value.quantity;
+    }
+    return editForm.inputCost;
+});
 
 // Image Compression Logic
 const handleModalImageUpload = (event) => {
@@ -172,7 +249,7 @@ const handleModalImageUpload = (event) => {
             const canvas = document.createElement('canvas');
             let width = img.width;
             let height = img.height;
-            const MAX_WIDTH = 500; // Resize to save DB space
+            const MAX_WIDTH = 600;
 
             if (width > MAX_WIDTH) {
                 height = Math.round((height * MAX_WIDTH) / width);
@@ -184,28 +261,48 @@ const handleModalImageUpload = (event) => {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            newImagePreview.value = canvas.toDataURL('image/webp', 0.8); 
+            editForm.imagePreview = canvas.toDataURL('image/jpeg', 0.8); 
         };
         img.src = e.target.result;
     };
     reader.readAsDataURL(file);
-    event.target.value = ''; // Reset input
+    event.target.value = ''; 
 };
 
-const saveNewImage = () => {
-    if (!newImagePreview.value || !selectedItemForImage.value) return;
-    isSavingImage.value = true;
+// 🔥 Save Update to Firebase
+const saveQuickEdit = async () => {
+    if (!selectedItem.value) return;
+    isSaving.value = true;
     
-    // បាញ់ទិន្នន័យទៅឱ្យ StockMain.vue ដើម្បី Save ចូល Firebase
-    emit('update-image', { 
-        id: selectedItemForImage.value.id, 
-        image: newImagePreview.value 
-    });
-    
-    setTimeout(() => {
-        isSavingImage.value = false;
-        closeImageModal();
-    }, 500); // Fake delay to show loading animation slightly
+    try {
+        const updateData = { updatedAt: serverTimestamp() };
+        
+        // ១. Update រូបភាពបើមានការដូរ
+        if (editForm.imagePreview) {
+            updateData.image = editForm.imagePreview;
+        }
+        
+        // ២. Update ចំនួនរាយក្នុងកេះ (បើខ្នាតជាកេះ)
+        if (selectedItem.value.unit === 'case') {
+            updateData.itemsPerCase = Number(editForm.itemsPerCase);
+        }
+
+        // ៣. Update តម្លៃទិញចូល (Cost)
+        updateData.unitCost = Number(editCalculatedUnitCost.value);
+        updateData.totalCost = Number(editCalculatedTotalCost.value);
+
+        // Save ចូល Database
+        await updateDoc(doc(db, 'stocks', selectedItem.value.id), updateData);
+        
+        notification.success("ទិន្នន័យត្រូវបានកែប្រែដោយជោគជ័យ!");
+        closeEditModal();
+        
+    } catch (error) {
+        console.error("Error updating quick edit:", error);
+        notification.error("មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ");
+    } finally {
+        isSaving.value = false;
+    }
 };
 
 // --- DISPLAY FORMATTERS ---
@@ -229,6 +326,12 @@ const getExactRetailStock = (item) => {
     return Math.round(qty);
 };
 
+const getExactReservedRetailStock = (item) => {
+    const reserved = Number(item.stock_reserved) || 0;
+    if (item.unit === 'case') return Math.round(reserved * (Number(item.itemsPerCase) || 1));
+    return Math.round(reserved);
+};
+
 const getFormattedBulkStock = (item) => {
     const qty = Number(item.quantity) || 0;
     if (item.unit !== 'case') return `${Math.round(qty)} ${translateUnit(item.unit)}`;
@@ -249,6 +352,11 @@ const getFormattedBulkStock = (item) => {
 </script>
 
 <style scoped>
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #52525b; border-radius: 10px; }
+.custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #71717a; }
+
 .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s ease; }
 .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
 .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }

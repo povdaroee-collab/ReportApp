@@ -258,9 +258,15 @@ const filteredProducts = computed(() => {
     return props.products.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
 });
 
-// ត្រងយកតែប្រវត្តិណាដែលត្រូវនឹង mode ខាងលើ
+// ត្រងយកតែប្រវត្តិណាដែលត្រូវនឹង mode ខាងលើ និងជាទំនិញដែលមិនទាន់ត្រូវបានលុប
 const filteredHistory = computed(() => {
-    return history.value.filter(h => h.type === mode.value);
+    // បង្កើតបញ្ជី ID ទំនិញដែលកំពុងមាន (Active)
+    const activeProductIds = new Set(props.products.map(p => p.id));
+    
+    return history.value.filter(h => {
+        // បង្ហាញតែប្រវត្តិណាដែលមាន type ត្រូវគ្នា និងមាន productId នៅក្នុងបញ្ជីទំនិញបច្ចុប្បន្ន
+        return h.type === mode.value && activeProductIds.has(h.productId);
+    });
 });
 
 // ការគណនា Loss ឆ្លាតវៃផ្អែកលើខ្នាតរាយ ឬ ដុំ
@@ -276,12 +282,17 @@ const lossValue = computed(() => {
     }
 });
 
+// ការគណនា Loss សរុប ដោយបូកបញ្ជូលតែទំនិញដែលមិនទាន់លុបប៉ុណ្ណោះ
 const totalLossUSD = computed(() => {
-    return history.value.filter(h => h.type === 'OUT').reduce((sum, h) => {
-        let val = h.totalValue;
-        if(h.currency === 'KHR' || h.currency === '៛') val = val / 4000;
-        return sum + val;
-    }, 0);
+    const activeProductIds = new Set(props.products.map(p => p.id));
+    
+    return history.value
+        .filter(h => h.type === 'OUT' && activeProductIds.has(h.productId))
+        .reduce((sum, h) => {
+            let val = h.totalValue;
+            if(h.currency === 'KHR' || h.currency === '៛') val = val / 4000;
+            return sum + val;
+        }, 0);
 });
 
 // Watch Mode changes to auto-adjust units AND sync history
@@ -351,18 +362,38 @@ const submitTransaction = async () => {
         const productRef = doc(db, 'stocks', selectedProduct.value.id);
         
         let newQtyBulk = 0;
-        let newCostBulk = Number(selectedProduct.value.unitCost);
+        let newCostBulk = Number(selectedProduct.value.unitCost) || 0;
         let transactionTotalValue = 0;
+        let historyUnitCost = 0; // បន្ថែមអញ្ញាតនេះសម្រាប់កត់ត្រាតម្លៃទិញចូលពិតប្រាកដក្នុងប្រវត្តិ
         
         const adminName = auth.currentUser?.displayName || 'Admin';
 
         if (mode.value === 'IN') {
-            newQtyBulk = currentQtyBulk + qtyDeltaBulk; // qtyDeltaBulk here is exactly form.qty because IN is always bulk
-            newCostBulk = Number(form.cost);
-            transactionTotalValue = form.qty * Number(form.cost);
+            // ១. គណនាតម្លៃដើមមធ្យមភាគ (Moving Average Cost)
+            const oldQty = currentQtyBulk;
+            const oldUnitCost = newCostBulk; 
+            const oldTotalValue = oldQty * oldUnitCost;
+
+            const incomingQty = qtyDeltaBulk; 
+            const incomingUnitCost = Number(form.cost);
+            const incomingTotalValue = incomingQty * incomingUnitCost;
+
+            newQtyBulk = oldQty + incomingQty;
+            
+            // ការពារការចែកនឹងសូន្យ ប្រសិនបើស្តុកសរុបធំជាង 0 ទើបគណនាមធ្យមភាគ
+            if (newQtyBulk > 0) {
+                newCostBulk = (oldTotalValue + incomingTotalValue) / newQtyBulk;
+            } else {
+                newCostBulk = incomingUnitCost; // ក្នុងករណីស្តុកមុន 0
+            }
+
+            transactionTotalValue = incomingTotalValue;
+            historyUnitCost = incomingUnitCost; // កត់ត្រាតម្លៃដែលទិញចូលជាក់ស្តែងសម្រាប់ជើងនេះ
+
         } else {
+            // Logic សម្រាប់ OUT (រក្សាទុកធម្មតា)
             newQtyBulk = currentQtyBulk - qtyDeltaBulk;
-            newCostBulk = selectedProduct.value.unitCost; // រក្សាតម្លៃដើមសម្រាប់ OUT
+            historyUnitCost = newCostBulk; // យកតម្លៃមធ្យមភាគទៅកត់ត្រាជាការខាតបង់
             
             if (form.transactionUnit === 'retail') {
                 transactionTotalValue = form.qty * (newCostBulk / itemsPerCase);
@@ -371,15 +402,15 @@ const submitTransaction = async () => {
             }
         }
 
-        // 1. Update Main Stock
+        // 1. Update Main Stock (Collection 'stocks')
         await updateDoc(productRef, {
             quantity: newQtyBulk,
-            unitCost: newCostBulk,
-            totalCost: newQtyBulk * newCostBulk,
+            unitCost: newCostBulk, // នេះគឺជាតម្លៃមធ្យមភាគថ្មី
+            totalCost: newQtyBulk * newCostBulk, // តម្លៃទុនសរុបប្រចាំស្តុក
             updatedAt: serverTimestamp()
         });
 
-        // 2. Add Transaction to History
+        // 2. Add Transaction to History (Collection 'stock_transactions')
         const displayUnitStr = form.transactionUnit === 'retail' ? (selectedProduct.value.retailUnit || 'bottle') : selectedProduct.value.unit;
 
         await addDoc(collection(db, 'stock_transactions'), {
@@ -387,8 +418,8 @@ const submitTransaction = async () => {
             productId: selectedProduct.value.id,
             productName: selectedProduct.value.name,
             qty: form.qty,
-            unitDisplay: displayUnitStr, // រក្សាទុកខ្នាតដែលគាត់បានវាយបញ្ចូល
-            unitCost: newCostBulk,
+            unitDisplay: displayUnitStr,
+            unitCost: historyUnitCost, // ប្រើប្រាស់តម្លៃជាក់ស្តែងនៃប្រតិបត្តិការ
             totalValue: transactionTotalValue,
             currency: selectedProduct.value.currency,
             reason: form.reason || (mode.value === 'IN' ? 'នាំចូលស្តុកបន្ថែម' : 'ដកចេញ'),
