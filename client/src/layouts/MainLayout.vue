@@ -66,7 +66,7 @@
         </div>
 
         <div v-else class="flex items-center gap-2 group relative z-10">
-          <div @click="isProfileModalOpen = true" class="flex-1 flex items-center gap-3 cursor-pointer min-w-0 p-1.5 rounded-xl hover:bg-white/5 transition-colors">
+          <div @click="openProfileModal" class="flex-1 flex items-center gap-3 cursor-pointer min-w-0 p-1.5 rounded-xl hover:bg-white/5 transition-colors">
              <div class="relative shrink-0">
                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 p-[2px] group-hover:scale-105 transition-transform duration-300 shadow-md">
                   <img :src="userPhoto || `https://ui-avatars.com/api/?name=${userName}&background=random`" class="rounded-full w-full h-full object-cover border-2 border-slate-900" alt="Profile">
@@ -259,7 +259,7 @@ const icons = {
   wallet: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>`
 };
 
-// DYNAMIC MENU ITEMS
+// DYNAMIC MENU ITEMS (កែប្រែត្រង់នេះ ដើម្បីឲ្យ superadmin និង owner ឃើញ Menu រៀងខ្លួន)
 const menuItems = computed(() => {
   if (isAuthLoading.value) return [];
 
@@ -269,7 +269,8 @@ const menuItems = computed(() => {
     { label: 'របាយការណ៍លក់', path: '/app/admin/seller-reports', key: 'seller-reports', icon: icons.chart, glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
   ];
 
-  if (rawRole.value === 'owner') {
+  // បើជា superadmin បង្ហាញ Menu ទាំងអស់ រួមទាំងការកំណត់ (Settings)
+  if (rawRole.value === 'superadmin') {
     return [
       { label: 'ផ្ទាំងគ្រប់គ្រង', path: '/app/owner/dashboard', key: 'dashboard', icon: icons.dashboard, glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
       { label: 'គ្រប់គ្រង Admin', path: '/app/owner/admins', key: 'admins', icon: icons.shield, glowClass: 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.6)]' },
@@ -279,7 +280,22 @@ const menuItems = computed(() => {
       { label: 'ការកំណត់', path: '/app/owner/settings', key: 'settings', icon: icons.cog, glowClass: 'bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.6)]' },
       { label: 'ធុងសម្រាម', path: '/app/owner/trash', key: 'trash', icon: icons.trash, glowClass: 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.6)]' },
     ];
-  } else {
+  } 
+  // បើជា owner ធម្មតា បង្ហាញ Menu ដូចគ្នា តែលាក់ "ការកំណត់" (Settings) ចេញ
+  else if (rawRole.value === 'owner') {
+    return [
+      { label: 'ផ្ទាំងគ្រប់គ្រង', path: '/app/owner/dashboard', key: 'dashboard', icon: icons.dashboard, glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
+      { label: 'គ្រប់គ្រង Admin', path: '/app/owner/admins', key: 'admins', icon: icons.shield, glowClass: 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.6)]' },
+      { label: 'គ្រប់គ្រងស្តុក', path: '/app/owner/stock-management', key: 'stock', icon: icons.box, glowClass: 'bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.6)]' },
+      { label: 'គណនី និងហិរញ្ញវត្ថុ', path: '/app/owner/account', key: 'account', icon: icons.wallet, glowClass: 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]' },
+      { label: 'របាយការណ៍', path: '/app/owner/reports', key: 'reports', icon: icons.chart, glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
+      // លាក់ Settings ចេញ
+      { label: 'ការកំណត់', path: '/app/owner/settings', key: 'settings', icon: icons.cog, glowClass: 'bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.6)]' },
+      { label: 'ធុងសម្រាម', path: '/app/owner/trash', key: 'trash', icon: icons.trash, glowClass: 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.6)]' },
+    ];
+  } 
+  // បើជា Admin
+  else {
     return [
       { label: 'ផ្ទាំងគ្រប់គ្រង', path: '/app/admin/dashboard', key: 'dashboard', icon: icons.dashboard, glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
       ...commonItems
@@ -292,7 +308,7 @@ const currentDate = computed(() => {
   return date.toLocaleDateString('km-KH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 });
 
-// FETCH USER DATA
+// FETCH USER DATA (កែប្រែត្រង់នេះ ដើម្បីឲ្យស្គាល់ឈ្មោះតួនាទី superadmin)
 onMounted(() => {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -306,8 +322,23 @@ onMounted(() => {
           
           userName.value = data.fullName || 'មិនមានឈ្មោះ';
           rawRole.value = data.role || 'user'; 
-          userRole.value = data.role === 'owner' ? 'ម្ចាស់ប្រព័ន្ធ' : (data.role === 'admin' ? 'អ្នកគ្រប់គ្រង' : 'អ្នកប្រើប្រាស់');
+          
+          // បន្ថែមឈ្មោះបង្ហាញសម្រាប់ superadmin
+          if (data.role === 'superadmin') {
+             userRole.value = 'អ្នកគ្រប់គ្រងកំពូល';
+          } else if (data.role === 'owner') {
+             userRole.value = 'ម្ចាស់ប្រព័ន្ធ';
+          } else if (data.role === 'admin') {
+             userRole.value = 'អ្នកគ្រប់គ្រង';
+          } else {
+             userRole.value = 'អ្នកប្រើប្រាស់';
+          }
+
           userPhoto.value = data.photoUrl || user.photoURL;
+        } else {
+            // បើរកមិនឃើញទិន្នន័យក្នុង Firestore (ករណីកម្រ) ក៏មិនបាច់ទាត់គាត់ចេញនៅទីនេះដែរ
+            // ទុកឲ្យ Router Guard ទាត់ចេញវិញប្រសើរជាង ដើម្បីកុំឲ្យជាន់គ្នា
+            userName.value = "មិនមានទិន្នន័យ";
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -425,4 +456,4 @@ const handleLogout = async () => {
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 10px; }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.5); }
-</style>              
+</style>

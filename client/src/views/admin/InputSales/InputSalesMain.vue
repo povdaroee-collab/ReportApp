@@ -79,7 +79,6 @@
                 <div class="flex flex-col">
                     <h2 class="text-lg font-black text-slate-800 flex items-center gap-2"><svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg> កន្ត្រកទំនិញ</h2>
                     <div v-if="timeLeft" class="mt-1 flex items-center gap-1.5 text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md w-fit animate-pulse"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> ផុតកំណត់ក្នុង: {{ timeLeft }}</div>
-                    <p v-else class="text-[9px] font-bold text-indigo-500 mt-0.5">ចំនួនខាងក្រោមគិតជាខ្នាតរាយ ឬឈុត</p>
                 </div>
                 
                 <div class="flex items-center gap-3">
@@ -98,24 +97,43 @@
                 </div>
                 <div v-else class="block">
                     <div class="space-y-3 mb-4">
-                        <div v-for="(item, index) in cart" :key="item.product.id" class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2 relative group hover:border-blue-400 transition-colors">
+                        <div v-for="(item, index) in cart" :key="item.product.id + item.selectedUnit" class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2 relative group hover:border-blue-400 transition-colors">
                             <button @click="removeFromCart(index)" class="absolute -top-2.5 -right-2.5 w-7 h-7 bg-rose-100 text-rose-600 hover:bg-rose-500 hover:text-white rounded-full flex items-center justify-center shadow-md border-2 border-white z-10"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg></button>
                             <div class="flex justify-between items-start gap-2">
                                 <div class="flex-1">
-                                    <h4 class="font-bold text-sm text-slate-800 leading-tight">{{ item.product.name }} <span v-if="item.product.isCombo" class="text-[10px] text-orange-500 ml-1">🎁 ឈុត</span></h4>
-                                    <span class="inline-block mt-1.5 px-2 py-0.5 rounded text-[10px] font-black border" :class="getAutoSaleType(item.product, item.qty) === 'wholesale' ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-indigo-50 text-indigo-600 border-indigo-200'">{{ getAutoSaleType(item.product, item.qty) === 'wholesale' ? 'តម្លៃបោះដុំ' : 'តម្លៃលក់រាយ' }}</span>
+                                    <h4 class="font-bold text-sm text-slate-800 leading-tight">{{ item.product.name }}</h4>
+                                    <span class="inline-block mt-1.5 px-2 py-0.5 rounded text-[10px] font-black border" :class="getBadgeClass(item)">{{ getBadgeLabel(item) }}</span>
                                 </div>
-                                <span class="text-base font-black text-emerald-600 whitespace-nowrap bg-emerald-50/50 px-2 py-1 rounded-lg border border-emerald-100 mt-0.5">{{ formatPrice(calculateItemPrice(item.product, item.qty), item.product.currency) }}</span>
+                                <span class="text-base font-black text-emerald-600 whitespace-nowrap bg-emerald-50/50 px-2 py-1 rounded-lg border border-emerald-100 mt-0.5">{{ formatPrice(calculateItemPrice(item), item.product.currency) }}</span>
                             </div>
-                            <div class="flex items-center justify-between mt-2 pt-3 border-t border-slate-100">
-                                <div class="text-[11px] font-bold text-slate-500">{{ formatPrice(calculateItemUnitPrice(item.product, item.qty), item.product.currency) }} <span class="opacity-70">/ 1 {{ translateHardcodedUnit(item.product.isCombo ? 'set' : (item.product.retailUnit || 'bottle')) }}</span></div>
+                            
+                            <div class="flex items-end justify-between mt-2 pt-3 border-t border-slate-100">
+                                
+                                <div class="flex flex-col gap-1.5">
+                                    <div class="relative inline-flex">
+                                        <select :value="item.selectedUnit" @change="handleUnitChange(index, $event)" class="appearance-none bg-slate-100 border border-slate-200 text-slate-700 py-1.5 pl-3 pr-8 rounded-lg text-xs font-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer transition-all shadow-sm">
+                                            <option value="retail">{{ translateHardcodedUnit(item.product.isCombo ? 'set' : (item.product.retailUnit || 'bottle')) }} (រាយ)</option>
+                                            <option v-if="!item.product.isCombo && item.product.itemsPerCase > 1" value="case">{{ translateHardcodedUnit(item.product.unit || 'case') }} (ដុំ)</option>
+                                        </select>
+                                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </div>
+                                    <div class="text-[10px] font-bold text-slate-400 mt-0.5">
+                                        <span v-if="!item.product.isCombo">១ដប: <span class="text-slate-600">{{ formatPrice(getSingleBottlePrice(item), item.product.currency) }}</span></span>
+                                        <span v-if="!item.product.isCombo && item.product.itemsPerCase > 1" class="mx-1">|</span>
+                                        <span v-if="!item.product.isCombo && item.product.itemsPerCase > 1">១កេះ: <span class="text-slate-600">{{ formatPrice(getSingleCasePrice(item), item.product.currency) }}</span></span>
+                                        
+                                        <span v-if="item.product.isCombo">១ឈុត: <span class="text-slate-600">{{ formatPrice(item.product.retailPrice, item.product.currency) }}</span></span>
+                                    </div>
+                                </div>
+                                
                                 <div class="flex items-center gap-2 shrink-0">
                                     <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden h-10 shadow-sm">
                                         <button @click="updateQty(index, -1)" class="w-10 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors text-xl font-bold">-</button>
-                                        <input :value="item.qty" @change="setQty(index, $event.target.value)" type="number" min="1" class="w-16 h-full bg-white text-center text-base font-black border-x border-slate-200 outline-none p-0">
+                                        <input :value="item.qty" @change="setQty(index, $event)" type="number" min="1" class="w-12 h-full bg-white text-center text-sm font-black border-x border-slate-200 outline-none p-0">
                                         <button @click="updateQty(index, 1)" class="w-10 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors text-xl font-bold">+</button>
                                     </div>
-                                    <span class="text-xs font-black text-slate-600">{{ translateHardcodedUnit(item.product.isCombo ? 'set' : (item.product.retailUnit || 'bottle')) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -185,7 +203,7 @@ const notification = useNotificationStore();
 
 // --- STATE ---
 const mainTab = ref('pos'); 
-const showMobileCart = ref(false); // សម្រាប់បញ្ជា Drawer លើទូរស័ព្ទ
+const showMobileCart = ref(false); 
 
 const mixedProducts = ref([]); 
 const originalStocks = ref([]); 
@@ -194,6 +212,7 @@ const sellers = ref([]);
 const isLoadingProducts = ref(true);
 const searchQuery = ref('');
 
+// Cart Item Structure: { product, qty, selectedUnit: 'retail' | 'case' }
 const cart = ref([]);
 const isCheckoutModalOpen = ref(false);
 const isSubmitting = ref(false);
@@ -246,7 +265,7 @@ const combineProductsAndCombos = () => {
     isLoadingProducts.value = false;
 };
 
-// --- SMART POS LOGIC ---
+// --- SMART POS LOGIC (WITH UNIT SELECTION) ---
 const getTotalRetailStock = (product) => {
     if (product.isCombo) {
         if (!product.items || product.items.length === 0) return 0;
@@ -264,10 +283,9 @@ const getTotalRetailStock = (product) => {
     }
 };
 
-const getTierMinRetailQty = (tier, product) => {
-    const minQty = Number(tier.minQty) || 0;
-    if (product.isCombo) return minQty;
-    return tier.unit === product.unit ? minQty * (Number(product.itemsPerCase) || 1) : minQty;
+const getRetailQtyEquivalent = (product, qty, selectedUnit) => {
+    if (product.isCombo) return qty;
+    return selectedUnit === 'case' ? qty * (Number(product.itemsPerCase) || 1) : qty;
 };
 
 const filteredProducts = computed(() => {
@@ -276,30 +294,76 @@ const filteredProducts = computed(() => {
     return mixedProducts.value.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
 });
 
-const getAutoSaleType = (product, cartQty) => {
+// ----------------------------------------------------
+// PRICE CALCULATION LOGIC
+// ----------------------------------------------------
+
+// រកតម្លៃ ១ដប ឲ្យត្រូវតាមចំនួន
+const getSingleBottlePrice = (item) => {
+    const { product, qty, selectedUnit } = item;
+    if (product.isCombo) return Number(product.retailPrice) || 0;
+    
+    const targetUnit = selectedUnit === 'case' ? 'case' : 'bottle';
+    
     if (product.wholesaleTiers && product.wholesaleTiers.length > 0) {
-        const sortedTiers = [...product.wholesaleTiers].sort((a, b) => getTierMinRetailQty(a, product) - getTierMinRetailQty(b, product));
-        if (cartQty >= getTierMinRetailQty(sortedTiers[0], product)) return 'wholesale';
+        const unitTiers = product.wholesaleTiers.filter(t => t.unit === targetUnit);
+        if (unitTiers.length > 0) {
+            const sorted = [...unitTiers].sort((a, b) => b.minQty - a.minQty);
+            const appliedTier = sorted.find(t => qty >= t.minQty);
+            // តម្លៃបោះដុំក្នុង DB តែងតែរក្សាទុកជាតម្លៃក្នុង ១ដប ជានិច្ច
+            if (appliedTier && appliedTier.price > 0) {
+                return Number(appliedTier.price);
+            }
+        }
     }
-    return 'retail';
+    return Number(product.retailPrice) || 0;
 };
 
-const calculateItemUnitPrice = (product, cartQty) => {
-    const type = getAutoSaleType(product, cartQty);
-    if (type === 'retail') return Number(product.retailPrice) || 0;
-    if (type === 'wholesale' && product.wholesaleTiers && product.wholesaleTiers.length > 0) {
-        const sortedTiers = [...product.wholesaleTiers].sort((a, b) => getTierMinRetailQty(b, product) - getTierMinRetailQty(a, product));
-        const appliedTier = sortedTiers.find(tier => cartQty >= getTierMinRetailQty(tier, product));
-        if (appliedTier) return Number(appliedTier.price) || 0; 
-    }
-    return Number(product.retailPrice) || 0; 
+// រកតម្លៃ ១កេះ (យកតម្លៃ ១ដប * ចំនួនដបក្នុង ១កេះ)
+const getSingleCasePrice = (item) => {
+    const bottlePrice = getSingleBottlePrice(item);
+    return bottlePrice * (Number(item.product.itemsPerCase) || 1);
 };
 
-const getApplicableUnit = (product, qty) => product.isCombo ? 'set' : (product.retailUnit || 'bottle');
-const calculateItemPrice = (product, qty) => calculateItemUnitPrice(product, qty) * qty;
-const cartTotalUSD = computed(() => cart.value.reduce((total, item) => total + calculateItemPrice(item.product, item.qty), 0));
+// រកតម្លៃឯកតា ដើម្បីយកទៅគុណ និង Qty
+const calculateItemUnitPrice = (item) => {
+    if (item.product.isCombo) return Number(item.product.retailPrice) || 0;
+    return item.selectedUnit === 'case' ? getSingleCasePrice(item) : getSingleBottlePrice(item);
+};
 
-// --- RESERVATION LOGIC ---
+// រកតម្លៃសរុបប្រចាំទំនិញនីមួយៗ (តម្លៃឯកតា * ចំនួនទិញ)
+const calculateItemPrice = (item) => calculateItemUnitPrice(item) * item.qty;
+
+// រកតម្លៃសរុបក្នុងកន្ត្រក
+const cartTotalUSD = computed(() => cart.value.reduce((total, item) => total + calculateItemPrice(item), 0));
+
+// បង្ហាញពាក្យនៅលើកន្ត្រក (Badge) 
+const getBadgeLabel = (item) => {
+    if (item.product.isCombo) return 'តម្លៃឈុត';
+    
+    const targetUnit = item.selectedUnit === 'case' ? 'case' : 'bottle';
+    if (item.product.wholesaleTiers && item.product.wholesaleTiers.length > 0) {
+        const unitTiers = item.product.wholesaleTiers.filter(t => t.unit === targetUnit);
+        const sorted = [...unitTiers].sort((a, b) => b.minQty - a.minQty);
+        const appliedTier = sorted.find(t => item.qty >= t.minQty);
+        if (appliedTier && appliedTier.price > 0) {
+            return targetUnit === 'case' ? 'តម្លៃបោះដុំ (កេះ)' : 'តម្លៃបោះដុំ (រាយ)';
+        }
+    }
+    return 'តម្លៃលក់រាយ';
+};
+
+const getBadgeClass = (item) => {
+    const label = getBadgeLabel(item);
+    if (label.includes('បោះដុំ')) return 'bg-purple-50 text-purple-600 border-purple-200';
+    if (label.includes('ឈុត')) return 'bg-orange-50 text-orange-600 border-orange-200';
+    return 'bg-indigo-50 text-indigo-600 border-indigo-200';
+};
+
+// ----------------------------------------------------
+// CART & TIMEOUT LOGIC
+// ----------------------------------------------------
+
 const startCartTimer = (expiresAt) => {
     if (reservationTimer.value) clearInterval(reservationTimer.value);
     reservationTimer.value = setInterval(async () => {
@@ -311,9 +375,21 @@ const startCartTimer = (expiresAt) => {
 
 const handleCartTimeout = async () => {
     if (cart.value.length === 0) return;
+    
+    // ចម្លងទិន្នន័យដើម្បីយកទៅដកស្តុកវិញ មុននឹង Clear UI
+    const itemsToReturn = [...cart.value];
+    
+    // Clear UI ភ្លាមៗ
+    cart.value = []; 
+    showMobileCart.value = false;
     notification.warning("រយៈពេលកក់ស្តុកបានផុតកំណត់! កន្ត្រកត្រូវបានសម្អាត។");
-    for (const item of cart.value) await modifyStockReservation(item.product, -item.qty);
-    cart.value = []; await updateActiveCartBackend();
+    
+    // ដកស្តុកវិញនៅ Backend
+    for (const item of itemsToReturn) {
+        const retailQtyToReturn = getRetailQtyEquivalent(item.product, item.qty, item.selectedUnit);
+        await modifyStockReservation(item.product, -retailQtyToReturn);
+    }
+    await updateActiveCartBackend();
 };
 
 const updateActiveCartBackend = async () => {
@@ -322,23 +398,23 @@ const updateActiveCartBackend = async () => {
     const cartRef = doc(db, 'active_carts', adminId);
     if (cart.value.length === 0) { await deleteDoc(cartRef).catch(e => {}); clearInterval(reservationTimer.value); timeLeft.value = ""; showMobileCart.value = false; return; }
     const expiresAt = new Date(Date.now() + 2 * 60 * 1000).getTime();
-    await setDoc(cartRef, { uid: adminId, items: cart.value.map(item => ({ id: item.product.id, qty: item.qty })), expiresAt, status: "PENDING" }, { merge: true });
+    await setDoc(cartRef, { uid: adminId, items: cart.value.map(item => ({ id: item.product.id, qty: item.qty, selectedUnit: item.selectedUnit })), expiresAt, status: "PENDING" }, { merge: true });
     startCartTimer(expiresAt);
 };
 
-const modifyStockReservation = async (product, qtyDelta) => {
+const modifyStockReservation = async (product, retailQtyDelta) => {
     try {
         if (product.isCombo) {
             for (const subItem of product.items) {
                 const stockRef = doc(db, 'stocks', subItem.productId);
                 const originalStock = originalStocks.value.find(s => s.id === subItem.productId);
                 const perCase = originalStock ? (Number(originalStock.itemsPerCase) || 1) : 1;
-                const bulkQtyDelta = (subItem.qty * qtyDelta) / perCase; 
+                const bulkQtyDelta = (subItem.qty * retailQtyDelta) / perCase; 
                 await updateDoc(stockRef, { quantity: increment(-bulkQtyDelta), stock_reserved: increment(bulkQtyDelta) });
             }
         } else {
             const stockRef = doc(db, 'stocks', product.id);
-            const bulkQtyDelta = qtyDelta / (Number(product.itemsPerCase) || 1); 
+            const bulkQtyDelta = retailQtyDelta / (Number(product.itemsPerCase) || 1); 
             await updateDoc(stockRef, { quantity: increment(-bulkQtyDelta), stock_reserved: increment(bulkQtyDelta) });
         }
     } catch (e) { console.error(e); }
@@ -347,45 +423,85 @@ const modifyStockReservation = async (product, qtyDelta) => {
 const addToCart = async (product) => {
     const maxStock = getTotalRetailStock(product);
     if (maxStock <= 0) return notification.error("អស់ពីស្តុកហើយ!");
-    const existingIndex = cart.value.findIndex(item => item.product.id === product.id);
+    
+    const defaultUnit = 'retail';
+    const retailQtyToAdd = getRetailQtyEquivalent(product, 1, defaultUnit);
+
+    const existingIndex = cart.value.findIndex(item => item.product.id === product.id && item.selectedUnit === defaultUnit);
+    
     if (existingIndex !== -1) {
-        if (1 > maxStock) return notification.error(`មានត្រឹមតែ ${maxStock} បន្ថែមទៀតប៉ុណ្ណោះ`);
+        if (retailQtyToAdd > maxStock) return notification.error(`មានស្តុករាយត្រឹមតែ ${maxStock} ប៉ុណ្ណោះ`);
         cart.value[existingIndex].qty += 1;
     } else {
-        if (1 > maxStock) return notification.error(`មានត្រឹមតែ ${maxStock} ប៉ុណ្ណោះ`);
-        cart.value.push({ product: product, qty: 1 });
+        if (retailQtyToAdd > maxStock) return notification.error(`មានស្តុករាយត្រឹមតែ ${maxStock} ប៉ុណ្ណោះ`);
+        cart.value.push({ product: product, qty: 1, selectedUnit: defaultUnit });
     }
-    await modifyStockReservation(product, 1); await updateActiveCartBackend();
+    
+    await modifyStockReservation(product, retailQtyToAdd); 
+    await updateActiveCartBackend();
+};
+
+const handleUnitChange = async (index, event) => {
+    const newUnit = event.target.value;
+    const item = cart.value[index];
+    const oldUnit = item.selectedUnit;
+    if (oldUnit === newUnit) return;
+
+    const oldRetailQty = getRetailQtyEquivalent(item.product, item.qty, oldUnit);
+    const newRetailQty = getRetailQtyEquivalent(item.product, item.qty, newUnit);
+    const retailDelta = newRetailQty - oldRetailQty;
+    
+    const maxRetailStock = getTotalRetailStock(item.product);
+
+    if (retailDelta > maxRetailStock) {
+        event.target.value = oldUnit; 
+        return notification.error('ស្តុកមិនគ្រប់គ្រាន់សម្រាប់ប្តូរជាខ្នាតនេះទេ!');
+    }
+
+    item.selectedUnit = newUnit;
+    await modifyStockReservation(item.product, retailDelta);
+    await updateActiveCartBackend();
 };
 
 const updateQty = async (index, delta) => {
     const item = cart.value[index];
-    const maxStock = getTotalRetailStock(item.product);
+    const maxRetailStock = getTotalRetailStock(item.product);
     const newQty = item.qty + delta;
+    
     if (newQty > 0) {
-        if (delta > 0 && delta > maxStock) return notification.error(`មានត្រឹមតែ ${maxStock} បន្ថែមទៀតប៉ុណ្ណោះ`);
-        item.qty = newQty; await modifyStockReservation(item.product, delta); await updateActiveCartBackend();
+        const retailDelta = getRetailQtyEquivalent(item.product, delta, item.selectedUnit);
+        if (retailDelta > 0 && retailDelta > maxRetailStock) return notification.error(`ស្តុកមិនគ្រប់គ្រាន់`);
+        item.qty = newQty; 
+        await modifyStockReservation(item.product, retailDelta); 
+        await updateActiveCartBackend();
     } else await removeFromCart(index);
 };
 
-const setQty = async (index, newQtyStr) => {
+const setQty = async (index, event) => {
+    const newQtyStr = event.target.value;
     let newQty = parseInt(newQtyStr); if (isNaN(newQty) || newQty < 1) newQty = 1;
+    
     const item = cart.value[index];
     const delta = newQty - item.qty; if (delta === 0) return;
-    const maxStock = getTotalRetailStock(item.product);
-    if (delta > 0 && delta > maxStock) {
-        notification.error(`មានត្រឹមតែ ${maxStock} បន្ថែមទៀតប៉ុណ្ណោះ`);
-        item.qty += maxStock; if (maxStock > 0) { await modifyStockReservation(item.product, maxStock); await updateActiveCartBackend(); }
-        return;
+    
+    const maxRetailStock = getTotalRetailStock(item.product);
+    const retailDelta = getRetailQtyEquivalent(item.product, delta, item.selectedUnit);
+    
+    if (retailDelta > 0 && retailDelta > maxRetailStock) {
+        event.target.value = item.qty; 
+        return notification.error(`ស្តុកមិនគ្រប់គ្រាន់`);
     }
-    item.qty = newQty; await modifyStockReservation(item.product, delta); await updateActiveCartBackend();
+    
+    item.qty = newQty; 
+    await modifyStockReservation(item.product, retailDelta); 
+    await updateActiveCartBackend();
 };
 
 const removeFromCart = async (index) => {
     const item = cart.value[index];
-    const qtyToReturn = item.qty;
+    const retailQtyToReturn = getRetailQtyEquivalent(item.product, item.qty, item.selectedUnit);
     cart.value.splice(index, 1);
-    await modifyStockReservation(item.product, -qtyToReturn); 
+    await modifyStockReservation(item.product, -retailQtyToReturn); 
     await updateActiveCartBackend();
 };
 
@@ -400,10 +516,11 @@ const submitSale = async (formData) => {
         const itemsToSave = cart.value.map((item, index) => ({
             id: item.product.id, cartItemId: `${item.product.id}_${Date.now()}_${index}`,
             name: item.product.name, image: item.product.image || '',
-            price: calculateItemUnitPrice(item.product, item.qty), qty: item.qty,
-            type: getAutoSaleType(item.product, item.qty), unit: getApplicableUnit(item.product, item.qty),
+            price: calculateItemUnitPrice(item), qty: item.qty,
+            type: getBadgeLabel(item), 
+            unit: item.selectedUnit === 'case' ? (item.product.unit || 'case') : (item.product.retailUnit || 'bottle'),
             isCombo: Boolean(item.product.isCombo),
-            cost: item.product.isCombo ? item.product.totalBaseCost : (Number(item.product.unitCost)/Number(item.product.itemsPerCase || 1))
+            cost: item.product.isCombo ? item.product.totalBaseCost : (item.selectedUnit === 'case' ? Number(item.product.unitCost) : (Number(item.product.unitCost)/Number(item.product.itemsPerCase || 1)))
         }));
 
         const payload = {
@@ -427,7 +544,9 @@ const submitSale = async (formData) => {
                     await updateDoc(doc(db, 'stocks', subItem.productId), { stock_reserved: increment(-((subItem.qty * item.qty) / perCase)) });
                 }
             } else {
-                await updateDoc(doc(db, 'stocks', item.product.id), { stock_reserved: increment(-(item.qty / (Number(item.product.itemsPerCase) || 1))) });
+                const retailQtyToDeduct = getRetailQtyEquivalent(item.product, item.qty, item.selectedUnit);
+                const bulkQtyToDeduct = retailQtyToDeduct / (Number(item.product.itemsPerCase) || 1);
+                await updateDoc(doc(db, 'stocks', item.product.id), { stock_reserved: increment(-bulkQtyToDeduct) });
             }
         }
 
@@ -448,7 +567,7 @@ const generateTelegramText = () => {
     if (!lastSavedSale.value) return '';
     const sale = lastSavedSale.value;
     let text = `🛒 *វិក្កយបត្រថ្មី (INVOICE)*\nលេខ: \`${sale.receiptId}\`\nថ្ងៃទី: ${formatDate(sale.createdAt)}\n--------------------------------\n👤 *អតិថិជន:* ${sale.customerName}\n📞 *ទូរស័ព្ទ:* ${sale.customerPhone}\n📍 *ទីតាំង:* ${sale.location}\n👨‍💼 *អ្នកលក់:* ${sale.sellerName}\n--------------------------------\n`;
-    sale.items.forEach((item, i) => { text += `${i+1}. ${item.name} ${item.isCombo ? '(🎁 ឈុត)' : `(${item.type === 'wholesale' ? 'ដុំ' : 'រាយ'})`}\n   ➔ ${item.qty} ${translateHardcodedUnit(item.unit)} x $${item.price} = *$${item.price * item.qty}*\n`; });
+    sale.items.forEach((item, i) => { text += `${i+1}. ${item.name} (${item.type})\n   ➔ ${item.qty} ${translateHardcodedUnit(item.unit)} x $${item.price} = *$${item.price * item.qty}*\n`; });
     text += `--------------------------------\n💰 *សរុបរួម:* *$${sale.totalAmount}*\n💳 *បង់ប្រាក់តាម:* ${sale.paymentMethod}\n`;
     if(sale.paymentNote) text += `📝 *ចំណាំ:* ${sale.paymentNote}\n`;
     return encodeURIComponent(text);
@@ -488,7 +607,7 @@ const generateInvoiceHTML = () => {
     sale.items.forEach((item, index) => {
         itemsHTML += `<tr style="border-bottom: 1px dashed #e2e8f0;">
             <td style="padding: 12px 10px; text-align: center; color: #64748b;">${index + 1}</td>
-            <td style="padding: 12px 10px; font-weight: bold; color: #1e293b;">${item.name} <span style="font-size: 10px; color: #94a3b8;">${item.isCombo ? '(ឈុត)' : `(${item.type === 'wholesale' ? 'ដុំ' : 'រាយ'})`}</span></td>
+            <td style="padding: 12px 10px; font-weight: bold; color: #1e293b;">${item.name} <span style="font-size: 10px; color: #94a3b8;">(${item.type})</span></td>
             <td style="padding: 12px 10px; text-align: center;">${item.qty} ${translateHardcodedUnit(item.unit)}</td>
             <td style="padding: 12px 10px; text-align: right;">${formatPrice(item.price, 'USD')}</td>
             <td style="padding: 12px 10px; text-align: right; font-weight: bold;">${formatPrice(item.price * item.qty, 'USD')}</td>
@@ -535,4 +654,5 @@ const downloadPDF = async () => {
 @keyframes slideDown { from { opacity: 0; transform: scaleY(0.95); } to { opacity: 1; transform: scaleY(1); } }
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
+select { -webkit-appearance: none; -moz-appearance: none; }
 </style>

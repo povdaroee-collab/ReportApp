@@ -72,8 +72,8 @@
 
           <div class="flex justify-end">
              <a href="https://t.me/MMKDaro" target="_blank" class="text-xs font-bold text-neutral-500 hover:text-amber-400 transition-colors flex items-center gap-1">
-                ភ្លេចពាក្យសម្ងាត់?
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+               ភ្លេចពាក្យសម្ងាត់?
+               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
              </a>
           </div>
 
@@ -156,9 +156,13 @@ const handleLogin = async () => {
         isLoading.value = false;
         return;
       }
-               
+                
       // C. Check Role and Redirect
-      if (userData.role === 'owner') {
+      if (userData.role === 'superadmin') {
+        notification.success(`ស្វាគមន៍អ្នកគ្រប់គ្រងកំពូល ${userData.fullName}`, 'ជោគជ័យ');
+        setTimeout(() => router.push('/app/owner/dashboard'), 1000);
+      }
+      else if (userData.role === 'owner') {
         notification.success(`ស្វាគមន៍ម្ចាស់ប្រព័ន្ធ ${userData.fullName}`, 'ជោគជ័យ');
         setTimeout(() => router.push('/app/owner/dashboard'), 1000);
       } 

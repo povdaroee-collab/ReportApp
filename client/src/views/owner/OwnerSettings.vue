@@ -9,6 +9,39 @@
       </div>
     </Teleport>
 
+    <Teleport to="body">
+      <div v-if="showDeleteModal" class="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-slide-up border border-slate-100">
+          <div class="p-6 md:p-8 text-center relative">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-rose-500/10 blur-2xl rounded-full pointer-events-none"></div>
+            
+            <div class="w-20 h-20 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-rose-500 shadow-sm border border-rose-100 relative z-10 rotate-3">
+              <svg class="w-10 h-10 -rotate-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            
+            <h3 class="text-xl md:text-2xl font-black text-slate-800 mb-3 tracking-tight">បញ្ជាក់ការលុបតម្លៃ</h3>
+            <p class="text-sm text-slate-500 font-bold leading-relaxed px-2">
+              តើអ្នកពិតជាចង់លុបការកំណត់តម្លៃនៃទំនិញនេះមែនទេ?
+              <br/>
+              <span class="text-rose-600 bg-rose-50 px-3 py-1 rounded-lg mt-3 inline-block border border-rose-100 shadow-inner">
+                ទំនិញនេះនឹងត្រលប់ទៅជាស្ថានភាពមិនទាន់កំណត់តម្លៃវិញ!
+              </span>
+            </p>
+          </div>
+          <div class="bg-slate-50 p-5 md:px-8 md:py-5 border-t border-slate-100 flex flex-col sm:flex-row gap-3 sm:justify-end">
+            <button @click="showDeleteModal = false" :disabled="isDeletingPrice" class="w-full sm:w-auto px-6 py-3 rounded-xl border bg-white border-slate-300 text-slate-600 font-bold shadow-sm hover:bg-slate-100 transition-all text-sm active:scale-95">
+              បោះបង់ (Cancel)
+            </button>
+            <button @click="executeDeletePrice" :disabled="isDeletingPrice" class="w-full sm:w-auto px-8 py-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 text-white font-black shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 hover:from-rose-500 hover:to-rose-400 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 text-sm border border-rose-600">
+              <svg v-if="isDeletingPrice" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              យល់ព្រមលុប
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
     <div class="flex-none bg-white/80 backdrop-blur-2xl border-b border-slate-200/60 z-40 p-4 md:px-8 md:py-4 shadow-sm transition-all">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center gap-4">
@@ -60,25 +93,73 @@
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </div>
+                        
                         <input 
                             v-model="productSearchQuery" 
                             @focus="showProductDropdown = true"
                             type="text" 
                             placeholder="វាយឈ្មោះផលិតផល ឬ Barcode នៅទីនេះ..." 
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-slate-800 font-bold focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-12 py-3 text-slate-800 font-bold focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
                         >
                         
-                        <div v-if="showProductDropdown && filteredProducts.length > 0" class="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto z-50 p-1.5 custom-scrollbar">
-                            <div 
-                                v-for="prod in filteredProducts" 
-                                :key="prod.id" 
-                                @click="selectProduct(prod)"
-                                class="flex items-center gap-3 p-2 hover:bg-indigo-50 rounded-lg cursor-pointer transition-colors"
-                            >
-                                <img :src="prod.image || 'https://via.placeholder.com/150'" class="w-10 h-10 rounded-md object-cover border border-slate-100 shrink-0 bg-white">
-                                <div>
-                                    <h4 class="font-bold text-sm text-slate-800">{{ prod.name }}</h4>
-                                    <p class="text-[10px] text-slate-500 font-mono">{{ prod.barcode }}</p>
+                        <button 
+                            v-if="productSearchQuery" 
+                            @click.stop="clearSearch" 
+                            class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-rose-500 transition-colors"
+                            title="លុបការស្វែងរក"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                        
+                        <div v-if="showProductDropdown" class="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col max-h-[400px]">
+                            
+                            <div class="p-2 border-b border-slate-100 bg-slate-50/50 flex gap-2 shrink-0">
+                                <button 
+                                    @click.stop="priceFilterStatus = 'all'"
+                                    :class="priceFilterStatus === 'all' ? 'bg-indigo-100 text-indigo-700 font-bold border-indigo-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'"
+                                    class="px-3 py-1.5 rounded-lg text-xs border transition-colors flex-1"
+                                >
+                                    ទាំងអស់
+                                </button>
+                                <button 
+                                    @click.stop="priceFilterStatus = 'set'"
+                                    :class="priceFilterStatus === 'set' ? 'bg-emerald-100 text-emerald-700 font-bold border-emerald-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'"
+                                    class="px-3 py-1.5 rounded-lg text-xs border transition-colors flex-1"
+                                >
+                                    បានកំណត់តម្លៃ
+                                </button>
+                                <button 
+                                    @click.stop="priceFilterStatus = 'unset'"
+                                    :class="priceFilterStatus === 'unset' ? 'bg-rose-100 text-rose-700 font-bold border-rose-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'"
+                                    class="px-3 py-1.5 rounded-lg text-xs border transition-colors flex-1"
+                                >
+                                    មិនទាន់កំណត់
+                                </button>
+                            </div>
+
+                            <div class="overflow-y-auto p-1.5 custom-scrollbar flex-1">
+                                <div v-if="filteredProducts.length === 0" class="p-4 text-center text-slate-400 text-sm font-bold">
+                                    រកមិនឃើញទំនិញទេ
+                                </div>
+                                <div 
+                                    v-else
+                                    v-for="prod in filteredProducts" 
+                                    :key="prod.id" 
+                                    @click="selectProduct(prod)"
+                                    class="flex items-center gap-3 p-2 hover:bg-indigo-50 rounded-lg cursor-pointer transition-colors"
+                                >
+                                    <img :src="prod.image || 'https://via.placeholder.com/150'" class="w-10 h-10 rounded-md object-cover border border-slate-100 shrink-0 bg-white">
+                                    
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="font-bold text-sm text-slate-800 truncate">{{ prod.name }}</h4>
+                                        <p class="text-[10px] text-slate-500 font-mono truncate">{{ prod.barcode }}</p>
+                                    </div>
+
+                                    <div class="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-md border" 
+                                         :class="hasPriceSet(prod) ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-500'">
+                                        <div class="w-1.5 h-1.5 rounded-full" :class="hasPriceSet(prod) ? 'bg-emerald-500' : 'bg-rose-500'"></div>
+                                        <span class="text-[10px] font-bold whitespace-nowrap">{{ hasPriceSet(prod) ? 'បានកំណត់តម្លៃ' : 'មិនទាន់កំណត់' }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -95,7 +176,7 @@
                             <h3 class="text-xl font-black text-slate-800">{{ selectedProduct.name }}</h3>
                             <div class="flex items-center gap-3 mt-1 text-xs font-bold text-slate-500">
                                 <span class="font-mono bg-slate-200/50 px-1.5 py-0.5 rounded">{{ selectedProduct.barcode }}</span>
-                                <span>| ក្នុងស្តុកមាន: <span class="text-emerald-600">{{ selectedProduct.quantity }} ឯកតា</span></span>
+                                <span>| ក្នុងស្តុកមាន: <span class="text-emerald-600">{{ formatQty(selectedProduct.quantity) }} ឯកតា</span></span>
                             </div>
                         </div>
                         <div class="mt-2 sm:mt-0 text-right bg-rose-50 px-4 py-2 rounded-xl border border-rose-100">
@@ -165,7 +246,7 @@
                                 <div class="bg-white p-4 rounded-xl border border-amber-200 shadow-sm relative">
                                     <div class="flex items-center justify-between mb-4 border-b border-amber-100 pb-2">
                                         <p class="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded">
-                                            ※ លក្ខខណ្ឌទី១៖ លក់ជា <span class="font-black text-amber-800">ខ្នាត ដប (រាយ)</span>
+                                            ※ លក្ខខណ្ឌទី១៖ បោះដុំជា <span class="font-black text-amber-800">ខ្នាត ដប</span>
                                         </p>
                                         <button type="button" @click="addBottleTier" class="text-[10px] bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-bold hover:bg-amber-500 hover:text-white transition-colors flex items-center gap-1">
                                             + បន្ថែម
@@ -205,7 +286,7 @@
                                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b border-blue-100 pb-2">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <p class="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded">
-                                                ※ លក្ខខណ្ឌទី២៖ លក់ជា <span class="font-black text-blue-800">ខ្នាត កេះ (ដុំ)</span>
+                                                ※ លក្ខខណ្ឌទី២៖ បោះដុំជា <span class="font-black text-blue-800">ខ្នាត កេះ</span>
                                             </p>
                                             <p class="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200">
                                                 <span class="text-blue-600">១កេះ</span> = <span class="text-emerald-600">{{ selectedProduct.itemsPerCase || 1 }} ដប</span>
@@ -250,13 +331,25 @@
                             </div>
                         </div>
 
-                        <div class="xl:col-span-12 pt-4 border-t border-slate-200 flex justify-end gap-3 mt-2">
-                            <button type="button" @click="cancelPriceEdit" class="px-6 py-2.5 rounded-xl border bg-white border-slate-300 text-slate-600 font-bold hover:bg-slate-50 transition-colors text-sm">បោះបង់ (Cancel)</button>
-                            <button type="submit" :disabled="isSavingPrice" class="px-8 py-2.5 rounded-xl bg-slate-800 text-white font-bold shadow-md hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 text-sm">
-                                <svg v-if="isSavingPrice" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                រក្សាទុកការកំណត់
+                        <div class="xl:col-span-12 pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center gap-3 mt-2">
+                            <button 
+                                v-if="hasPriceSet(selectedProduct)" 
+                                type="button" 
+                                @click="showDeleteModal = true" 
+                                class="w-full sm:w-auto sm:mr-auto px-6 py-2.5 rounded-xl border bg-white border-rose-200 text-rose-500 font-bold hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 shadow-sm transition-all text-sm flex items-center justify-center gap-2 active:scale-95"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                លុបការកំណត់នេះចោល
                             </button>
+
+                            <div class="flex gap-3 w-full sm:w-auto">
+                                <button type="button" @click="cancelPriceEdit" class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl border bg-white border-slate-300 text-slate-600 font-bold shadow-sm hover:bg-slate-50 transition-colors text-sm">បោះបង់ (Cancel)</button>
+                                <button type="submit" :disabled="isSavingPrice" class="flex-1 sm:flex-none px-8 py-2.5 rounded-xl bg-slate-800 text-white font-bold shadow-md hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 text-sm">
+                                    <svg v-if="isSavingPrice" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    រក្សាទុកការកំណត់
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -421,7 +514,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed, onUnmounted } from 'vue';
 import { db } from '@/firebaseConfig';
-import { collection, getDocs, doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, setDoc, getDoc, query, where, onSnapshot, deleteField } from 'firebase/firestore';
 import Toast from '@/components/Toast.vue'; 
 import { useNotificationStore } from '@/stores/notification';
 import ManageCombos from './ManageCombos.vue';
@@ -443,30 +536,78 @@ const showProductDropdown = ref(false);
 const selectedProduct = ref(null);
 const isSavingPrice = ref(false);
 
+const isDeletingPrice = ref(false);
+const showDeleteModal = ref(false);
+
+const priceFilterStatus = ref('all'); // 'all', 'set', 'unset'
+
 const priceForm = reactive({
     retailPrice: 0,
     retailUnit: 'bottle',     
     sellerIncentive: 0, 
-    
-    // បំបែកការគ្រប់គ្រង State ជា ២ សម្រាប់ UI ថ្មី
     bottleTiers: [], 
     caseTiers: [] 
 });
 
-const fetchProducts = async () => {
-    if (products.value.length > 0) return; 
+let unsubscribeProducts = null;
+
+const fetchProducts = () => {
+    if (unsubscribeProducts) return; 
     isFetchingProducts.value = true;
     try {
-        const snap = await getDocs(collection(db, 'stocks'));
-        products.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) { notification.error('មិនអាចទាញយកទិន្នន័យស្តុកបានទេ'); } 
-    finally { isFetchingProducts.value = false; }
+        const q = query(collection(db, 'stocks'), where('isDeleted', '==', false));
+        unsubscribeProducts = onSnapshot(q, (snap) => {
+            products.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            isFetchingProducts.value = false;
+
+            if (selectedProduct.value) {
+                const updatedProd = products.value.find(p => p.id === selectedProduct.value.id);
+                if (!updatedProd) cancelPriceEdit();
+                else {
+                    selectedProduct.value.quantity = updatedProd.quantity;
+                    selectedProduct.value.unitCost = updatedProd.unitCost;
+                }
+            }
+        }, (error) => {
+            console.error(error);
+            notification.error('មិនអាចទាញយកទិន្នន័យស្តុកបានទេ');
+            isFetchingProducts.value = false;
+        });
+    } catch (error) { 
+        console.error(error);
+        isFetchingProducts.value = false; 
+    }
+};
+
+// មុខងារសម្រាប់ឆែកមើលថា ទំនិញនោះត្រូវបានកំណត់តម្លៃរួចឬនៅ
+const hasPriceSet = (prod) => {
+    if (!prod) return false;
+    return !!prod.priceUpdatedAt || Number(prod.retailPrice) > 0 || (prod.wholesaleTiers && prod.wholesaleTiers.length > 0);
+};
+
+// មុខងារសម្រាប់លុបអក្សរក្នុងប្រអប់ស្វែងរកភ្លាមៗ
+const clearSearch = () => {
+    productSearchQuery.value = '';
+    showProductDropdown.value = true; 
 };
 
 const filteredProducts = computed(() => {
-    if (!productSearchQuery.value) return products.value.slice(0, 10); 
-    const q = productSearchQuery.value.toLowerCase();
-    return products.value.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
+    let result = products.value;
+
+    if (priceFilterStatus.value === 'set') {
+        result = result.filter(p => hasPriceSet(p));
+    } else if (priceFilterStatus.value === 'unset') {
+        result = result.filter(p => !hasPriceSet(p));
+    }
+
+    if (productSearchQuery.value) {
+        const q = productSearchQuery.value.toLowerCase();
+        result = result.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
+    } else {
+        result = result.slice(0, 15);
+    }
+
+    return result;
 });
 
 const selectProduct = (prod) => {
@@ -480,43 +621,23 @@ const selectProduct = (prod) => {
     priceForm.bottleTiers = [];
     priceForm.caseTiers = [];
 
-    // បែងចែក Tiers ចាស់ៗចូលក្នុងប្រអប់រៀងៗខ្លួន
     if (prod.wholesaleTiers && Array.isArray(prod.wholesaleTiers)) {
         prod.wholesaleTiers.forEach(t => {
-            if (t.unit === 'case') {
-                priceForm.caseTiers.push({ ...t, id: t.id || Date.now() + Math.random() });
-            } else {
-                priceForm.bottleTiers.push({ ...t, id: t.id || Date.now() + Math.random() });
-            }
+            if (t.unit === 'case') priceForm.caseTiers.push({ ...t, id: t.id || Date.now() + Math.random() });
+            else priceForm.bottleTiers.push({ ...t, id: t.id || Date.now() + Math.random() });
         });
     }
     
-    // បើអត់មានទិន្នន័យសោះ បង្កើត Default ម្នាក់១ ឱ្យ
-    if (priceForm.bottleTiers.length === 0) {
-        priceForm.bottleTiers.push({ id: Date.now(), minQty: 1, price: 0, incentive: 0, unit: 'bottle' });
-    }
-    if (priceForm.caseTiers.length === 0) {
-        priceForm.caseTiers.push({ id: Date.now() + 1, minQty: 1, price: 0, incentive: 0, unit: 'case' });
-    }
+    if (priceForm.bottleTiers.length === 0) priceForm.bottleTiers.push({ id: Date.now(), minQty: 1, price: 0, incentive: 0, unit: 'bottle' });
+    if (priceForm.caseTiers.length === 0) priceForm.caseTiers.push({ id: Date.now() + 1, minQty: 1, price: 0, incentive: 0, unit: 'case' });
     
     showProductDropdown.value = false;
 };
 
-// មុខងារបន្ថែម/លុប លក្ខខណ្ឌសម្រាប់ (ដប)
-const addBottleTier = () => {
-    priceForm.bottleTiers.push({ id: Date.now() + Math.random(), minQty: 1, price: 0, incentive: 0, unit: 'bottle' });
-};
-const removeBottleTier = (index) => {
-    priceForm.bottleTiers.splice(index, 1);
-};
-
-// មុខងារបន្ថែម/លុប លក្ខខណ្ឌសម្រាប់ (កេះ)
-const addCaseTier = () => {
-    priceForm.caseTiers.push({ id: Date.now() + Math.random(), minQty: 1, price: 0, incentive: 0, unit: 'case' });
-};
-const removeCaseTier = (index) => {
-    priceForm.caseTiers.splice(index, 1);
-};
+const addBottleTier = () => { priceForm.bottleTiers.push({ id: Date.now() + Math.random(), minQty: 1, price: 0, incentive: 0, unit: 'bottle' }); };
+const removeBottleTier = (index) => { priceForm.bottleTiers.splice(index, 1); };
+const addCaseTier = () => { priceForm.caseTiers.push({ id: Date.now() + Math.random(), minQty: 1, price: 0, incentive: 0, unit: 'case' }); };
+const removeCaseTier = (index) => { priceForm.caseTiers.splice(index, 1); };
 
 const cancelPriceEdit = () => {
     selectedProduct.value = null; productSearchQuery.value = '';
@@ -527,7 +648,6 @@ const savePrices = async () => {
     if (!selectedProduct.value) return;
     isSavingPrice.value = true;
     try {
-        // បញ្ចូល Tiers ទាំង២ប្រភេទ បញ្ចូលគ្នាទៅជា wholesaleTiers រួមសម្រាប់ Database
         const combinedTiers = [
             ...priceForm.bottleTiers.map(t => ({ ...t, unit: 'bottle' })),
             ...priceForm.caseTiers.map(t => ({ ...t, unit: 'case' }))
@@ -542,13 +662,36 @@ const savePrices = async () => {
         };
         await updateDoc(doc(db, 'stocks', selectedProduct.value.id), updates);
         
-        const idx = products.value.findIndex(p => p.id === selectedProduct.value.id);
-        if (idx !== -1) products.value[idx] = { ...products.value[idx], ...updates };
-
         notification.success('ការកំណត់តម្លៃត្រូវបានរក្សាទុកដោយជោគជ័យ');
         cancelPriceEdit(); 
     } catch (error) { notification.error('មិនអាចរក្សាទុកទិន្នន័យបានទេ'); } 
     finally { isSavingPrice.value = false; }
+};
+
+// មុខងារប្រតិបត្តិការលុបការកំណត់តម្លៃ (ហៅចេញពី Custom Modal)
+const executeDeletePrice = async () => {
+    if (!selectedProduct.value) return;
+    
+    isDeletingPrice.value = true;
+    try {
+        const updates = {
+            retailPrice: 0, 
+            retailUnit: 'bottle', 
+            sellerIncentive: 0, 
+            wholesaleTiers: [], 
+            priceUpdatedAt: deleteField() 
+        };
+        await updateDoc(doc(db, 'stocks', selectedProduct.value.id), updates);
+        
+        notification.success('បានលុបតម្លៃចេញដោយជោគជ័យ!');
+        showDeleteModal.value = false; // បិទ Modal ក្រោយជោគជ័យ
+        cancelPriceEdit(); 
+    } catch (error) { 
+        console.error(error);
+        notification.error('មានបញ្ហាក្នុងការលុបតម្លៃ'); 
+    } finally { 
+        isDeletingPrice.value = false; 
+    }
 };
 
 // --- TAB 3: DELIVERY SETTINGS ---
@@ -586,10 +729,23 @@ const saveDeliverySettings = async () => {
     finally { isSavingDelivery.value = false; }
 };
 
+const formatQty = (val) => {
+    if (!val) return '0';
+    return Number(val).toFixed(2).replace(/\.00$/, ''); 
+};
+
 // --- GENERAL UTILS ---
 const closeDropdown = (e) => { if (!e.target.closest('.relative')) showProductDropdown.value = false; };
-onMounted(() => { fetchProducts(); document.addEventListener('click', closeDropdown); });
-onUnmounted(() => { document.removeEventListener('click', closeDropdown); });
+
+onMounted(() => { 
+    fetchProducts(); 
+    document.addEventListener('click', closeDropdown); 
+});
+
+onUnmounted(() => { 
+    document.removeEventListener('click', closeDropdown); 
+    if (unsubscribeProducts) unsubscribeProducts(); 
+});
 
 const formatPrice = (val) => {
     if (val === undefined || val === null) return '0.00';
