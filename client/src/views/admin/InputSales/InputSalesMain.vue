@@ -112,7 +112,7 @@
                                 <div class="flex flex-col gap-1.5">
                                     <div class="relative inline-flex">
                                         <select :value="item.selectedUnit" @change="handleUnitChange(index, $event)" class="appearance-none bg-slate-100 border border-slate-200 text-slate-700 py-1.5 pl-3 pr-8 rounded-lg text-xs font-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer transition-all shadow-sm">
-                                            <option value="retail">{{ translateHardcodedUnit(item.product.isCombo ? 'set' : (item.product.retailUnit || 'bottle')) }} (រាយ)</option>
+                                            <option value="retail">{{ item.product.isCombo ? 'ឈុត' : translateHardcodedUnit(item.product.retailUnit || 'bottle') + ' (រាយ)' }}</option>
                                             <option v-if="!item.product.isCombo && item.product.itemsPerCase > 1" value="case">{{ translateHardcodedUnit(item.product.unit || 'case') }} (ដុំ)</option>
                                         </select>
                                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
@@ -120,18 +120,24 @@
                                         </div>
                                     </div>
                                     <div class="text-[10px] font-bold text-slate-400 mt-0.5">
-                                        <span v-if="!item.product.isCombo">១ដប: <span class="text-slate-600">{{ formatPrice(getSingleBottlePrice(item), item.product.currency) }}</span></span>
+                                        <span v-if="!item.product.isCombo">១ដប: <span class="text-slate-600">{{ formatPrice(getSingleBasePrice(item), item.product.currency) }}</span></span>
                                         <span v-if="!item.product.isCombo && item.product.itemsPerCase > 1" class="mx-1">|</span>
                                         <span v-if="!item.product.isCombo && item.product.itemsPerCase > 1">១កេះ: <span class="text-slate-600">{{ formatPrice(getSingleCasePrice(item), item.product.currency) }}</span></span>
                                         
-                                        <span v-if="item.product.isCombo">១ឈុត: <span class="text-slate-600">{{ formatPrice(item.product.retailPrice, item.product.currency) }}</span></span>
+                                        <span v-if="item.product.isCombo">១ឈុត: <span class="text-slate-600">{{ formatPrice(getSingleBasePrice(item), item.product.currency) }}</span></span>
                                     </div>
                                 </div>
                                 
                                 <div class="flex items-center gap-2 shrink-0">
                                     <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden h-10 shadow-sm">
                                         <button @click="updateQty(index, -1)" class="w-10 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors text-xl font-bold">-</button>
-                                        <input :value="item.qty" @change="setQty(index, $event)" type="number" min="1" class="w-12 h-full bg-white text-center text-sm font-black border-x border-slate-200 outline-none p-0">
+                                        <input 
+                                            v-model="item.inputQty" 
+                                            @change="commitQty(index)" 
+                                            @keyup.enter="$event.target.blur()" 
+                                            type="number" min="1" 
+                                            class="w-12 h-full bg-white text-center text-sm font-black border-x border-slate-200 outline-none p-0"
+                                        >
                                         <button @click="updateQty(index, 1)" class="w-10 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors text-xl font-bold">+</button>
                                     </div>
                                 </div>
@@ -212,7 +218,7 @@ const sellers = ref([]);
 const isLoadingProducts = ref(true);
 const searchQuery = ref('');
 
-// Cart Item Structure: { product, qty, selectedUnit: 'retail' | 'case' }
+// Cart Item Structure: { product, qty, inputQty, selectedUnit: 'retail' | 'case' }
 const cart = ref([]);
 const isCheckoutModalOpen = ref(false);
 const isSubmitting = ref(false);
@@ -260,6 +266,7 @@ const combineProductsAndCombos = () => {
     cart.value = cart.value.map(cartItem => {
         const updatedProduct = mixedProducts.value.find(p => p.id === cartItem.product.id);
         if (updatedProduct) { cartItem.product = updatedProduct; }
+        if (!cartItem.inputQty) cartItem.inputQty = cartItem.qty; // Initialize input qty if missing
         return cartItem;
     });
     isLoadingProducts.value = false;
@@ -298,20 +305,24 @@ const filteredProducts = computed(() => {
 // PRICE CALCULATION LOGIC
 // ----------------------------------------------------
 
-// រកតម្លៃ ១ដប ឲ្យត្រូវតាមចំនួន
-const getSingleBottlePrice = (item) => {
+// រកតម្លៃ ១ដប ឬ ១ឈុត ឲ្យត្រូវតាមចំនួន
+const getSingleBasePrice = (item) => {
     const { product, qty, selectedUnit } = item;
-    if (product.isCombo) return Number(product.retailPrice) || 0;
+    const targetUnit = product.isCombo ? 'set' : (selectedUnit === 'case' ? 'case' : 'bottle');
     
-    const targetUnit = selectedUnit === 'case' ? 'case' : 'bottle';
-    
-    if (product.wholesaleTiers && product.wholesaleTiers.length > 0) {
-        const unitTiers = product.wholesaleTiers.filter(t => t.unit === targetUnit);
+    if (product.wholesaleTiers && Array.isArray(product.wholesaleTiers) && product.wholesaleTiers.length > 0) {
+        let unitTiers = product.wholesaleTiers.filter(t => t.unit === targetUnit);
+        
+        // សម្រាប់ឈុត បើអត់មាន unit parameter ទេ យើងយក wholesaleTiers ទាំងអស់មកឆែក
+        if (product.isCombo && unitTiers.length === 0) {
+            unitTiers = product.wholesaleTiers;
+        }
+
         if (unitTiers.length > 0) {
-            const sorted = [...unitTiers].sort((a, b) => b.minQty - a.minQty);
-            const appliedTier = sorted.find(t => qty >= t.minQty);
-            // តម្លៃបោះដុំក្នុង DB តែងតែរក្សាទុកជាតម្លៃក្នុង ១ដប ជានិច្ច
-            if (appliedTier && appliedTier.price > 0) {
+            // Casting ជា Number ជានិច្ច ដើម្បីការពារ Error
+            const sorted = [...unitTiers].sort((a, b) => Number(b.minQty) - Number(a.minQty));
+            const appliedTier = sorted.find(t => qty >= Number(t.minQty));
+            if (appliedTier && Number(appliedTier.price) > 0) {
                 return Number(appliedTier.price);
             }
         }
@@ -321,14 +332,14 @@ const getSingleBottlePrice = (item) => {
 
 // រកតម្លៃ ១កេះ (យកតម្លៃ ១ដប * ចំនួនដបក្នុង ១កេះ)
 const getSingleCasePrice = (item) => {
-    const bottlePrice = getSingleBottlePrice(item);
-    return bottlePrice * (Number(item.product.itemsPerCase) || 1);
+    const basePrice = getSingleBasePrice(item);
+    return basePrice * (Number(item.product.itemsPerCase) || 1);
 };
 
-// រកតម្លៃឯកតា ដើម្បីយកទៅគុណ និង Qty
+// រកតម្លៃឯកតារួម (១ឯកតា ដែលគាត់រើស)
 const calculateItemUnitPrice = (item) => {
-    if (item.product.isCombo) return Number(item.product.retailPrice) || 0;
-    return item.selectedUnit === 'case' ? getSingleCasePrice(item) : getSingleBottlePrice(item);
+    if (item.product.isCombo) return getSingleBasePrice(item);
+    return item.selectedUnit === 'case' ? getSingleCasePrice(item) : getSingleBasePrice(item);
 };
 
 // រកតម្លៃសរុបប្រចាំទំនិញនីមួយៗ (តម្លៃឯកតា * ចំនួនទិញ)
@@ -339,18 +350,27 @@ const cartTotalUSD = computed(() => cart.value.reduce((total, item) => total + c
 
 // បង្ហាញពាក្យនៅលើកន្ត្រក (Badge) 
 const getBadgeLabel = (item) => {
-    if (item.product.isCombo) return 'តម្លៃឈុត';
+    const { product, qty, selectedUnit } = item;
+    const targetUnit = product.isCombo ? 'set' : (selectedUnit === 'case' ? 'case' : 'bottle');
     
-    const targetUnit = item.selectedUnit === 'case' ? 'case' : 'bottle';
-    if (item.product.wholesaleTiers && item.product.wholesaleTiers.length > 0) {
-        const unitTiers = item.product.wholesaleTiers.filter(t => t.unit === targetUnit);
-        const sorted = [...unitTiers].sort((a, b) => b.minQty - a.minQty);
-        const appliedTier = sorted.find(t => item.qty >= t.minQty);
-        if (appliedTier && appliedTier.price > 0) {
-            return targetUnit === 'case' ? 'តម្លៃបោះដុំ (កេះ)' : 'តម្លៃបោះដុំ (រាយ)';
+    if (product.wholesaleTiers && Array.isArray(product.wholesaleTiers) && product.wholesaleTiers.length > 0) {
+        let unitTiers = product.wholesaleTiers.filter(t => t.unit === targetUnit);
+        
+        if (product.isCombo && unitTiers.length === 0) {
+             unitTiers = product.wholesaleTiers;
+        }
+        
+        if (unitTiers.length > 0) {
+            const sorted = [...unitTiers].sort((a, b) => Number(b.minQty) - Number(a.minQty));
+            const appliedTier = sorted.find(t => qty >= Number(t.minQty));
+            
+            if (appliedTier && Number(appliedTier.price) > 0) {
+                if (product.isCombo) return 'តម្លៃបោះដុំ (ឈុត)';
+                return targetUnit === 'case' ? 'តម្លៃបោះដុំ (កេះ)' : 'តម្លៃបោះដុំ (រាយ)';
+            }
         }
     }
-    return 'តម្លៃលក់រាយ';
+    return product.isCombo ? 'តម្លៃឈុត' : 'តម្លៃលក់រាយ';
 };
 
 const getBadgeClass = (item) => {
@@ -376,15 +396,15 @@ const startCartTimer = (expiresAt) => {
 const handleCartTimeout = async () => {
     if (cart.value.length === 0) return;
     
-    // ចម្លងទិន្នន័យដើម្បីយកទៅដកស្តុកវិញ មុននឹង Clear UI
+    // ចម្លងទិន្នន័យទុក ដើម្បីយកទៅដកស្តុកវិញ
     const itemsToReturn = [...cart.value];
     
-    // Clear UI ភ្លាមៗ
+    // សម្អាត UI កន្ត្រកភ្លាមៗ កុំអោយទើជាប់មុខអេក្រង់
     cart.value = []; 
     showMobileCart.value = false;
     notification.warning("រយៈពេលកក់ស្តុកបានផុតកំណត់! កន្ត្រកត្រូវបានសម្អាត។");
     
-    // ដកស្តុកវិញនៅ Backend
+    // ដំណើរការដកស្តុកវិញនៅ Backend
     for (const item of itemsToReturn) {
         const retailQtyToReturn = getRetailQtyEquivalent(item.product, item.qty, item.selectedUnit);
         await modifyStockReservation(item.product, -retailQtyToReturn);
@@ -430,11 +450,12 @@ const addToCart = async (product) => {
     const existingIndex = cart.value.findIndex(item => item.product.id === product.id && item.selectedUnit === defaultUnit);
     
     if (existingIndex !== -1) {
-        if (retailQtyToAdd > maxStock) return notification.error(`មានស្តុករាយត្រឹមតែ ${maxStock} ប៉ុណ្ណោះ`);
+        if (retailQtyToAdd > maxStock) return notification.error(`មានស្តុកត្រឹមតែ ${maxStock} ប៉ុណ្ណោះ`);
         cart.value[existingIndex].qty += 1;
+        cart.value[existingIndex].inputQty = cart.value[existingIndex].qty; // Sync input
     } else {
-        if (retailQtyToAdd > maxStock) return notification.error(`មានស្តុករាយត្រឹមតែ ${maxStock} ប៉ុណ្ណោះ`);
-        cart.value.push({ product: product, qty: 1, selectedUnit: defaultUnit });
+        if (retailQtyToAdd > maxStock) return notification.error(`មានស្តុកត្រឹមតែ ${maxStock} ប៉ុណ្ណោះ`);
+        cart.value.push({ product: product, qty: 1, inputQty: 1, selectedUnit: defaultUnit });
     }
     
     await modifyStockReservation(product, retailQtyToAdd); 
@@ -472,27 +493,37 @@ const updateQty = async (index, delta) => {
         const retailDelta = getRetailQtyEquivalent(item.product, delta, item.selectedUnit);
         if (retailDelta > 0 && retailDelta > maxRetailStock) return notification.error(`ស្តុកមិនគ្រប់គ្រាន់`);
         item.qty = newQty; 
+        item.inputQty = newQty; // Sync input
         await modifyStockReservation(item.product, retailDelta); 
         await updateActiveCartBackend();
     } else await removeFromCart(index);
 };
 
-const setQty = async (index, event) => {
-    const newQtyStr = event.target.value;
-    let newQty = parseInt(newQtyStr); if (isNaN(newQty) || newQty < 1) newQty = 1;
-    
+// មុខងារនេះត្រូវបានកែសម្រួលដើម្បីឱ្យវាយលេខបញ្ចូលបានត្រឹមត្រូវ
+const commitQty = async (index) => {
     const item = cart.value[index];
-    const delta = newQty - item.qty; if (delta === 0) return;
+    let newQty = parseInt(item.inputQty); 
+    
+    // បើវាយអក្សរមិនមែនលេខ ឬលេខតូចជាង ១ នោះវានឹងត្រលប់ទៅលេខចាស់
+    if (isNaN(newQty) || newQty < 1) {
+        item.inputQty = item.qty; 
+        return;
+    }
+
+    const delta = newQty - item.qty; 
+    if (delta === 0) return;
     
     const maxRetailStock = getTotalRetailStock(item.product);
     const retailDelta = getRetailQtyEquivalent(item.product, delta, item.selectedUnit);
     
     if (retailDelta > 0 && retailDelta > maxRetailStock) {
-        event.target.value = item.qty; 
-        return notification.error(`ស្តុកមិនគ្រប់គ្រាន់`);
+        notification.error(`ស្តុកមានត្រឹមតែ ${maxRetailStock} ប៉ុណ្ណោះ`);
+        item.inputQty = item.qty; // ត្រលប់ទៅលេខចាស់
+        return;
     }
     
     item.qty = newQty; 
+    item.inputQty = newQty; 
     await modifyStockReservation(item.product, retailDelta); 
     await updateActiveCartBackend();
 };
@@ -652,6 +683,8 @@ const downloadPDF = async () => {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 .animate-slide-down { animation: slideDown 0.2s ease-out forwards; transform-origin: top; }
 @keyframes slideDown { from { opacity: 0; transform: scaleY(0.95); } to { opacity: 1; transform: scaleY(1); } }
+
+/* បំបាត់សញ្ញាព្រួញនៅ Input Number ពេល Focus */
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
 select { -webkit-appearance: none; -moz-appearance: none; }
