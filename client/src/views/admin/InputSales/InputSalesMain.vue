@@ -421,7 +421,7 @@ const updateActiveCartBackend = async () => {
     if (cart.value.length === 0) { await deleteDoc(cartRef).catch(e => {}); clearInterval(reservationTimer.value); timeLeft.value = ""; showMobileCart.value = false; return; }
     
     // ប្តូរពី ២នាទី ទៅ ៥នាទី
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).getTime();
+    const expiresAt = new Date(Date.now() + 9 * 60 * 1000).getTime();
     
     const plainItems = cart.value.map(item => ({ 
         id: item.product.id, qty: item.qty, selectedUnit: item.selectedUnit, 
