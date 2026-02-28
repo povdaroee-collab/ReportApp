@@ -99,7 +99,7 @@
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </span>
-                        <input v-model="searchQuery" type="text" placeholder="ស្វែងឈ្មោះ ឬ អត្តលេខ..." class="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 outline-none transition-all shadow-sm" />
+                        <input v-model="searchQuery" type="text" placeholder="ស្វែងរកឈ្មោះ ឬ អត្តលេខ..." class="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 outline-none transition-all shadow-sm" />
                      </div>
                   </div>
                   
@@ -195,7 +195,7 @@
 
     </div>
 
-    <div ref="printStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1]"></div>
+    <div ref="printStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1] opacity-0 print:opacity-100 bg-white"></div>
 
     <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
         <div v-if="processing.active" class="fixed inset-0 z-[999999] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
@@ -312,7 +312,8 @@ onMounted(() => {
                      unit: item.unit,
                      totalPrice: Number(item.price) * Number(item.qty),
                      productName: item.name, 
-                     totalClients: index === 0 ? 1 : 0 
+                     totalClients: index === 0 ? 1 : 0,
+                     isFirstItemOfReceipt: index === 0 // សម្រាប់ការពារបូកថ្លៃដឹកជាន់គ្នា
                  });
              });
          }
@@ -385,6 +386,8 @@ const baseCalculatedData = computed(() => {
         if (!unitCounts[u]) unitCounts[u] = 0;
         unitCounts[u] += Number(sale.totalSold || 0);
         totalClients += Number(sale.totalClients || 0);
+        
+        // Product Revenue Only (No Delivery here to keep item values clean)
         if (sale.currency === 'USD' || sale.currency === '$') revenueUSD += Number(sale.totalPrice || 0);
         else revenueKHR += Number(sale.totalPrice || 0);
         
@@ -447,12 +450,12 @@ const filteredSellers = computed(() => {
   return result;
 });
 
-// --- ITEMIZED SUMMARY WITH REGIONAL LOGIC (NEW) ---
+// --- ITEMIZED SUMMARY WITH REGIONAL LOGIC (FOR PDF) ---
 const itemizedSummary = computed(() => {
     let summary = {
         overall: { retail: {}, wholesale: {} },
-        phnomPenh: { retail: {}, wholesale: {}, clients: new Set(), usd: 0, khr: 0 },
-        provinces: { retail: {}, wholesale: {}, clients: new Set(), usd: 0, khr: 0 }
+        phnomPenh: { retail: {}, wholesale: {}, clients: new Set(), usd: 0, khr: 0, deliveryUSD: 0, deliveryKHR: 0 },
+        provinces: { retail: {}, wholesale: {}, clients: new Set(), usd: 0, khr: 0, deliveryUSD: 0, deliveryKHR: 0 }
     };
 
     const activeSellerIds = new Set(filteredSellers.value.map(s => s.originalSellerId));
@@ -479,12 +482,21 @@ const itemizedSummary = computed(() => {
         const regionGroupTarget = isWholesale ? regionGroup.wholesale : regionGroup.retail;
         
         const qty = Number(sale.totalSold) || 0;
-        const total = Number(sale.totalPrice) || 0;
+        const total = Number(sale.totalPrice) || 0; // Product only
         const unitPrice = qty > 0 ? (total / qty) : 0;
         const currency = sale.currency === 'KHR' || sale.currency === '៛' ? 'KHR' : 'USD';
         
+        // Add Product Total to Regional Total
         if (currency === 'USD') regionGroup.usd += total;
         else regionGroup.khr += total;
+
+        // Extract Delivery Fee (Only add once per receipt to regional totals)
+        if (sale.isFirstItemOfReceipt) {
+             const dFee = Number(sale.deliveryFee) || 0;
+             const dCurr = sale.deliveryCurrency || 'USD';
+             if (dCurr === 'USD' || dCurr === '$') regionGroup.deliveryUSD += dFee;
+             else regionGroup.deliveryKHR += dFee;
+        }
 
         const key = `${sale.productName}_${sale.unit}_${unitPrice}_${currency}`;
 
@@ -527,14 +539,18 @@ const itemizedSummary = computed(() => {
             wholesale: toArray(summary.phnomPenh.wholesale),
             clientCount: summary.phnomPenh.clients.size,
             usd: summary.phnomPenh.usd,
-            khr: summary.phnomPenh.khr
+            khr: summary.phnomPenh.khr,
+            deliveryUSD: summary.phnomPenh.deliveryUSD,
+            deliveryKHR: summary.phnomPenh.deliveryKHR
         },
         provinces: {
             retail: toArray(summary.provinces.retail),
             wholesale: toArray(summary.provinces.wholesale),
             clientCount: summary.provinces.clients.size,
             usd: summary.provinces.usd,
-            khr: summary.provinces.khr
+            khr: summary.provinces.khr,
+            deliveryUSD: summary.provinces.deliveryUSD,
+            deliveryKHR: summary.provinces.deliveryKHR
         }
     };
 });
@@ -552,14 +568,16 @@ const paginatedData = computed(() => {
 const activeSellersCount = computed(() => new Set(baseCalculatedData.value.filter(s => s.hasSales).map(s => s.originalSellerId)).size);
 
 const grandTotals = computed(() => {
-    let stats = { all: { usd: 0, khr: 0, clients: 0, totalUnitsCount: 0, units: {} }, retail: { usd: 0, khr: 0, clients: 0, totalUnitsCount: 0, units: {} }, wholesale: { usd: 0, khr: 0, clients: 0, totalUnitsCount: 0, units: {} } };
+    let stats = { 
+        all: { usd: 0, khr: 0, deliveryUSD: 0, deliveryKHR: 0, clients: 0, totalUnitsCount: 0, units: {} }, 
+        retail: { usd: 0, khr: 0, deliveryUSD: 0, deliveryKHR: 0, clients: 0, totalUnitsCount: 0, units: {} }, 
+        wholesale: { usd: 0, khr: 0, deliveryUSD: 0, deliveryKHR: 0, clients: 0, totalUnitsCount: 0, units: {} } 
+    };
     
-    // We compute this from flatSales to be extremely accurate, independent of the combined row logic
     allSales.value.forEach(sale => {
         const isWholesale = sale.category === 'បោះដុំ';
         if (!isDateInScope(getValidDateStr(sale))) return;
         
-        // Only count if seller is currently active in the view
         const activeSellerIds = new Set(filteredSellers.value.map(s => s.originalSellerId));
         if (!activeSellerIds.has(sale.sellerId) && !activeSellerIds.has(sale.uid)) return;
 
@@ -570,8 +588,20 @@ const grandTotals = computed(() => {
         const unit = (sale.unit || 'unknown').toLowerCase().trim();
         const clientVal = Number(sale.totalClients || 0);
 
+        let dUsd = 0;
+        let dKhr = 0;
+        if (sale.isFirstItemOfReceipt) {
+            const dFee = Number(sale.deliveryFee) || 0;
+            const dCurr = sale.deliveryCurrency || 'USD';
+            if (dCurr === 'USD' || dCurr === '$') dUsd = dFee;
+            else dKhr = dFee;
+        }
+
         stats.all.usd += usdVal; stats.all.khr += khrVal; stats.all.clients += clientVal;
+        stats.all.deliveryUSD += dUsd; stats.all.deliveryKHR += dKhr;
+
         stats[cat].usd += usdVal; stats[cat].khr += khrVal; stats[cat].clients += clientVal;
+        stats[cat].deliveryUSD += dUsd; stats[cat].deliveryKHR += dKhr;
         
         if (qty > 0) {
             stats.all.units[unit] = (stats.all.units[unit] || 0) + qty; stats.all.totalUnitsCount += qty;
@@ -597,14 +627,15 @@ const selectedDateFormatter = (dateStr) => {
 };
 
 // ---------------------------------------------------------
-// 🖨️ PRINT & PDF LOGIC (FIXED PAGINATION) 🖨️
+// 🖨️ PRINT & PDF LOGIC (ROBUST PAGINATION) 🖨️
 // ---------------------------------------------------------
 
 const formatCurrency = (val, curr) => Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (curr === 'USD' ? ' $' : ' ៛');
 
 const executeNativePrint = () => {
     const dataWithIndex = filteredSellers.value.map((item, idx) => ({ ...item, printIndex: idx + 1 }));
-    const contentHTML = generatePageHTML(dataWithIndex, 1, 1, true);
+    // Native print handles pagination natively, so we just ask for 1 giant page rendering
+    const contentHTML = generatePageHTML({ rows: dataWithIndex, summary: { top: true, overall: true, region: true } }, 1, 1, true);
 
     const iframe = document.createElement('iframe');
     iframe.style.position = 'absolute'; iframe.style.width = '0'; iframe.style.height = '0'; iframe.style.border = 'none';
@@ -642,52 +673,88 @@ const generatePDF = async () => {
     
     try {
         const pages = [];
-        let currentPageRows = [];
         
-        // Revised Height Calculation
-        const MAX_PAGE_HEIGHT = 980; // Total height 1123 minus padding
+        // កាត់បន្ថយកម្ពស់សរុបបន្តិច ដើម្បីកុំឱ្យជាន់ Footer
+        const MAX_PAGE_HEIGHT = 920; 
         const PAGE_TITLE_HEIGHT = 120; 
-        const TABLE_HEADER_HEIGHT = 50;
+        const TABLE_HEADER_HEIGHT = 60;
 
+        let currentRows = [];
         let currentHeight = PAGE_TITLE_HEIGHT + TABLE_HEADER_HEIGHT; 
         let rowCounter = 1;
         let allRows = [...filteredSellers.value];
 
-        // 1. Paginate Rows
+        // 1. Paginate Rows strictly based on exact height estimation
         for (let row of allRows) {
             let numProducts = row.productsList ? row.productsList.length : 1;
-            let rowHeight = 70 + (numProducts * 20); // Estimate height based on number of items
+            let rowHeight = 70 + (numProducts * 30); 
 
-            if (currentHeight + rowHeight > MAX_PAGE_HEIGHT && currentPageRows.length > 0) {
-                pages.push(currentPageRows);
-                currentPageRows = [];
-                currentHeight = TABLE_HEADER_HEIGHT; // New page has no main title
+            if (currentHeight + rowHeight > MAX_PAGE_HEIGHT && currentRows.length > 0) {
+                pages.push({ rows: currentRows, summary: {} });
+                currentRows = [];
+                currentHeight = TABLE_HEADER_HEIGHT; 
             }
             
-            currentPageRows.push({ ...row, printIndex: rowCounter++ });
+            currentRows.push({ ...row, printIndex: rowCounter++ });
             currentHeight += rowHeight;
         }
 
-        // 2. Estimate Summary Height
+        // 2. Estimate Summary Section Heights
         let grandTotalUnitCount = Object.keys(grandTotals.value.all.units || {}).length;
-        let topSummaryHeight = 250 + (Math.ceil(grandTotalUnitCount / 2) * 50); // Increased base height to 250
+        let hTop = 260 + (Math.ceil(grandTotalUnitCount / 2) * 45); // Top Grand Total Height
 
-        let itemizedRowsCount = itemizedSummary.value.overall.retail.length + itemizedSummary.value.overall.wholesale.length;
-        let ppRowsCount = itemizedSummary.value.phnomPenh.retail.length + itemizedSummary.value.phnomPenh.wholesale.length;
-        let provRowsCount = itemizedSummary.value.provinces.retail.length + itemizedSummary.value.provinces.wholesale.length;
-        
-        let tableHeadersCount = (itemizedSummary.value.overall.retail.length > 0 ? 1 : 0) + (itemizedSummary.value.overall.wholesale.length > 0 ? 1 : 0) + (ppRowsCount > 0 ? 2 : 0) + (provRowsCount > 0 ? 2 : 0);
-        let bottomSummaryHeight = 150 + (tableHeadersCount * 50) + ((itemizedRowsCount + ppRowsCount + provRowsCount) * 35);
+        let countOverallItems = itemizedSummary.value.overall.retail.length + itemizedSummary.value.overall.wholesale.length;
+        let hOverall = countOverallItems === 0 ? 0 : 120 + (countOverallItems * 35); // Overall Breakdown Height
 
-        let totalSummaryHeight = topSummaryHeight + bottomSummaryHeight;
+        let countPPItems = itemizedSummary.value.phnomPenh.retail.length + itemizedSummary.value.phnomPenh.wholesale.length;
+        let hPP = countPPItems === 0 ? 0 : 130 + (countPPItems * 35); // PP Height
 
-        // 3. Check if Summary fits on the last page
-        if (currentHeight + totalSummaryHeight > MAX_PAGE_HEIGHT && currentPageRows.length > 0) {
-            pages.push(currentPageRows);
-            currentPageRows = []; // Start a fresh blank page for the summary
+        let countProvItems = itemizedSummary.value.provinces.retail.length + itemizedSummary.value.provinces.wholesale.length;
+        let hProv = countProvItems === 0 ? 0 : 130 + (countProvItems * 35); // Provinces Height
+
+        let hRegion = hPP + hProv;
+        if (hRegion > 0) hRegion += 60; // Added safety buffer
+
+        let summaryObj = { top: false, overall: false, region: false };
+
+        // Append Top Summary
+        if (currentHeight + hTop <= MAX_PAGE_HEIGHT) {
+            summaryObj.top = true;
+            currentHeight += hTop;
+        } else {
+            pages.push({ rows: currentRows, summary: summaryObj });
+            currentRows = [];
+            summaryObj = { top: true, overall: false, region: false };
+            currentHeight = hTop;
         }
-        
-        pages.push(currentPageRows); // Push the last page
+
+        // Append Overall Items Summary
+        if (hOverall > 0) {
+            if (currentHeight + hOverall <= MAX_PAGE_HEIGHT) {
+                summaryObj.overall = true;
+                currentHeight += hOverall;
+            } else {
+                pages.push({ rows: currentRows, summary: summaryObj });
+                currentRows = [];
+                summaryObj = { top: false, overall: true, region: false };
+                currentHeight = hOverall;
+            }
+        }
+
+        // Append Region Summary
+        if (hRegion > 0) {
+            if (currentHeight + hRegion <= MAX_PAGE_HEIGHT) {
+                summaryObj.region = true;
+                currentHeight += hRegion;
+            } else {
+                pages.push({ rows: currentRows, summary: summaryObj });
+                currentRows = [];
+                summaryObj = { top: false, overall: false, region: true };
+                currentHeight = hRegion;
+            }
+        }
+
+        pages.push({ rows: currentRows, summary: summaryObj });
 
         const pdf = new jsPDF('p', 'mm', 'a4'); 
         const pdfWidth = 210; 
@@ -725,7 +792,10 @@ const generatePDF = async () => {
     }
 };
 
-const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
+const generatePageHTML = (pageData, pageNum, totalPages, isNativePrint = false) => {
+    
+    const rows = isNativePrint ? pageData : (pageData.rows || []);
+    const summary = isNativePrint ? { top: true, overall: true, region: true } : (pageData.summary || {});
 
     const renderRow = (item) => {
         let salesHTML = '';
@@ -799,18 +869,14 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
         `;
     };
 
-    let summarySectionHTML = '';
-    if (pageNum === totalPages || isNativePrint) {
-        
-        // ---------------------------------------------------------------------------------------------------------
-        // ផ្នែកទី១៖ តារាងសរុបរួម (Grand Total)
-        // ---------------------------------------------------------------------------------------------------------
+    // 1. Build Top Grand Total
+    let topGrandTotalHTML = '';
+    if (summary.top) {
         const unitsArray = Object.entries(grandTotals.value.all.units || {});
         let unitRows = '';
         for (let i = 0; i < unitsArray.length; i += 2) {
             const [u1, c1] = unitsArray[i];
             const item2 = unitsArray[i + 1];
-            
             const cell1 = `
                 <td style="width: 50%; padding: 4px 8px 4px 0; vertical-align: top;">
                     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; overflow: hidden;">
@@ -819,7 +885,6 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
                         <div style="clear: both;"></div>
                     </div>
                 </td>`;
-                
             const cell2 = item2 ? `
                 <td style="width: 50%; padding: 4px 0 4px 8px; vertical-align: top;">
                     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; overflow: hidden;">
@@ -828,7 +893,6 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
                         <div style="clear: both;"></div>
                     </div>
                 </td>` : `<td style="width: 50%;"></td>`;
-                
             unitRows += `<tr>${cell1}${cell2}</tr>`;
         }
         
@@ -836,83 +900,89 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
             ? `<table style="width: 100%; border-collapse: collapse; border: none;"><tbody>${unitRows}</tbody></table>`
             : `<p style="color: #94a3b8; font-size: 12px; margin: 0;">គ្មានទិន្នន័យ</p>`;
 
-        const categoryLabel = activeCategory.value === 'all' ? '' : `- ${activeCategory.value}`;
-
         let breakdownHTML = '';
         if (activeCategory.value === 'all') {
             breakdownHTML = `
-                <div style="margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 15px; overflow: hidden; width: 100%;">
-                    <div style="float: left; width: 48%; background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; box-sizing: border-box;">
-                        <p style="font-size: 10px; color: #64748b; font-weight: 900; margin: 0 0 8px 0;">លក់រាយ (RETAIL)</p>
-                        <p style="margin: 0; font-size: 16px; font-weight: 900; color: #059669;">${grandTotals.value.retail.usd.toLocaleString()} $</p>
-                        <p style="margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #2563eb;">${grandTotals.value.retail.khr.toLocaleString()} ៛</p>
-                        <div style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
-                            <p style="margin: 0; font-size: 10px; font-weight: bold; color: #475569;">អតិថិជន: ${grandTotals.value.retail.clients.toLocaleString()} នាក់</p>
-                            <p style="margin: 2px 0 0 0; font-size: 10px; font-weight: bold; color: #475569;">បរិមាណលក់: ${grandTotals.value.retail.totalUnitsCount.toLocaleString()}</p>
-                        </div>
-                    </div>
-                    <div style="float: right; width: 48%; background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; box-sizing: border-box;">
-                        <p style="font-size: 10px; color: #64748b; font-weight: 900; margin: 0 0 8px 0;">បោះដុំ (WHOLESALE)</p>
-                        <p style="margin: 0; font-size: 16px; font-weight: 900; color: #059669;">${grandTotals.value.wholesale.usd.toLocaleString()} $</p>
-                        <p style="margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #2563eb;">${grandTotals.value.wholesale.khr.toLocaleString()} ៛</p>
-                        <div style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
-                            <p style="margin: 0; font-size: 10px; font-weight: bold; color: #475569;">អតិថិជន: ${grandTotals.value.wholesale.clients.toLocaleString()} នាក់</p>
-                            <p style="margin: 2px 0 0 0; font-size: 10px; font-weight: bold; color: #475569;">បរិមាណលក់: ${grandTotals.value.wholesale.totalUnitsCount.toLocaleString()}</p>
-                        </div>
-                    </div>
-                    <div style="clear: both;"></div>
-                </div>
+                <table style="width: 100%; margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
+                    <tr>
+                        <td style="width: 48%; background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; vertical-align: top;">
+                            <p style="font-size: 10px; color: #64748b; font-weight: 900; margin: 0 0 8px 0;">លក់រាយ (RETAIL)</p>
+                            <p style="margin: 0; font-size: 16px; font-weight: 900; color: #059669;">${grandTotals.value.retail.usd.toLocaleString()} $</p>
+                            <p style="margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #2563eb;">${grandTotals.value.retail.khr.toLocaleString()} ៛</p>
+                            <div style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+                                <p style="margin: 0; font-size: 10px; font-weight: bold; color: #475569;">អតិថិជន: ${grandTotals.value.retail.clients.toLocaleString()} នាក់</p>
+                                <p style="margin: 2px 0 0 0; font-size: 10px; font-weight: bold; color: #475569;">បរិមាណលក់: ${grandTotals.value.retail.totalUnitsCount.toLocaleString()}</p>
+                            </div>
+                        </td>
+                        <td style="width: 4%;"></td>
+                        <td style="width: 48%; background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; vertical-align: top;">
+                            <p style="font-size: 10px; color: #64748b; font-weight: 900; margin: 0 0 8px 0;">បោះដុំ (WHOLESALE)</p>
+                            <p style="margin: 0; font-size: 16px; font-weight: 900; color: #059669;">${grandTotals.value.wholesale.usd.toLocaleString()} $</p>
+                            <p style="margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #2563eb;">${grandTotals.value.wholesale.khr.toLocaleString()} ៛</p>
+                            <div style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+                                <p style="margin: 0; font-size: 10px; font-weight: bold; color: #475569;">អតិថិជន: ${grandTotals.value.wholesale.clients.toLocaleString()} នាក់</p>
+                                <p style="margin: 2px 0 0 0; font-size: 10px; font-weight: bold; color: #475569;">បរិមាណលក់: ${grandTotals.value.wholesale.totalUnitsCount.toLocaleString()}</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
             `;
         }
 
-        const topGrandTotalHTML = `
-            <div style="margin-top: 30px; border-top: 2px dashed #cbd5e1; padding-top: 20px; overflow: hidden; break-inside: avoid; page-break-inside: avoid; width: 100%; display: table;">
-                <div style="display: table-cell; width: 55%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; vertical-align: top;">
-                    <div style="margin-bottom: 15px; overflow: hidden;">
-                        <div style="float: left; width: 24px; height: 24px; background: #e0e7ff; color: #4f46e5; border-radius: 6px; text-align: center; line-height: 24px; margin-right: 8px;">
-                            <svg style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-top: -2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        topGrandTotalHTML = `
+            <table style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 20px;">
+                <tr>
+                    <td style="width: 55%; vertical-align: top; padding-right: 15px;">
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px;">
+                            <h3 style="font-size: 14px; font-weight: 900; color: #1e293b; margin: 0 0 15px 0;">
+                                <span style="display:inline-block; background: #e0e7ff; color: #4f46e5; padding: 2px 6px; border-radius: 6px; margin-right: 5px;">📊</span> សរុបបរិមាណលក់តាមប្រភេទ
+                            </h3>
+                            ${unitsTableHTML}
                         </div>
-                        <h3 style="font-size: 14px; font-weight: 900; color: #1e293b; margin: 0; line-height: 24px; float: left;">សរុបបរិមាណលក់តាមប្រភេទ ${categoryLabel}</h3>
-                        <div style="clear: both;"></div>
-                    </div>
-                    <div>${unitsTableHTML}</div>
-                </div>
-                <div style="display: table-cell; width: 3%;"></div>
-                <div style="display: table-cell; width: 42%; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0; vertical-align: top; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-                    <div style="background: #1e293b; padding: 12px 15px; border-top-left-radius: 11px; border-top-right-radius: 11px;">
-                        <h3 style="font-size: 14px; font-weight: 900; color: white; margin: 0;">សរុបរួម (Grand Total) ${categoryLabel}</h3>
-                    </div>
-                    <div style="padding: 15px; background: #f8fafc; border-bottom-left-radius: 11px; border-bottom-right-radius: 11px;">
-                        <table style="width: 100%; border-collapse: collapse; border: none;">
-                            <tr>
-                                <td style="padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1; color: #64748b; font-size: 11px; font-weight: bold; border-top: none; border-left: none; border-right: none;">អតិថិជនសរុប:</td>
-                                <td style="padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1; text-align: right; border-top: none; border-left: none; border-right: none;">
-                                    <span style="font-weight: 900; color: #0f172a; font-size: 13px; background: white; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">${grandTotals.value.all.clients.toLocaleString()} នាក់</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding-top: 12px; padding-bottom: 6px; color: #64748b; font-size: 11px; font-weight: bold; border: none;">ចំណូល (USD):</td>
-                                <td style="padding-top: 12px; padding-bottom: 6px; text-align: right; font-weight: 900; color: #059669; font-size: 18px; border: none;">${grandTotals.value.all.usd.toLocaleString()} $</td>
-                            </tr>
-                            <tr>
-                                <td style="padding-top: 0; color: #64748b; font-size: 11px; font-weight: bold; border: none;">ចំណូល (KHR):</td>
-                                <td style="padding-top: 0; text-align: right; font-weight: 900; color: #2563eb; font-size: 14px; border: none;">${grandTotals.value.all.khr.toLocaleString()} ៛</td>
-                            </tr>
-                        </table>
-                        ${breakdownHTML}
-                    </div>
-                </div>
-            </div>
+                    </td>
+                    <td style="width: 45%; vertical-align: top;">
+                        <div style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                            <div style="background: #1e293b; padding: 12px 15px;">
+                                <h3 style="font-size: 14px; font-weight: 900; color: white; margin: 0;">សរុបរួម (Grand Total)</h3>
+                            </div>
+                            <div style="padding: 15px; background: #f8fafc;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                    <tr>
+                                        <td style="padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1; color: #64748b; font-weight: bold;">អតិថិជនសរុប:</td>
+                                        <td style="padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1; text-align: right; font-weight: 900; color: #0f172a;">${grandTotals.value.all.clients.toLocaleString()} នាក់</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding-top: 8px; padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1; color: #64748b; font-weight: bold;">សរុបទំនិញ (Products):</td>
+                                        <td style="padding-top: 8px; padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1; text-align: right; font-weight: 900; color: #059669; font-size: 14px;">
+                                            ${grandTotals.value.all.usd.toLocaleString()} $
+                                            ${grandTotals.value.all.khr > 0 ? `<br/><span style="color: #2563eb; font-size: 11px;">${grandTotals.value.all.khr.toLocaleString()} ៛</span>` : ''}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding-top: 8px; padding-bottom: 8px; border-bottom: 1px solid #cbd5e1; color: #64748b; font-weight: bold;">ថ្លៃដឹកជញ្ជូន (Delivery):</td>
+                                        <td style="padding-top: 8px; padding-bottom: 8px; border-bottom: 1px solid #cbd5e1; text-align: right; font-weight: 900; color: #ea580c;">
+                                            ${grandTotals.value.all.deliveryUSD > 0 ? grandTotals.value.all.deliveryUSD.toLocaleString() + ' $' : ''}
+                                            ${grandTotals.value.all.deliveryUSD > 0 && grandTotals.value.all.deliveryKHR > 0 ? ' | ' : ''}
+                                            ${grandTotals.value.all.deliveryKHR > 0 ? grandTotals.value.all.deliveryKHR.toLocaleString() + ' ៛' : ''}
+                                            ${grandTotals.value.all.deliveryUSD === 0 && grandTotals.value.all.deliveryKHR === 0 ? '0 $' : ''}
+                                        </td>
+                                    </tr>
+                                </table>
+                                ${breakdownHTML}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
         `;
+    }
 
-
-        // ---------------------------------------------------------------------------------------------------------
-        // ផ្នែកទី២៖ របាយការណ៍លម្អិតតាមមុខទំនិញ និងតំបន់
-        // ---------------------------------------------------------------------------------------------------------
-        
-        let overallRetailHTML = '';
+    // 2. Build Overall Summary
+    let overallHTML = '';
+    if (summary.overall) {
+        let retailHTML = '';
         if (itemizedSummary.value.overall.retail.length > 0) {
-            overallRetailHTML = `
+            retailHTML = `
                 <div style="margin-bottom: 15px;">
                     <div style="background: #e0e7ff; color: #4f46e5; font-size: 12px; font-weight: bold; padding: 6px 12px; border-radius: 6px; display: inline-block; margin-bottom: 10px;">សរុបការលក់រាយ និងឈុត (Retail & Combo)</div>
                     <table style="width: 100%; border-collapse: collapse; font-size: 11px; background: white;">
@@ -939,9 +1009,9 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
             `;
         }
 
-        let overallWholesaleHTML = '';
+        let wholesaleHTML = '';
         if (itemizedSummary.value.overall.wholesale.length > 0) {
-            overallWholesaleHTML = `
+            wholesaleHTML = `
                 <div style="margin-bottom: 15px;">
                     <div style="background: #f3e8ff; color: #7e22ce; font-size: 12px; font-weight: bold; padding: 6px 12px; border-radius: 6px; display: inline-block; margin-bottom: 10px;">សរុបការបោះដុំ (Wholesale)</div>
                     <table style="width: 100%; border-collapse: collapse; font-size: 11px; background: white;">
@@ -967,18 +1037,32 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
                 </div>
             `;
         }
+        
+        overallHTML = retailHTML + wholesaleHTML;
+    }
 
+    // 3. Build Regional Summary
+    let regionHTML = '';
+    if (summary.region) {
         const buildRegionHTML = (title, regionData, colorHex, bgColor) => {
             if (regionData.retail.length === 0 && regionData.wholesale.length === 0) return '';
+
             let html = `
-                <div style="margin-top: 20px; padding: 15px; border-radius: 12px; border: 1px solid ${colorHex}40; background: ${bgColor}; break-inside: avoid; page-break-inside: avoid;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid ${colorHex}40; padding-bottom: 10px;">
-                        <h3 style="font-size: 15px; font-weight: 900; color: ${colorHex}; margin: 0;">📍 ${title}</h3>
-                        <span style="background: white; color: #475569; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; border: 1px solid #cbd5e1;">
-                            អតិថិជនសរុប: ${regionData.clientCount} នាក់
-                        </span>
-                    </div>
+                <div style="margin-top: 25px; padding: 15px; border-radius: 12px; border: 1px solid ${colorHex}40; background: ${bgColor}; break-inside: avoid; page-break-inside: avoid;">
+                    <table style="width: 100%; margin-bottom: 15px; border-bottom: 2px solid ${colorHex}40; padding-bottom: 10px;">
+                        <tr>
+                            <td style="text-align: left;">
+                                <h3 style="font-size: 15px; font-weight: 900; color: ${colorHex}; margin: 0;">📍 ${title}</h3>
+                            </td>
+                            <td style="text-align: right;">
+                                <span style="background: white; color: #475569; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; border: 1px solid #cbd5e1;">
+                                    អតិថិជនសរុប: ${regionData.clientCount} នាក់
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
             `;
+
             const buildTable = (typeTitle, items) => {
                 if (items.length === 0) return '';
                 return `
@@ -1007,27 +1091,49 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
                     </div>
                 `;
             };
+
             html += buildTable('លក់រាយ (Retail)', regionData.retail);
             html += buildTable('បោះដុំ (Wholesale)', regionData.wholesale);
+
             html += `
-                    <div style="text-align: right; padding-top: 10px; font-size: 14px; font-weight: 900; color: ${colorHex}; border-top: 1px dashed ${colorHex}40;">
-                        សរុបទឹកប្រាក់តំបន់នេះ: ${regionData.usd.toLocaleString()} $ ${regionData.khr > 0 ? `| ${regionData.khr.toLocaleString()} ៛` : ''}
+                    <div style="text-align: right; padding-top: 10px; font-size: 12px; color: ${colorHex}; border-top: 1px dashed ${colorHex}40;">
+                        <table style="width: 100%; border: none;">
+                            <tr>
+                                <td style="text-align: right; color: #64748b; font-weight: bold; padding-bottom: 4px;">សរុបទំនិញតំបន់នេះ:</td>
+                                <td style="text-align: right; font-weight: 900; color: ${colorHex}; padding-bottom: 4px; width: 180px;">${regionData.usd.toLocaleString()} $ ${regionData.khr > 0 ? `| ${regionData.khr.toLocaleString()} ៛` : ''}</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: right; color: #64748b; font-weight: bold; padding-bottom: 4px;">ថ្លៃដឹកជញ្ជូន:</td>
+                                <td style="text-align: right; font-weight: 900; color: #ea580c; padding-bottom: 4px;">${regionData.deliveryUSD > 0 ? regionData.deliveryUSD.toLocaleString() + ' $' : '0 $'} ${regionData.deliveryKHR > 0 ? `| ${regionData.deliveryKHR.toLocaleString()} ៛` : ''}</td>
+                            </tr>
+                        </table>
                     </div>
                 </div>
             `;
             return html;
         };
 
-        summarySectionHTML = `
-            ${topGrandTotalHTML}
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #cbd5e1; break-inside: avoid; page-break-inside: avoid; width: 100%;">
-                <h3 style="font-size: 18px; font-weight: 900; color: #1e293b; margin-bottom: 20px; text-align: center;">របាយការណ៍លម្អិតតាមមុខទំនិញ និងតំបន់</h3>
-                
-                ${overallRetailHTML}
-                ${overallWholesaleHTML}
+        regionHTML += buildRegionHTML('រាជធានីភ្នំពេញ', itemizedSummary.value.phnomPenh, '#0284c7', '#f0f9ff');
+        regionHTML += buildRegionHTML('តាមបណ្តាខេត្ត', itemizedSummary.value.provinces, '#ea580c', '#fff7ed');
+    }
 
-                ${buildRegionHTML('រាជធានីភ្នំពេញ', itemizedSummary.value.phnomPenh, '#0284c7', '#f0f9ff')}
-                ${buildRegionHTML('តាមបណ្តាខេត្ត', itemizedSummary.value.provinces, '#ea580c', '#fff7ed')}
+    let allSummariesCombined = '';
+    if (summary.top || summary.overall || summary.region) {
+        let titleHTML = '';
+        if (summary.overall || summary.region) {
+            titleHTML = `<h3 style="font-size: 18px; font-weight: 900; color: #1e293b; margin-bottom: 20px; text-align: center;">របាយការណ៍លម្អិតតាមមុខទំនិញ និងតំបន់</h3>`;
+        }
+
+        let topMargin = summary.top ? '30px' : '0px';
+        let topPadding = summary.top ? '20px' : '0px';
+        let topBorder = summary.top ? '2px solid #cbd5e1' : 'none';
+
+        allSummariesCombined = `
+            <div style="margin-top: ${topMargin}; padding-top: ${topPadding}; border-top: ${topBorder}; width: 100%;">
+                ${topGrandTotalHTML}
+                ${titleHTML}
+                ${overallHTML}
+                ${regionHTML}
             </div>
         `;
     }
@@ -1056,28 +1162,34 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
         `;
     }
 
+    // លុប Fixed Height ចេញ
     const pageStyles = isNativePrint
         ? `width: 100%; box-sizing: border-box; font-family: 'Battambang', 'Kantumruy Pro', sans-serif; line-height: 1.5; padding: 15px;`
-        : `width: 794px; height: 1122px; background: white; padding: 40px; box-sizing: border-box; font-family: 'Battambang', 'Kantumruy Pro', sans-serif; line-height: 1.5; position: relative; overflow: hidden;`;
+        : `width: 794px; min-height: 1123px; height: auto; background: white; padding: 40px; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'Battambang', 'Kantumruy Pro', sans-serif; line-height: 1.5; position: relative;`;
 
     const mainTitle = (pageNum === 1 || isNativePrint) 
         ? `<div style="text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #4f46e5;"><h1 style="font-size: 24px; font-weight: 900; color: #4338ca; margin: 0; text-align: center; width: 100%;">របាយការណ៍លក់សរុប</h1></div>` 
         : '';
 
+    // ប្តូរ Footer ពី Absolute ទៅជា Flex Margin Auto ដើម្បីកុំឱ្យជាន់ទិន្នន័យពីលើ
+    const footerHTML = isNativePrint ? '' : `
+        <div style="margin-top: auto; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 11px; font-weight: bold; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; background: white; width: 100%;">
+            <div>
+                <span style="background-color: #f8fafc; padding: 3px 8px; border-radius: 4px; border: 1px solid #e2e8f0; color: #1e293b; font-size: 11px; font-weight: 900;">កាលបរិច្ឆេទ: ${reportDateLabel.value}</span>
+                <span style="margin-left: 10px;">ថ្ងៃបញ្ចេញរបាយការណ៍ • ${new Date().toLocaleString('km-KH')}</span>
+            </div>
+            <div>ទំព័រទី ${pageNum} នៃ ${totalPages}</div>
+        </div>
+    `;
+
     return `
         <div class="print-page" style="${pageStyles}">
-            <div>
+            <div style="padding-bottom: 60px;">
                 ${mainTitle}
                 ${tableHTML}
-                ${summarySectionHTML}
+                ${allSummariesCombined}
             </div>
-            <div style="position: absolute; bottom: 30px; left: 40px; right: 40px; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 11px; font-weight: bold; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                   <span style="background-color: #f8fafc; padding: 3px 8px; border-radius: 4px; border: 1px solid #e2e8f0; color: #1e293b; font-size: 11px; font-weight: 900;">កាលបរិច្ឆេទ: ${reportDateLabel.value}</span>
-                   <span style="margin-left: 10px;">ថ្ងៃបញ្ចេញរបាយការណ៍ • ${new Date().toLocaleString('km-KH')}</span>
-                </div>
-                <div>${isNativePrint ? '' : `ទំព័រទី ${pageNum} នៃ ${totalPages}`}</div>
-            </div>
+            ${footerHTML}
         </div>
     `;
 };
