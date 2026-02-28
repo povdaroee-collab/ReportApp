@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-[#0a0a0a] font-khmer relative overflow-hidden selection:bg-amber-500 selection:text-black">
+  <div class="min-h-screen flex items-center justify-center bg-[#0a0a0a] font-khmer relative overflow-hidden selection:bg-amber-500 selection:text-black" @click="closeDropdown">
     
     <Teleport to="body">
       <div class="fixed top-4 right-4 z-[9999] w-full max-w-sm pointer-events-none flex flex-col gap-2">
@@ -33,25 +33,57 @@
 
         <form @submit.prevent="handleLogin" class="space-y-5 relative z-10">
           
-          <div class="group relative">
+          <div class="group relative user-dropdown-container z-[60]">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300 group-focus-within:text-amber-400 text-neutral-500">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
             </div>
             <input 
+              ref="usernameInputRef"
               v-model="username" 
+              @input="handleUsernameInput"
+              @keydown.down.prevent="navigateDropdown(1)"
+              @keydown.up.prevent="navigateDropdown(-1)"
+              @keydown.enter.prevent="selectHighlightedAccount"
+              @keydown.esc="closeDropdown"
               type="text" 
+              autocomplete="off"
               class="w-full bg-[#171717] border border-neutral-800 rounded-xl py-3.5 pl-11 pr-4 text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300 hover:border-neutral-700 font-medium" 
               placeholder="ឈ្មោះគណនី (Username)" 
               required 
             />
+            
+            <div v-if="showSavedUsers && filteredAccounts.length > 0" class="absolute left-0 right-0 mt-2 bg-[#171717] border border-neutral-800 rounded-xl shadow-2xl shadow-black/80 max-h-48 overflow-y-auto custom-scrollbar p-1.5 z-[100]">
+                <div 
+                    v-for="(acc, index) in filteredAccounts" :key="acc.username" 
+                    @click.stop="selectSavedAccount(acc)" 
+                    @mouseenter="highlightedIndex = index"
+                    class="px-4 py-2.5 rounded-lg cursor-pointer flex items-center justify-between transition-colors"
+                    :class="highlightedIndex === index ? 'bg-[#262626]' : 'hover:bg-[#262626]'"
+                >
+                    <div class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-neutral-800 flex items-center justify-center text-[10px] font-black text-amber-500 border transition-colors"
+                             :class="highlightedIndex === index ? 'border-amber-500/50' : 'border-neutral-700'">
+                            {{ acc.username.charAt(0).toUpperCase() }}
+                        </div>
+                        <span class="text-sm font-bold transition-colors"
+                              :class="highlightedIndex === index ? 'text-amber-400' : 'text-neutral-300'">
+                            {{ acc.username }}
+                        </span>
+                    </div>
+                    <button @click.stop="removeSavedAccount(acc.username, $event)" class="text-neutral-600 hover:text-rose-500 p-1.5 rounded-md transition-colors" title="លុបចេញពីការចងចាំ">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            </div>
           </div>
 
-          <div class="group relative">
+          <div class="group relative z-10">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300 group-focus-within:text-amber-400 text-neutral-500">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
             </div>
             
             <input 
+              ref="passwordInputRef"
               v-model="password" 
               :type="showPassword ? 'text' : 'password'" 
               class="w-full bg-[#171717] border border-neutral-800 rounded-xl py-3.5 pl-11 pr-12 text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300 hover:border-neutral-700 font-medium font-mono tracking-wider" 
@@ -70,14 +102,22 @@
             </button>
           </div>
 
-          <div class="flex justify-end">
-             <a href="https://t.me/MMKDaro" target="_blank" class="text-xs font-bold text-neutral-500 hover:text-amber-400 transition-colors flex items-center gap-1">
-               ភ្លេចពាក្យសម្ងាត់?
-               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+          <div class="flex items-center justify-between mt-2 z-10 relative">
+             <label class="flex items-center gap-2 cursor-pointer group select-none">
+                <div class="relative flex items-center justify-center w-4 h-4 rounded border border-neutral-600 bg-[#171717] group-hover:border-amber-500/50 transition-colors">
+                   <input type="checkbox" v-model="rememberMe" class="opacity-0 absolute inset-0 cursor-pointer z-10" />
+                   <svg v-if="rememberMe" class="w-3 h-3 text-amber-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <span class="text-[11px] font-bold text-neutral-400 group-hover:text-neutral-300 transition-colors">ចងចាំគណនីខ្ញុំ</span>
+             </label>
+
+             <a href="https://t.me/MMKDaro" target="_blank" class="text-[11px] font-bold text-neutral-500 hover:text-amber-400 transition-colors flex items-center gap-1">
+                ភ្លេចពាក្យសម្ងាត់?
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
              </a>
           </div>
 
-          <button type="submit" class="w-full relative overflow-hidden group bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black font-black py-3.5 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.3)] transform transition-all duration-200 hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 mt-4" :disabled="isLoading">
+          <button type="submit" ref="loginButtonRef" class="w-full relative overflow-hidden group bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black font-black py-3.5 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.3)] transform transition-all duration-200 hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 mt-4 z-10" :disabled="isLoading">
             <div class="absolute inset-0 bg-white/30 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out skew-x-12"></div>
             <span v-if="!isLoading" class="relative z-10 flex items-center justify-center gap-2">
               ចូលប្រព័ន្ធ (LOGIN)
@@ -101,22 +141,134 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth'; 
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/firebaseConfig';
 
-// ✅ ប្រើប្រាស់ Notification Store ថ្មី
 import Toast from '@/components/Toast.vue';
 import { useNotificationStore } from '@/stores/notification';
 
+// Refs for DOM elements to handle focus
+const usernameInputRef = ref(null);
+const passwordInputRef = ref(null);
+const loginButtonRef = ref(null);
+
 const username = ref('');
 const password = ref('');
-const showPassword = ref(false); // State for toggling password visibility
+const showPassword = ref(false); 
+const rememberMe = ref(false); 
 const isLoading = ref(false);
 const router = useRouter();
 const notification = useNotificationStore();
+
+// --- Smart Remember Me State ---
+const LS_ACCOUNTS_KEY = 'rms_saved_accounts';
+const savedAccounts = ref([]);
+const showSavedUsers = ref(false);
+const highlightedIndex = ref(-1);
+
+// Load accounts on mount
+onMounted(() => {
+  const stored = localStorage.getItem(LS_ACCOUNTS_KEY);
+  if (stored) {
+    try {
+      savedAccounts.value = JSON.parse(stored);
+    } catch (e) {
+      savedAccounts.value = [];
+    }
+  }
+});
+
+const closeDropdown = () => {
+    showSavedUsers.value = false;
+    highlightedIndex.value = -1;
+};
+
+// Handle Input Change
+const handleUsernameInput = () => {
+    // Show dropdown only if input is at least 2 characters OR if it perfectly matches an existing saved account (to show options early if they type fast)
+    if (username.value.length >= 2 || savedAccounts.value.some(acc => acc.username.toLowerCase().startsWith(username.value.toLowerCase()))) {
+        showSavedUsers.value = true;
+    } else {
+        showSavedUsers.value = false;
+    }
+    
+    // Reset highlighted index when typing
+    highlightedIndex.value = -1;
+    
+    // If they change the username, uncheck remember me and clear password
+    rememberMe.value = false;
+    password.value = '';
+};
+
+// Filter dropdown based on input
+const filteredAccounts = computed(() => {
+    if (!username.value) return [];
+    return savedAccounts.value.filter(acc => 
+        acc.username.toLowerCase().includes(username.value.toLowerCase())
+    );
+});
+
+// Keyboard Navigation
+const navigateDropdown = (direction) => {
+    if (!showSavedUsers.value || filteredAccounts.value.length === 0) return;
+    
+    highlightedIndex.value += direction;
+    
+    if (highlightedIndex.value < 0) {
+        highlightedIndex.value = filteredAccounts.value.length - 1;
+    } else if (highlightedIndex.value >= filteredAccounts.value.length) {
+        highlightedIndex.value = 0;
+    }
+};
+
+const selectHighlightedAccount = () => {
+    // If dropdown is open and an item is highlighted, select it
+    if (showSavedUsers.value && highlightedIndex.value >= 0 && highlightedIndex.value < filteredAccounts.value.length) {
+        selectSavedAccount(filteredAccounts.value[highlightedIndex.value]);
+    } else if (!showSavedUsers.value && username.value && password.value) {
+        // If dropdown is closed and inputs are filled, submit the form
+        handleLogin();
+    } else if (!showSavedUsers.value && username.value && !password.value) {
+        // Move focus to password if username is filled but password is empty
+        passwordInputRef.value?.focus();
+    }
+};
+
+// Auto-fill when clicked from dropdown or selected via Enter
+const selectSavedAccount = (account) => {
+    username.value = account.username;
+    try {
+        password.value = atob(account.password); 
+    } catch (e) {
+        password.value = '';
+    }
+    rememberMe.value = true; 
+    closeDropdown();
+    
+    // Auto focus login button for quick entry
+    setTimeout(() => {
+        loginButtonRef.value?.focus();
+    }, 100);
+};
+
+// Delete account from local storage
+const removeSavedAccount = (usernameToRemove, event) => {
+    event.stopPropagation(); // Prevent triggering the row click
+    savedAccounts.value = savedAccounts.value.filter(acc => acc.username !== usernameToRemove);
+    localStorage.setItem(LS_ACCOUNTS_KEY, JSON.stringify(savedAccounts.value));
+    
+    // Clear input if they delete the currently typed one
+    if (username.value === usernameToRemove) {
+        username.value = '';
+        password.value = '';
+        rememberMe.value = false;
+        closeDropdown();
+        usernameInputRef.value?.focus();
+    }
+};
 
 // --- LOGIN LOGIC ---
 const handleLogin = async () => {
@@ -127,42 +279,55 @@ const handleLogin = async () => {
   isLoading.value = true;
 
   try {
-    // 1. Convert Username to Fake Email
     const email = `${username.value}@report-system.com`;
-
-    // 2. Authenticate with Firebase Auth
     const userCredential = await signInWithEmailAndPassword(auth, email, password.value);
     const user = userCredential.user;
 
-    // 3. Query Firestore to get User Data
     const userDocRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userDocRef);
 
     if (userSnap.exists()) {
       const userData = userSnap.data();
 
-      // A. Check if user is soft-deleted (In Trash)
       if (userData.isDeleted === true || userData.isDeleted === "true") {
-        await signOut(auth); // Immediately log them back out
+        await signOut(auth);
         notification.error('គណនីនេះត្រូវបានលុបចេញពីប្រព័ន្ធហើយ។', 'គណនីមិនមានសុពលភាព');
         isLoading.value = false;
         return;
       }
 
-      // B. Check if user is blocked
       if (userData.isBlocked) {
-        await signOut(auth); // Immediately log them back out
+        await signOut(auth);
         notification.error('សូមទាក់ទងទៅកាន់ម្ចាស់ប្រព័ន្ធ', 'គណនីត្រូវបានបិទ');
         isLoading.value = false;
         return;
       }
-                
-      // C. Check Role and Redirect
-      if (userData.role === 'superadmin') {
-        notification.success(`ស្វាគមន៍អ្នកគ្រប់គ្រងកំពូល ${userData.fullName}`, 'ជោគជ័យ');
-        setTimeout(() => router.push('/app/owner/dashboard'), 1000);
+
+      // --- SAVE OR REMOVE FROM LOCAL STORAGE UPON SUCCESS ---
+      let currentAccounts = [...savedAccounts.value];
+      const existingIndex = currentAccounts.findIndex(acc => acc.username === username.value);
+
+      if (rememberMe.value) {
+          const newAcc = {
+              username: username.value,
+              password: btoa(password.value) 
+          };
+          if (existingIndex !== -1) {
+              currentAccounts[existingIndex] = newAcc; 
+          } else {
+              currentAccounts.push(newAcc); 
+          }
+      } else {
+          // If they successfully log in but uncheck "Remember me", remove them from saved list
+          if (existingIndex !== -1) {
+              currentAccounts.splice(existingIndex, 1);
+          }
       }
-      else if (userData.role === 'owner') {
+      localStorage.setItem(LS_ACCOUNTS_KEY, JSON.stringify(currentAccounts));
+      savedAccounts.value = currentAccounts;
+
+      // --- REDIRECT ---
+      if (userData.role === 'superadmin' || userData.role === 'owner') {
         notification.success(`ស្វាគមន៍ម្ចាស់ប្រព័ន្ធ ${userData.fullName}`, 'ជោគជ័យ');
         setTimeout(() => router.push('/app/owner/dashboard'), 1000);
       } 
@@ -182,8 +347,6 @@ const handleLogin = async () => {
 
   } catch (error) {
     console.error("Login Error:", error.code);
-    
-    // Friendly Error Messages
     let msg = "មានបញ្ហាក្នុងការភ្ជាប់";
     let title = "បរាជ័យ";
 
@@ -194,7 +357,6 @@ const handleLogin = async () => {
     } else if (error.code === 'auth/configuration-not-found') {
       msg = "សូមបើក Email/Password Login នៅក្នុង Firebase Console ជាមុនសិន!";
     }
-    
     notification.error(msg, title);
   } finally {
     isLoading.value = false;
@@ -211,4 +373,10 @@ const handleLogin = async () => {
   50% { transform: scale(1.1); opacity: 0.2; }
 }
 .animate-pulse-slow { animation: pulse-slow 8s infinite ease-in-out; }
+
+/* Custom scrollbar for the dropdown */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #404040; border-radius: 10px; }
+.custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #525252; }
 </style>

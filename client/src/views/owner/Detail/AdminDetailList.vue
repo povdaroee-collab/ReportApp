@@ -43,10 +43,10 @@
                 <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase font-black tracking-widest border-b border-slate-200">
                     <tr>
                         <th class="px-6 py-5 text-center w-16 whitespace-nowrap">#</th>
-                        <th class="px-6 py-5 whitespace-nowrap">តំណាងលក់</th>
-                        <th class="px-6 py-5 whitespace-nowrap w-48">ប្រភេទ (ទំនិញ)</th>
-                        <th class="px-6 py-5 w-[25%] whitespace-nowrap">ចំនួនលក់ (UNITS)</th>
-                        <th class="px-6 py-5 text-center whitespace-nowrap">ការលក់ (TYPE)</th>
+                        <th class="px-6 py-5 whitespace-nowrap w-48">តំណាងលក់</th>
+                        <th class="px-6 py-5 text-center whitespace-nowrap">ប្រភេទ</th>
+                        <th class="px-6 py-5 whitespace-nowrap">មុខទំនិញ</th>
+                        <th class="px-6 py-5 w-[20%] whitespace-nowrap">បរិមាណលក់</th>
                         <th class="px-6 py-5 text-center whitespace-nowrap">អតិថិជន</th>
                         <th class="px-6 py-5 text-right whitespace-nowrap">ចំណូល</th>
                     </tr>
@@ -67,10 +67,19 @@
                             </div>
                         </td>
                         
-                        <td class="px-6 py-4 align-top pt-6">
-                            <span v-if="seller.hasSales" class="font-bold text-slate-700 text-sm bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-                                {{ seller.productName }}
+                        <td class="px-6 py-4 text-center align-top pt-6">
+                            <span v-if="seller.hasSales" :class="seller.saleType === 'បោះដុំ' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-indigo-50 text-indigo-600 border-indigo-200'" class="px-3 py-1.5 rounded-lg text-[11px] font-black border tracking-wider">
+                                {{ seller.saleType }}
                             </span>
+                            <span v-else class="text-slate-300 font-bold">-</span>
+                        </td>
+
+                        <td class="px-6 py-4 align-top pt-5">
+                            <div v-if="seller.hasSales && seller.productsList && seller.productsList.length > 0" class="flex flex-wrap gap-1.5 mt-1">
+                                <span v-for="(prod, pIdx) in seller.productsList" :key="pIdx" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] bg-blue-50 text-blue-700 font-bold border border-blue-100 shadow-sm whitespace-nowrap">
+                                    <span class="font-black text-slate-800">{{ prod.name }}</span> • {{ prod.qty }} {{ translateUnit(prod.unit) }}
+                                </span>
+                            </div>
                             <span v-else class="text-slate-300 font-bold">-</span>
                         </td>
 
@@ -87,13 +96,6 @@
                                 </button>
                             </div>
                             <span v-else class="text-xs font-bold text-slate-300 mt-1 block">គ្មានការលក់</span>
-                        </td>
-
-                        <td class="px-6 py-4 text-center align-top pt-6">
-                            <span v-if="seller.hasSales" :class="seller.saleType === 'បោះដុំ' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-indigo-50 text-indigo-600 border-indigo-200'" class="px-3 py-1.5 rounded-lg text-[11px] font-black border tracking-wider">
-                                {{ seller.saleType }}
-                            </span>
-                            <span v-else class="text-slate-300 font-bold">-</span>
                         </td>
 
                         <td class="px-6 py-4 text-center align-top pt-6">
