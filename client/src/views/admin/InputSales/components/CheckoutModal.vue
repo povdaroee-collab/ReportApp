@@ -18,6 +18,7 @@
               </div>
               
               <div class="p-6 overflow-y-visible space-y-6">
+                
                 <div class="relative z-[60]">
                   <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">តំណាងលក់ (SELLER) <span class="text-rose-500">*</span></label>
                   <div class="relative">
@@ -45,10 +46,27 @@
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-slate-100">
-                  <div>
-                    <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ឈ្មោះអតិថិជន <span class="text-rose-500">*</span></label>
-                    <input v-model="form.customerName" type="text" placeholder="បញ្ចូលឈ្មោះ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all">
+                  <div class="relative customer-dropdown-container z-[55]">
+                      <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ឈ្មោះអតិថិជន <span class="text-rose-500">*</span></label>
+                      <input 
+                          v-model="form.customerName" 
+                          @focus="showCustomerDropdown = true" 
+                          @input="handleCustomerInput"
+                          type="text" required placeholder="បញ្ចូលឈ្មោះអតិថិជន..." 
+                          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all"
+                      >
+                      <div v-if="showCustomerDropdown && filteredCustomers.length > 0" class="absolute z-[100] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto py-1 custom-scrollbar">
+                          <div 
+                              v-for="(cust, idx) in filteredCustomers" :key="idx" 
+                              @click.stop="selectCustomer(cust)"
+                              class="px-4 py-2 hover:bg-blue-50 cursor-pointer flex flex-col border-b border-slate-50 last:border-0 transition-colors"
+                          >
+                              <span class="text-sm font-black text-slate-800">{{ cust.name }}</span>
+                              <span class="text-[10px] text-slate-500 font-bold mt-0.5">{{ cust.phone }} | {{ cust.province }}</span>
+                          </div>
+                      </div>
                   </div>
+                  
                   <div>
                     <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">លេខទូរស័ព្ទ <span class="text-rose-500">*</span></label>
                     <input v-model="form.customerPhone" type="text" placeholder="បញ្ចូលលេខ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all">
@@ -74,7 +92,7 @@
                   </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-slate-100">
                   <div>
                     <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">កាលបរិច្ឆេទ</label>
                     <input v-model="form.date" type="datetime-local" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none cursor-pointer transition-all">
@@ -84,11 +102,23 @@
                     <div class="relative">
                       <select v-model="form.paymentMethod" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none appearance-none cursor-pointer transition-all">
                         <option value="CASH">សាច់ប្រាក់ (CASH)</option>
-                        <option value="KHQR">វេរប្រាក់ (KHQR)</option>
+                        <option value="BANK TRANSFER">វេរប្រាក់ (BANK TRANSFER)</option>
+                        <option value="KHQR">ស្កេនកូដ (KHQR)</option>
                       </select>
                       <svg class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
                   </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-black text-sky-600 uppercase tracking-widest mb-2">ថ្លៃដឹកជញ្ជូន (DELIVERY FEE)</label>
+                    <div class="flex bg-slate-50 border border-sky-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-500/20 focus-within:bg-white transition-all shadow-sm">
+                        <input v-model.number="form.deliveryFee" type="number" step="any" min="0" placeholder="0.00" class="w-full bg-transparent px-4 py-3 text-sm font-black text-sky-700 outline-none">
+                        <select v-model="form.deliveryCurrency" class="bg-sky-50 border-l border-sky-200 px-3 font-black text-sky-700 outline-none cursor-pointer">
+                            <option value="USD">$ (USD)</option>
+                            <option value="KHR">៛ (KHR)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div v-if="form.paymentMethod === 'KHQR'" class="pt-2">
@@ -114,8 +144,19 @@
                 </div>
 
                 <div class="pt-2">
-                  <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ចំណាំបញ្ជាក់ការទូទាត់ (Payment Note)</label>
-                  <input v-model="form.paymentNote" type="text" list="payment-notes" placeholder="ឧ. បានទូទាត់រួច, នៅខ្វះ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:border-blue-400 outline-none transition-all">
+                  <div class="flex items-center justify-between mb-2">
+                      <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">ចំណាំបញ្ជាក់ការទូទាត់ (Payment Note)</label>
+                      
+                      <button 
+                          v-if="form.province === 'រាជធានីភ្នំពេញ'" 
+                          type="button" 
+                          @click="addDeliveryGuyNote"
+                          class="text-[10px] font-bold bg-amber-50 text-amber-600 px-2.5 py-1 rounded border border-amber-200 hover:bg-amber-100 transition-colors"
+                      >
+                          + ទូទាត់តាមអ្នកដឹកជញ្ជូន
+                      </button>
+                  </div>
+                  <input v-model="form.paymentNote" type="text" list="payment-notes" placeholder="ឧ. បានទូទាត់រួច, នៅខ្វះ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:border-blue-400 outline-none transition-all shadow-inner">
                   <datalist id="payment-notes">
                     <option value="បានទូទាត់រួច"></option><option value="មិនទាន់ទូទាត់"></option><option value="កក់ប្រាក់ខ្លះ"></option><option value="បង់ពេលឥវ៉ាន់ដល់"></option>
                   </datalist>
@@ -126,9 +167,9 @@
                     <span class="text-sm font-bold text-slate-300">ទំនិញសរុប:</span>
                     <span class="text-sm font-black bg-white/10 px-2 py-1 rounded-lg">{{ cartLength }} មុខ</span>
                   </div>
-                  <div class="flex justify-between items-end border-t border-white/10 pt-3">
+                  <div class="flex justify-between items-end border-t border-white/10 pt-3 mt-2">
                     <span class="text-xs font-black uppercase tracking-widest text-slate-400">ទឹកប្រាក់សរុប (Total)</span>
-                    <span class="text-3xl font-black text-emerald-400">{{ formatPrice(cartTotalUSD, 'USD') }}</span>
+                    <span class="text-3xl font-black text-emerald-400">{{ formatPrice(checkoutFinalTotalUSD, 'USD') }}</span>
                   </div>
                 </div>
 
@@ -152,7 +193,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { TransitionRoot, TransitionChild, Dialog, DialogPanel, DialogTitle } from '@headlessui/vue';
 
 const props = defineProps({
@@ -160,6 +201,7 @@ const props = defineProps({
     cartLength: Number,
     cartTotalUSD: Number,
     sellers: Array,
+    savedCustomers: { type: Array, default: () => [] },
     isSubmitting: Boolean
 });
 
@@ -174,10 +216,41 @@ const getLocalISOString = () => {
 const form = reactive({
     sellerId: '', sellerName: '', customerName: '', customerPhone: '',
     province: '', district: '', paymentMethod: 'CASH', paymentNote: '', 
-    date: getLocalISOString(), paymentImage: '' 
+    date: getLocalISOString(), paymentImage: '',
+    deliveryFee: 0, deliveryCurrency: 'USD'
 });
 
-// Location Logic
+// Watch 'show' to Auto set DateTime when opened
+watch(() => props.show, (newVal) => {
+    if (newVal) {
+        form.date = getLocalISOString();
+    }
+});
+
+// Method to expose form reset to parent
+const resetForm = () => {
+    form.sellerId = ''; form.sellerName = '';
+    form.customerName = ''; form.customerPhone = '';
+    form.province = ''; form.district = '';
+    form.paymentMethod = 'CASH'; form.paymentNote = '';
+    form.paymentImage = '';
+    form.deliveryFee = 0; form.deliveryCurrency = 'USD';
+    form.date = getLocalISOString();
+    provinceSearch.value = '';
+    sellerSearchQuery.value = '';
+};
+defineExpose({ resetForm });
+
+// Calculate Final Total including Delivery Fee
+const checkoutFinalTotalUSD = computed(() => {
+    let deliveryUSD = 0;
+    if (form.deliveryFee > 0) {
+        deliveryUSD = form.deliveryCurrency === 'USD' ? form.deliveryFee : (form.deliveryFee / 4000);
+    }
+    return props.cartTotalUSD + deliveryUSD;
+});
+
+// Location Data
 const locationData = {
     "រាជធានីភ្នំពេញ": ["ខណ្ឌចំការមន", "ខណ្ឌដូនពេញ", "ខណ្ឌ៧មករា", "ខណ្ឌទួលគោក", "ខណ្ឌដង្កោ", "ខណ្ឌមានជ័យ", "ខណ្ឌឫស្សីកែវ", "ខណ្ឌសែនសុខ", "ខណ្ឌពោធិ៍សែនជ័យ", "ខណ្ឌជ្រោយចង្វារ", "ខណ្ឌព្រែកព្នៅ", "ខណ្ឌច្បារអំពៅ", "ខណ្ឌបឹងកេងកង", "ខណ្ឌកំបូល"],
             "ខេត្តកណ្តាល": ["ក្រុងតាខ្មៅ", "ស្រុកកណ្តាលស្ទឹង", "ស្រុកគីវីស៊ុង", "ស្រុកខ្សាច់កណ្តាល", "ស្រុកកោះធំ", "ស្រុកលើកដែក", "ស្រុកល្វាឯម", "ស្រុកមុខកំពូល", "ស្រុកអង្គស្នួល", "ស្រុកពញាឮ", "ស្រុកស្អាង"],
@@ -231,7 +304,7 @@ const handleProvinceInput = () => {
 const selectProvince = (prov) => { form.province = prov; provinceSearch.value = prov; form.district = ''; showProvinceDropdown.value = false; setTimeout(() => showDistrictDropdown.value = true, 100); };
 const selectDistrict = (dist) => { form.district = dist; showDistrictDropdown.value = false; };
 
-// Seller Logic
+// --- Seller Logic ---
 const sellerSearchQuery = ref('');
 const showSellerDropdown = ref(false);
 const filteredSellers = computed(() => {
@@ -242,9 +315,49 @@ const filteredSellers = computed(() => {
 const selectSeller = (seller) => { form.sellerId = seller.id; form.sellerName = seller.fullName; sellerSearchQuery.value = seller.fullName; showSellerDropdown.value = false; };
 const clearSeller = () => { form.sellerId = ''; form.sellerName = ''; sellerSearchQuery.value = ''; };
 
-const closeDropdowns = () => { showSellerDropdown.value = false; showProvinceDropdown.value = false; showDistrictDropdown.value = false; };
+// --- Smart Customer Logic ---
+const showCustomerDropdown = ref(false);
 
-// Image Compression
+const filteredCustomers = computed(() => {
+    if (!form.customerName) return props.savedCustomers;
+    return props.savedCustomers.filter(c => c.name.toLowerCase().includes(form.customerName.toLowerCase()));
+});
+
+const handleCustomerInput = () => {
+    showCustomerDropdown.value = true;
+    if (!form.customerName.trim()) {
+        form.customerPhone = '';
+        form.province = '';
+        form.district = '';
+        provinceSearch.value = '';
+    }
+};
+
+const selectCustomer = (cust) => {
+    form.customerName = cust.name;
+    form.customerPhone = cust.phone;
+    form.province = cust.province;
+    provinceSearch.value = cust.province; // Sync Search Input
+    form.district = cust.district;
+    showCustomerDropdown.value = false;
+};
+
+// --- Note Shortcut Logic ---
+const addDeliveryGuyNote = () => {
+    const note = form.paymentNote;
+    if (!note.includes('ទូទាត់តាមអ្នកដឹកជញ្ជូន')) {
+        form.paymentNote = note ? note + '\n- ទូទាត់តាមអ្នកដឹកជញ្ជូន' : 'ទូទាត់តាមអ្នកដឹកជញ្ជូន';
+    }
+};
+
+const closeDropdowns = () => { 
+    showSellerDropdown.value = false; 
+    showProvinceDropdown.value = false; 
+    showDistrictDropdown.value = false; 
+    showCustomerDropdown.value = false;
+};
+
+// --- Image Compression ---
 const isCompressing = ref(false);
 const compressImage = (file, targetSizeKB) => {
     return new Promise((resolve, reject) => {
@@ -271,6 +384,19 @@ const handleImageUpload = async (event) => {
     finally { isCompressing.value = false; event.target.value = ''; }
 };
 
-const onSubmit = () => { emit('confirm', form); };
+const onSubmit = () => { 
+    emit('confirm', { ...form, finalTotalUSD: checkoutFinalTotalUSD.value }); 
+};
+
 const formatPrice = (val, currency = 'USD') => Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (currency === 'USD' ? ' $' : ' ៛');
 </script>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
+input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+select { -webkit-appearance: none; -moz-appearance: none; }
+</style>

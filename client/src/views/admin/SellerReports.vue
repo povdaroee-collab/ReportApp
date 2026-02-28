@@ -4,11 +4,11 @@
       
       <div class="bg-white px-4 md:px-8 pt-4 pb-0 border-b border-slate-200/60 flex items-center gap-6 shadow-sm relative z-50">
           <button @click="mainTab = 'analytics'" class="pb-3 text-sm font-black border-b-2 transition-all" :class="mainTab === 'analytics' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'">
-             📊 របាយការណ៍សរុប (Analytics)
+              📊 របាយការណ៍សរុប (Analytics)
           </button>
           <button @click="mainTab = 'today'" class="pb-3 text-sm font-black border-b-2 transition-all flex items-center gap-1.5" :class="mainTab === 'today' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'">
-             📝 ព័ត៌មានលក់ថ្ងៃនេះ 
-             <span class="bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded-full animate-pulse">Live</span>
+              📝 ព័ត៌មានលក់ថ្ងៃនេះ 
+              <span class="bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded-full animate-pulse">Live</span>
           </button>
       </div>
 
@@ -225,7 +225,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
-// 📦 Import Child Components (មានតែមួយជួរគត់សម្រាប់ Component នីមួយៗ)
+// 📦 Import Child Components
 import CustomAlert from '../../components/shared/CustomAlert.vue';
 import SellerDataView from './reports/SellerDataView.vue'; 
 import ReportStatsCards from './reports/ReportStatsCards.vue'; 
@@ -301,10 +301,13 @@ onMounted(() => {
          const data = doc.data();
          if (data.items && Array.isArray(data.items)) {
              data.items.forEach((item, index) => {
+                 let typeStr = String(item.type || '');
+                 let isWholesale = typeStr.includes('បោះដុំ');
+
                  flatSales.push({
                      ...data,                     
                      id: `${doc.id}_${index}`,    
-                     category: item.type === 'wholesale' ? 'បោះដុំ' : 'លក់រាយ',
+                     category: isWholesale ? 'បោះដុំ' : 'លក់រាយ', // Fix Category Logic based on UI Labels
                      totalSold: Number(item.qty),
                      unit: item.unit,
                      totalPrice: Number(item.price) * Number(item.qty),
@@ -375,6 +378,7 @@ const baseCalculatedData = computed(() => {
    const createRow = (catName, salesList) => {
        let totalClients = 0; let revenueUSD = 0; let revenueKHR = 0; let unitCounts = {}; 
        let productsSet = new Set(); 
+       let productAgg = {};
 
        salesList.forEach(sale => {
         const u = (sale.unit || 'unknown').toLowerCase().trim();
@@ -384,7 +388,17 @@ const baseCalculatedData = computed(() => {
         if (sale.currency === 'USD' || sale.currency === '$') revenueUSD += Number(sale.totalPrice || 0);
         else revenueKHR += Number(sale.totalPrice || 0);
         
-        if (sale.productName) productsSet.add(sale.productName);
+        if (sale.productName) {
+            productsSet.add(sale.productName);
+            let pName = sale.productName;
+            let pUnit = sale.unit || '';
+            let pKey = `${pName}_${pUnit}`;
+
+            if (!productAgg[pKey]) {
+                productAgg[pKey] = { name: pName, unit: pUnit, qty: 0 };
+            }
+            productAgg[pKey].qty += Number(sale.totalSold || 0);
+        }
        });
 
        rows.push({ 
@@ -397,16 +411,19 @@ const baseCalculatedData = computed(() => {
            revenueUSD, 
            revenueKHR, 
            hasSales: salesList.length > 0,
-           productNames: Array.from(productsSet) 
+           productNames: Array.from(productsSet),
+           productsList: Object.values(productAgg)
        });
    };
 
    if (activeCategory.value === 'all') {
+       if (relevantSales.length > 0) createRow('សរុបរួម', relevantSales);
+       else createRow('-', []); 
+   } else if (activeCategory.value === 'លក់រាយ') {
        if (retailSales.length > 0) createRow('លក់រាយ', retailSales);
+   } else if (activeCategory.value === 'បោះដុំ') {
        if (wholesaleSales.length > 0) createRow('បោះដុំ', wholesaleSales);
-       if (retailSales.length === 0 && wholesaleSales.length === 0) createRow('-', []); 
-   } else if (activeCategory.value === 'លក់រាយ') createRow('លក់រាយ', retailSales);
-     else if (activeCategory.value === 'បោះដុំ') createRow('បោះដុំ', wholesaleSales);
+   }
  });
 
  return rows.sort((a, b) => (b.revenueUSD + (b.revenueKHR/4000)) - (a.revenueUSD + (a.revenueKHR/4000))); 
@@ -430,6 +447,52 @@ const filteredSellers = computed(() => {
   return result;
 });
 
+// --- ITEMIZED SUMMARY (សម្រាប់ PDF) ---
+const itemizedSummary = computed(() => {
+    let summary = { retail: {}, wholesale: {} };
+    const activeSellerIds = new Set(filteredSellers.value.map(s => s.originalSellerId));
+
+    allSales.value.forEach(sale => {
+        if (!isDateInScope(getValidDateStr(sale))) return;
+        if (!activeSellerIds.has(sale.sellerId) && !activeSellerIds.has(sale.uid)) return;
+
+        const isWholesale = sale.category === 'បោះដុំ';
+        if (activeCategory.value !== 'all') {
+            if (activeCategory.value === 'លក់រាយ' && isWholesale) return;
+            if (activeCategory.value === 'បោះដុំ' && !isWholesale) return;
+        }
+
+        const targetGroup = isWholesale ? summary.wholesale : summary.retail;
+        
+        const qty = Number(sale.totalSold) || 0;
+        const total = Number(sale.totalPrice) || 0;
+        const unitPrice = qty > 0 ? (total / qty) : 0;
+        const currency = sale.currency === 'KHR' || sale.currency === '៛' ? 'KHR' : 'USD';
+        
+        const key = `${sale.productName}_${sale.unit}_${unitPrice}_${currency}`;
+
+        if (!targetGroup[key]) {
+            targetGroup[key] = {
+                name: sale.productName || 'Unknown',
+                unit: sale.unit || 'unit',
+                unitPrice: unitPrice,
+                currency: currency,
+                qty: 0,
+                total: 0
+            };
+        }
+
+        targetGroup[key].qty += qty;
+        targetGroup[key].total += total;
+    });
+
+    const toArray = (obj) => Object.values(obj).sort((a, b) => b.total - a.total);
+    return {
+        retail: toArray(summary.retail),
+        wholesale: toArray(summary.wholesale)
+    };
+});
+
 // --- PAGINATION ---
 const totalPages = computed(() => Math.ceil(filteredSellers.value.length / itemsPerPage.value) || 1);
 
@@ -445,19 +508,31 @@ const activeSellersCount = computed(() => new Set(baseCalculatedData.value.filte
 const grandTotals = computed(() => {
     let stats = { all: { usd: 0, khr: 0, clients: 0, totalUnitsCount: 0, units: {} }, retail: { usd: 0, khr: 0, clients: 0, totalUnitsCount: 0, units: {} }, wholesale: { usd: 0, khr: 0, clients: 0, totalUnitsCount: 0, units: {} } };
     
-    baseCalculatedData.value.forEach(row => {
-        if(row.hasSales) {
-            const cat = row.category === 'បោះដុំ' ? 'wholesale' : 'retail';
-            stats.all.clients += row.totalClients; stats.all.usd += row.revenueUSD; stats.all.khr += row.revenueKHR;
-            stats[cat].clients += row.totalClients; stats[cat].usd += row.revenueUSD; stats[cat].khr += row.revenueKHR;
-            for (const [unit, count] of Object.entries(row.unitCounts)) {
-                if(count > 0) {
-                    stats.all.units[unit] = (stats.all.units[unit] || 0) + count; stats.all.totalUnitsCount += count;
-                    stats[cat].units[unit] = (stats[cat].units[unit] || 0) + count; stats[cat].totalUnitsCount += count;
-                }
-            }
+    // We compute this from flatSales to be extremely accurate, independent of the combined row logic
+    allSales.value.forEach(sale => {
+        const isWholesale = sale.category === 'បោះដុំ';
+        if (!isDateInScope(getValidDateStr(sale))) return;
+        
+        // Only count if seller is currently active in the view
+        const activeSellerIds = new Set(filteredSellers.value.map(s => s.originalSellerId));
+        if (!activeSellerIds.has(sale.sellerId) && !activeSellerIds.has(sale.uid)) return;
+
+        const cat = isWholesale ? 'wholesale' : 'retail';
+        const usdVal = (sale.currency === 'USD' || sale.currency === '$') ? Number(sale.totalPrice || 0) : 0;
+        const khrVal = (sale.currency === 'KHR' || sale.currency === '៛') ? Number(sale.totalPrice || 0) : 0;
+        const qty = Number(sale.totalSold || 0);
+        const unit = (sale.unit || 'unknown').toLowerCase().trim();
+        const clientVal = Number(sale.totalClients || 0);
+
+        stats.all.usd += usdVal; stats.all.khr += khrVal; stats.all.clients += clientVal;
+        stats[cat].usd += usdVal; stats[cat].khr += khrVal; stats[cat].clients += clientVal;
+        
+        if (qty > 0) {
+            stats.all.units[unit] = (stats.all.units[unit] || 0) + qty; stats.all.totalUnitsCount += qty;
+            stats[cat].units[unit] = (stats[cat].units[unit] || 0) + qty; stats[cat].totalUnitsCount += qty;
         }
     });
+
     return stats;
 });
 
@@ -478,6 +553,8 @@ const selectedDateFormatter = (dateStr) => {
 // ---------------------------------------------------------
 // 🖨️ PRINT & PDF LOGIC 🖨️
 // ---------------------------------------------------------
+
+const formatCurrency = (val, curr) => Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (curr === 'USD' ? ' $' : ' ៛');
 
 const executeNativePrint = () => {
     const dataWithIndex = filteredSellers.value.map((item, idx) => ({ ...item, printIndex: idx + 1 }));
@@ -525,9 +602,9 @@ const generatePDF = async () => {
         const PAGE_TITLE_HEIGHT = 150; 
         const TABLE_HEADER_HEIGHT = 65;
         
-        let grandTotalUnitCount = Object.keys(grandTotals.value.all.units || {}).length;
-        let FOOTER_HEIGHT = 220 + (Math.ceil(grandTotalUnitCount / 2) * 50);
-        if (activeCategory.value === 'all') FOOTER_HEIGHT += 140; 
+        let itemizedRowsCount = itemizedSummary.value.retail.length + itemizedSummary.value.wholesale.length;
+        let tableHeadersCount = (itemizedSummary.value.retail.length > 0 ? 1 : 0) + (itemizedSummary.value.wholesale.length > 0 ? 1 : 0);
+        let FOOTER_HEIGHT = 180 + (tableHeadersCount * 60) + (itemizedRowsCount * 35);
 
         let currentHeight = PAGE_TITLE_HEIGHT + TABLE_HEADER_HEIGHT; 
         let rowCounter = 1;
@@ -628,11 +705,14 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
             salesHTML = `<span style="font-size: 11px; font-weight: bold; color: #94a3b8;">-</span>`;
         }
 
+        // បង្ហាញឈ្មោះទំនិញភ្ជាប់ជាមួយចំនួនលក់
         let productsHTML = '';
-        if (item.hasSales && item.productNames && item.productNames.length > 0) {
+        if (item.hasSales && item.productsList && item.productsList.length > 0) {
             productsHTML = `<div style="overflow: hidden;">` + 
-                item.productNames.map(p => 
-                    `<span style="display: inline-block; color: #4338ca; background-color: #eef2ff; border: 1px solid #e0e7ff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; margin: 0 4px 4px 0;">${p}</span>`
+                item.productsList.map(p => 
+                    `<div style="display: inline-block; color: #4338ca; background-color: #eef2ff; border: 1px solid #e0e7ff; padding: 3px 6px; border-radius: 4px; font-size: 9px; margin: 0 4px 4px 0;">
+                        <strong style="font-weight: 900;">${p.name}</strong> <span style="color: #6366f1;">• ${p.qty} ${translateUnit(p.unit)}</span>
+                    </div>`
                 ).join('') + `</div>`;
         } else {
             productsHTML = `<span style="font-size: 11px; font-weight: bold; color: #94a3b8;">-</span>`;
@@ -649,9 +729,16 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
             revenueHTML = `<div style="text-align: right; color:#94a3b8; font-weight:bold; font-size:12px;">-</div>`;
         }
 
-        const catBadge = item.category === 'បោះដុំ' 
-            ? `<span style="background-color: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff; padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">បោះដុំ</span>`
-            : `<span style="background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">លក់រាយ</span>`;
+        let catBadge = '';
+        if (item.category === 'បោះដុំ') {
+            catBadge = `<span style="background-color: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff; padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">បោះដុំ</span>`;
+        } else if (item.category === 'លក់រាយ') {
+            catBadge = `<span style="background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">លក់រាយ</span>`;
+        } else if (item.category === 'សរុបរួម') {
+            catBadge = `<span style="background-color: #f0fdf4; color: #166534; border: 1px solid #dcfce7; padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">សរុបរួម</span>`;
+        } else {
+            catBadge = '-';
+        }
 
         const dealerBadge = item.role === 'dealer' 
             ? `<span style="background-color: #fffbeb; color: #d97706; border: 1px solid #fde68a; padding: 1px 4px; border-radius: 3px; font-size: 8px; font-weight: 900; vertical-align: middle; margin-left: 4px;">DEALER</span>` 
@@ -682,101 +769,77 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
 
     let summarySectionHTML = '';
     if (pageNum === totalPages || isNativePrint) {
-        const unitsArray = Object.entries(grandTotals.value.all.units || {});
-        let unitRows = '';
-        for (let i = 0; i < unitsArray.length; i += 2) {
-            const [u1, c1] = unitsArray[i];
-            const item2 = unitsArray[i + 1];
-            
-            const cell1 = `
-                <td style="width: 50%; padding: 4px 8px 4px 0; vertical-align: top;">
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; overflow: hidden;">
-                        <span style="color: #475569; font-size: 12px; font-weight: bold; float: left;">${translateUnit(u1)}</span>
-                        <span style="font-weight: 900; color: #0f172a; font-size: 14px; float: right;">${c1.toLocaleString()}</span>
-                        <div style="clear: both;"></div>
-                    </div>
-                </td>`;
-                
-            const cell2 = item2 ? `
-                <td style="width: 50%; padding: 4px 0 4px 8px; vertical-align: top;">
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; overflow: hidden;">
-                        <span style="color: #475569; font-size: 12px; font-weight: bold; float: left;">${translateUnit(item2[0])}</span>
-                        <span style="font-weight: 900; color: #0f172a; font-size: 14px; float: right;">${item2[1].toLocaleString()}</span>
-                        <div style="clear: both;"></div>
-                    </div>
-                </td>` : `<td style="width: 50%;"></td>`;
-                
-            unitRows += `<tr>${cell1}${cell2}</tr>`;
-        }
         
-        const unitsTableHTML = unitsArray.length > 0 
-            ? `<table style="width: 100%; border-collapse: collapse; border: none;"><tbody>${unitRows}</tbody></table>`
-            : `<p style="color: #94a3b8; font-size: 12px; margin: 0;">គ្មានទិន្នន័យ</p>`;
-
-        let breakdownHTML = '';
-        if (activeCategory.value === 'all') {
-            breakdownHTML = `
-                <div style="margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 15px; overflow: hidden; width: 100%;">
-                    <div style="float: left; width: 48%; background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; box-sizing: border-box;">
-                        <p style="font-size: 10px; color: #64748b; font-weight: 900; margin: 0 0 8px 0;">លក់រាយ (RETAIL)</p>
-                        <p style="margin: 0; font-size: 16px; font-weight: 900; color: #059669;">${grandTotals.value.retail.usd.toLocaleString()} $</p>
-                        <p style="margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #2563eb;">${grandTotals.value.retail.khr.toLocaleString()} ៛</p>
-                        <div style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
-                            <p style="margin: 0; font-size: 10px; font-weight: bold; color: #475569;">អតិថិជន: ${grandTotals.value.retail.clients.toLocaleString()} នាក់</p>
-                            <p style="margin: 2px 0 0 0; font-size: 10px; font-weight: bold; color: #475569;">បរិមាណលក់: ${grandTotals.value.retail.totalUnitsCount.toLocaleString()}</p>
-                        </div>
-                    </div>
-                    <div style="float: right; width: 48%; background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; box-sizing: border-box;">
-                        <p style="font-size: 10px; color: #64748b; font-weight: 900; margin: 0 0 8px 0;">បោះដុំ (WHOLESALE)</p>
-                        <p style="margin: 0; font-size: 16px; font-weight: 900; color: #059669;">${grandTotals.value.wholesale.usd.toLocaleString()} $</p>
-                        <p style="margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #2563eb;">${grandTotals.value.wholesale.khr.toLocaleString()} ៛</p>
-                        <div style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
-                            <p style="margin: 0; font-size: 10px; font-weight: bold; color: #475569;">អតិថិជន: ${grandTotals.value.wholesale.clients.toLocaleString()} នាក់</p>
-                            <p style="margin: 2px 0 0 0; font-size: 10px; font-weight: bold; color: #475569;">បរិមាណលក់: ${grandTotals.value.wholesale.totalUnitsCount.toLocaleString()}</p>
-                        </div>
-                    </div>
-                    <div style="clear: both;"></div>
+        let retailHTML = '';
+        if (itemizedSummary.value.retail.length > 0) {
+            retailHTML = `
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-size: 13px; font-weight: 900; color: #475569; background: #f8fafc; padding: 6px 12px; border-left: 4px solid #6366f1; margin: 0 0 10px 0;">សរុបការលក់រាយ និងឈុត (Retail & Combo)</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #475569;">
+                            <tr>
+                                <th style="padding: 8px; text-align: left;">មុខទំនិញ</th>
+                                <th style="padding: 8px; text-align: center;">ចំនួន</th>
+                                <th style="padding: 8px; text-align: right;">តម្លៃឯកតា (រាយ/ឈុត)</th>
+                                <th style="padding: 8px; text-align: right;">តម្លៃសរុប</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemizedSummary.value.retail.map(item => `
+                                <tr style="border-bottom: 1px dashed #e2e8f0;">
+                                    <td style="padding: 8px; font-weight: bold; color: #1e293b;">${item.name}</td>
+                                    <td style="padding: 8px; text-align: center; color: #475569;">${item.qty} ${translateUnit(item.unit)}</td>
+                                    <td style="padding: 8px; text-align: right; color: #475569;">${formatCurrency(item.unitPrice, item.currency)}</td>
+                                    <td style="padding: 8px; text-align: right; font-weight: bold; color: #059669;">${formatCurrency(item.total, item.currency)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
                 </div>
             `;
         }
 
-        const categoryLabel = activeCategory.value === 'all' ? '' : `- ${activeCategory.value}`;
+        let wholesaleHTML = '';
+        if (itemizedSummary.value.wholesale.length > 0) {
+            wholesaleHTML = `
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-size: 13px; font-weight: 900; color: #475569; background: #f8fafc; padding: 6px 12px; border-left: 4px solid #8b5cf6; margin: 0 0 10px 0;">សរុបការបោះដុំ (Wholesale)</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #475569;">
+                            <tr>
+                                <th style="padding: 8px; text-align: left;">មុខទំនិញ</th>
+                                <th style="padding: 8px; text-align: center;">ចំនួន</th>
+                                <th style="padding: 8px; text-align: right;">តម្លៃឯកតា (ដុំ)</th>
+                                <th style="padding: 8px; text-align: right;">តម្លៃសរុប</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemizedSummary.value.wholesale.map(item => `
+                                <tr style="border-bottom: 1px dashed #e2e8f0;">
+                                    <td style="padding: 8px; font-weight: bold; color: #1e293b;">${item.name}</td>
+                                    <td style="padding: 8px; text-align: center; color: #475569;">${item.qty} ${translateUnit(item.unit)}</td>
+                                    <td style="padding: 8px; text-align: right; color: #475569;">${formatCurrency(item.unitPrice, item.currency)}</td>
+                                    <td style="padding: 8px; text-align: right; font-weight: bold; color: #059669;">${formatCurrency(item.total, item.currency)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
 
         summarySectionHTML = `
-            <div style="margin-top: 30px; border-top: 2px dashed #cbd5e1; padding-top: 20px; overflow: hidden; break-inside: avoid; page-break-inside: avoid; width: 100%; display: table;">
-                <div style="display: table-cell; width: 55%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; vertical-align: top;">
-                    <div style="margin-bottom: 15px; overflow: hidden;">
-                        <div style="float: left; width: 24px; height: 24px; background: #e0e7ff; color: #4f46e5; border-radius: 6px; text-align: center; line-height: 24px; margin-right: 8px;">
-                            <svg style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-top: -2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                        </div>
-                        <h3 style="font-size: 14px; font-weight: 900; color: #1e293b; margin: 0; line-height: 24px; float: left;">សរុបបរិមាណលក់តាមប្រភេទ ${categoryLabel}</h3>
-                        <div style="clear: both;"></div>
-                    </div>
-                    <div>${unitsTableHTML}</div>
-                </div>
-                <div style="display: table-cell; width: 3%;"></div>
-                <div style="display: table-cell; width: 42%; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0; vertical-align: top; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-                    <div style="background: #1e293b; padding: 12px 15px; border-top-left-radius: 11px; border-top-right-radius: 11px;">
-                        <h3 style="font-size: 14px; font-weight: 900; color: white; margin: 0;">សរុបរួម (Grand Total) ${categoryLabel}</h3>
-                    </div>
-                    <div style="padding: 15px; background: #f8fafc; border-bottom-left-radius: 11px; border-bottom-right-radius: 11px;">
-                        <table style="width: 100%; border-collapse: collapse; border: none;">
-                            <tr>
-                                <td style="padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1; color: #64748b; font-size: 11px; font-weight: bold; border-top: none; border-left: none; border-right: none;">អតិថិជនសរុប:</td>
-                                <td style="padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1; text-align: right; border-top: none; border-left: none; border-right: none;">
-                                    <span style="font-weight: 900; color: #0f172a; font-size: 13px; background: white; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">${grandTotals.value.all.clients.toLocaleString()} នាក់</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding-top: 12px; padding-bottom: 6px; color: #64748b; font-size: 11px; font-weight: bold; border: none;">ចំណូល (USD):</td>
-                                <td style="padding-top: 12px; padding-bottom: 6px; text-align: right; font-weight: 900; color: #059669; font-size: 18px; border: none;">${grandTotals.value.all.usd.toLocaleString()} $</td>
-                            </tr>
-                            <tr>
-                                <td style="padding-top: 0; color: #64748b; font-size: 11px; font-weight: bold; border: none;">ចំណូល (KHR):</td>
-                                <td style="padding-top: 0; text-align: right; font-weight: 900; color: #2563eb; font-size: 14px; border: none;">${grandTotals.value.all.khr.toLocaleString()} ៛</td>
-                            </tr>
-                        </table>
-                        ${breakdownHTML}
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #cbd5e1; break-inside: avoid; page-break-inside: avoid; width: 100%;">
+                <h3 style="font-size: 18px; font-weight: 900; color: #1e293b; margin-bottom: 20px; text-align: center;">របាយការណ៍លម្អិតតាមមុខទំនិញ</h3>
+                
+                ${retailHTML}
+                ${wholesaleHTML}
+
+                <div style="margin-top: 20px; padding: 15px; background: #1e293b; border-radius: 12px; color: white; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 16px; font-weight: bold;">សរុបរួមទាំងអស់ (Grand Total)</span>
+                    <div style="text-align: right;">
+                        <span style="font-size: 24px; font-weight: 900; color: #10b981;">${grandTotals.value.all.usd.toLocaleString()} $</span>
+                        ${grandTotals.value.all.khr > 0 ? `<br/><span style="font-size: 14px; font-weight: bold; color: #60a5fa;">${grandTotals.value.all.khr.toLocaleString()} ៛</span>` : ''}
                     </div>
                 </div>
             </div>
@@ -789,11 +852,11 @@ const generatePageHTML = (rows, pageNum, totalPages, isNativePrint = false) => {
         <thead style="color: #334155; font-size: 11px; font-weight: 900; display: table-header-group;">
             <tr>
                 <th style="padding: 12px 8px; width: 5%; text-align: center; border-bottom: 2px solid #cbd5e1;">#</th>
-                <th style="padding: 12px 8px; width: 22%; border-bottom: 2px solid #cbd5e1;">តំណាងលក់</th>
-                <th style="padding: 12px 8px; width: 10%; text-align: center; border-bottom: 2px solid #cbd5e1;">ប្រភេទ</th>
-                <th style="padding: 12px 8px; width: 23%; border-bottom: 2px solid #cbd5e1;">មុខទំនិញ</th>
+                <th style="padding: 12px 8px; width: 18%; border-bottom: 2px solid #cbd5e1;">តំណាងលក់</th>
+                <th style="padding: 12px 8px; width: 8%; text-align: center; border-bottom: 2px solid #cbd5e1;">ប្រភេទ</th>
+                <th style="padding: 12px 8px; width: 27%; border-bottom: 2px solid #cbd5e1;">មុខទំនិញ</th>
                 <th style="padding: 12px 8px; width: 15%; border-bottom: 2px solid #cbd5e1;">បរិមាណលក់</th>
-                <th style="padding: 12px 8px; width: 10%; text-align: center; border-bottom: 2px solid #cbd5e1;">អតិថិជន</th>
+                <th style="padding: 12px 8px; width: 12%; text-align: center; border-bottom: 2px solid #cbd5e1;">អតិថិជន</th>
                 <th style="padding: 12px 8px; width: 15%; text-align: right; border-bottom: 2px solid #cbd5e1;">ចំណូល</th>
             </tr>
         </thead>
@@ -855,6 +918,8 @@ const translateUnit = (unitVal) => {
   const u = unitVal.toLowerCase().trim();
   if (u === 'bottle' || u === 'bottles') return 'ដប';
   if (u === 'pack' || u === 'packs') return 'កញ្ចប់';
+  if (u === 'case' || u === 'cases') return 'កេះ';
+  if (u === 'set' || u === 'sets') return 'ឈុត';
   return unitVal; 
 };
 </script>
