@@ -1,6 +1,7 @@
 <template>
   <div class="print-container">
-    <div class="font-khmer h-[100dvh] flex flex-col relative bg-[#F4F7FE] overflow-hidden print:hidden">
+    
+    <div v-show="!showSellerDetail" class="font-khmer h-[100dvh] flex flex-col relative bg-[#F4F7FE] overflow-hidden print:hidden">
       
       <div class="bg-white px-4 md:px-8 pt-4 pb-0 border-b border-slate-200/60 flex items-center gap-6 shadow-sm relative z-50">
           <button @click="mainTab = 'analytics'" class="pb-3 text-sm font-black border-b-2 transition-all" :class="mainTab === 'analytics' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'">
@@ -25,7 +26,7 @@
               <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-5 mb-5">
                 <div class="flex items-center gap-4">
                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white shrink-0">
-                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012-2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012-2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                    </div>
                    <div>
                      <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-tight">របាយការណ៍លក់</h1>
@@ -126,11 +127,11 @@
                      </div>
 
                      <div class="flex gap-2">
-                        <button @click="executeNativePrint" :disabled="processing.active || filteredSellers.length === 0" class="bg-slate-800 hover:bg-slate-900 text-white border border-slate-800 px-4 py-2 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-xs shadow-sm disabled:opacity-50">
+                        <button @click="handlePrint" :disabled="processing.active || filteredSellers.length === 0" class="bg-slate-800 hover:bg-slate-900 text-white border border-slate-800 px-4 py-2 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-xs shadow-sm disabled:opacity-50">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2v4h10z"></path></svg>
                             <span>Print</span>
                         </button>
-                        <button @click="generatePDF" :disabled="processing.active || filteredSellers.length === 0" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-4 py-2 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-xs disabled:opacity-50">
+                        <button @click="handlePDF" :disabled="processing.active || filteredSellers.length === 0" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-4 py-2 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-xs disabled:opacity-50">
                             <svg v-if="processing.active" class="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                             <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                             <span>PDF</span>
@@ -159,6 +160,7 @@
                       :view-mode="viewMode"
                       :start-index="(currentPage - 1) * itemsPerPage"
                       :available-units="availableUnits"
+                      @goToSellerDetail="openSellerDetail"
                   />
 
                   <div v-if="totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between bg-white px-6 py-4 rounded-[1.5rem] border border-slate-200 shadow-sm mt-2 gap-4">
@@ -195,6 +197,13 @@
 
     </div>
 
+    <div v-if="showSellerDetail" class="font-khmer w-full h-[100dvh] bg-[#F4F7FE] overflow-y-auto custom-scrollbar print:hidden absolute inset-0 z-[100]">
+        <SellerSalesDetail 
+            :seller-id="selectedSellerId"
+            @close="showSellerDetail = false"
+        />
+    </div>
+
     <div ref="printStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1] opacity-0 print:opacity-100 bg-white"></div>
 
     <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
@@ -218,12 +227,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, reactive, onMounted, computed, watch, onUnmounted } from 'vue';
 import { db, auth } from '@/firebaseConfig';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 
 // 📦 Import Child Components
 import CustomAlert from '../../components/shared/CustomAlert.vue';
@@ -231,6 +238,11 @@ import SellerDataView from './reports/SellerDataView.vue';
 import ReportStatsCards from './reports/ReportStatsCards.vue'; 
 import ReportBottomSummary from './reports/ReportBottomSummary.vue';
 import TodaySalesList from './reports/pos/POSTodaySales.vue'; 
+// ជួសជុល Path ឲ្យត្រូវនឹង Directory Structure ថ្មី (src/views/owner/Detail/)
+import SellerSalesDetail from '../owner/Detail/SellerSalesDetail.vue'; 
+
+// 📦 Import External Print Logic (កូដ Print ដែលយើងទើបបំបែក)
+import { executeNativePrint, generatePDF } from './printPdfLogic.js';
 
 // --- STATE ---
 const mainTab = ref('analytics'); // 'analytics' | 'today'
@@ -243,6 +255,15 @@ const processing = ref({ active: false, message: '', progress: 0 });
 
 const alert = reactive({ show: false, title: '', message: '', type: 'success' });
 const triggerAlert = (type, title, message) => { alert.type = type; alert.title = title; alert.message = message; alert.show = true; setTimeout(() => alert.show = false, 3000); };
+
+// --- MODAL STATE សម្រាប់ Seller Detail ---
+const showSellerDetail = ref(false);
+const selectedSellerId = ref(null);
+
+const openSellerDetail = (sellerId) => {
+    selectedSellerId.value = sellerId;
+    showSellerDetail.value = true;
+};
 
 // HELPER FOR LOCAL DATES
 const getTodayString = () => { const today = new Date(); return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`; };
@@ -275,7 +296,10 @@ watch([searchQuery, activeCategory, activityFilter, dateFilterType, selectedMont
     currentPage.value = 1;
 });
 
-// --- FETCH DATA ---
+// --- REALTIME FETCH DATA ---
+let unsubscribeSales = null;
+let unsubscribeSellers = null;
+
 onMounted(() => {
  onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -283,51 +307,64 @@ onMounted(() => {
      const userDoc = await getDoc(doc(db, "users", user.uid));
      const role = userDoc.exists() ? userDoc.data().role : 'user';
 
+     // Fetch Units once
+     const unitSnap = await getDocs(collection(db, 'settings_units'));
+     availableUnits.value = unitSnap.docs.map(doc => doc.data());
+
+     // Realtime Sellers
      let sellerQ = role === 'admin' 
         ? query(collection(db, 'users'), where('role', 'in', ['seller', 'dealer']), where('createdBy', '==', user.uid))
         : query(collection(db, 'users'), where('role', 'in', ['seller', 'dealer']));
 
-     const sellerSnap = await getDocs(sellerQ);
-     sellersList.value = sellerSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(s => s.isDeleted === false || !s.isDeleted);
-
-     const unitSnap = await getDocs(collection(db, 'settings_units'));
-     availableUnits.value = unitSnap.docs.map(doc => doc.data());
-
-     const salesQ = query(collection(db, 'sales_reports'), where('createdBy', '==', user.uid));
-     const salesSnap = await getDocs(salesQ);
-     
-     let flatSales = [];
-     salesSnap.docs.forEach(doc => {
-         const data = doc.data();
-         if (data.items && Array.isArray(data.items)) {
-             data.items.forEach((item, index) => {
-                 let typeStr = String(item.type || '');
-                 let isWholesale = typeStr.includes('បោះដុំ');
-
-                 flatSales.push({
-                     ...data,                     
-                     id: `${doc.id}_${index}`,    
-                     category: isWholesale ? 'បោះដុំ' : 'លក់រាយ', // Fix Category Logic based on UI Labels
-                     totalSold: Number(item.qty),
-                     unit: item.unit,
-                     totalPrice: Number(item.price) * Number(item.qty),
-                     productName: item.name, 
-                     totalClients: index === 0 ? 1 : 0,
-                     isFirstItemOfReceipt: index === 0 // សម្រាប់ការពារបូកថ្លៃដឹកជាន់គ្នា
-                 });
-             });
-         }
+     unsubscribeSellers = onSnapshot(sellerQ, (sellerSnap) => {
+         sellersList.value = sellerSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(s => s.isDeleted === false || !s.isDeleted);
      });
 
-     allSales.value = flatSales.sort((a,b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+     // Realtime Sales
+     const salesQ = query(collection(db, 'sales_reports'), where('createdBy', '==', user.uid));
+     
+     unsubscribeSales = onSnapshot(salesQ, (salesSnap) => {
+         let flatSales = [];
+         salesSnap.docs.forEach(doc => {
+             const data = doc.data();
+             if (data.items && Array.isArray(data.items)) {
+                 data.items.forEach((item, index) => {
+                     let typeStr = String(item.type || '');
+                     let isWholesale = typeStr.includes('បោះដុំ');
+
+                     flatSales.push({
+                         ...data,                     
+                         id: `${doc.id}_${index}`,    
+                         category: isWholesale ? 'បោះដុំ' : 'លក់រាយ',
+                         totalSold: Number(item.qty),
+                         unit: item.unit,
+                         totalPrice: Number(item.price) * Number(item.qty),
+                         productName: item.name, 
+                         totalClients: index === 0 ? 1 : 0,
+                         isFirstItemOfReceipt: index === 0 
+                     });
+                 });
+             }
+         });
+
+         allSales.value = flatSales.sort((a,b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+         isLoading.value = false;
+     }, (error) => {
+         console.error("Error in realtime sales stream:", error);
+         isLoading.value = false;
+     });
 
    } catch (error) {
-     console.error("Error fetching data", error);
-   } finally {
+     console.error("Error setting up data:", error);
      isLoading.value = false;
    }
   }
  });
+});
+
+onUnmounted(() => {
+    if (unsubscribeSales) unsubscribeSales();
+    if (unsubscribeSellers) unsubscribeSellers();
 });
 
 // --- DYNAMIC DATES ---
@@ -387,7 +424,7 @@ const baseCalculatedData = computed(() => {
         unitCounts[u] += Number(sale.totalSold || 0);
         totalClients += Number(sale.totalClients || 0);
         
-        // Product Revenue Only (No Delivery here to keep item values clean)
+        // Product Revenue Only 
         if (sale.currency === 'USD' || sale.currency === '$') revenueUSD += Number(sale.totalPrice || 0);
         else revenueKHR += Number(sale.totalPrice || 0);
         
@@ -455,7 +492,9 @@ const itemizedSummary = computed(() => {
     let summary = {
         overall: { retail: {}, wholesale: {} },
         phnomPenh: { retail: {}, wholesale: {}, clients: new Set(), usd: 0, khr: 0, deliveryUSD: 0, deliveryKHR: 0 },
-        provinces: { retail: {}, wholesale: {}, clients: new Set(), usd: 0, khr: 0, deliveryUSD: 0, deliveryKHR: 0 }
+        provinces: { retail: {}, wholesale: {}, clients: new Set(), usd: 0, khr: 0, deliveryUSD: 0, deliveryKHR: 0 },
+        // បន្ថែមតំបន់ ទិញផ្ទាល់ 
+        directWalkIn: { retail: {}, wholesale: {}, clients: new Set(), usd: 0, khr: 0, deliveryUSD: 0, deliveryKHR: 0 } 
     };
 
     const activeSellerIds = new Set(filteredSellers.value.map(s => s.originalSellerId));
@@ -470,9 +509,15 @@ const itemizedSummary = computed(() => {
             if (activeCategory.value === 'បោះដុំ' && !isWholesale) return;
         }
 
-        // Determine Region
-        const isPP = sale.province === 'រាជធានីភ្នំពេញ';
-        const regionGroup = isPP ? summary.phnomPenh : summary.provinces;
+        // Determine Region (ភ្នំពេញ, ខេត្ត, ឬ ទិញផ្ទាល់)
+        let regionGroup;
+        if (sale.location === 'ទិញផ្ទាល់') {
+            regionGroup = summary.directWalkIn;
+        } else if (sale.province === 'រាជធានីភ្នំពេញ') {
+            regionGroup = summary.phnomPenh;
+        } else {
+            regionGroup = summary.provinces;
+        }
 
         if (sale.receiptId) {
             regionGroup.clients.add(sale.receiptId);
@@ -482,15 +527,13 @@ const itemizedSummary = computed(() => {
         const regionGroupTarget = isWholesale ? regionGroup.wholesale : regionGroup.retail;
         
         const qty = Number(sale.totalSold) || 0;
-        const total = Number(sale.totalPrice) || 0; // Product only
+        const total = Number(sale.totalPrice) || 0; 
         const unitPrice = qty > 0 ? (total / qty) : 0;
         const currency = sale.currency === 'KHR' || sale.currency === '៛' ? 'KHR' : 'USD';
         
-        // Add Product Total to Regional Total
         if (currency === 'USD') regionGroup.usd += total;
         else regionGroup.khr += total;
 
-        // Extract Delivery Fee (Only add once per receipt to regional totals)
         if (sale.isFirstItemOfReceipt) {
              const dFee = Number(sale.deliveryFee) || 0;
              const dCurr = sale.deliveryCurrency || 'USD';
@@ -551,6 +594,15 @@ const itemizedSummary = computed(() => {
             khr: summary.provinces.khr,
             deliveryUSD: summary.provinces.deliveryUSD,
             deliveryKHR: summary.provinces.deliveryKHR
+        },
+        directWalkIn: {
+            retail: toArray(summary.directWalkIn.retail),
+            wholesale: toArray(summary.directWalkIn.wholesale),
+            clientCount: summary.directWalkIn.clients.size,
+            usd: summary.directWalkIn.usd,
+            khr: summary.directWalkIn.khr,
+            deliveryUSD: summary.directWalkIn.deliveryUSD,
+            deliveryKHR: summary.directWalkIn.deliveryKHR
         }
     };
 });
@@ -626,586 +678,25 @@ const selectedDateFormatter = (dateStr) => {
     return new Intl.DateTimeFormat('km-KH', { dateStyle: 'medium' }).format(new Date(dateStr));
 };
 
-// ---------------------------------------------------------
-// 🖨️ PRINT & PDF LOGIC (ROBUST PAGINATION) 🖨️
-// ---------------------------------------------------------
+// --- BUNDLE DATA FOR PRINT HELPER ---
+const getPrintDataPayload = () => ({
+    filteredSellers: filteredSellers.value,
+    itemizedSummary: itemizedSummary.value,
+    grandTotals: grandTotals.value,
+    reportDateLabel: reportDateLabel.value,
+    activeCategory: activeCategory.value,
+    dateFilterType: dateFilterType.value,
+    availableUnits: availableUnits.value
+});
 
-const formatCurrency = (val, curr) => Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (curr === 'USD' ? ' $' : ' ៛');
-
-const executeNativePrint = () => {
-    const dataWithIndex = filteredSellers.value.map((item, idx) => ({ ...item, printIndex: idx + 1 }));
-    // Native print handles pagination natively, so we just ask for 1 giant page rendering
-    const contentHTML = generatePageHTML({ rows: dataWithIndex, summary: { top: true, overall: true, region: true } }, 1, 1, true);
-
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute'; iframe.style.width = '0'; iframe.style.height = '0'; iframe.style.border = 'none';
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(`
-        <html>
-        <head>
-            <title>Sales_Report_${dateFilterType.value}</title>
-            <link href="https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&family=Kantumruy+Pro:wght@400;700&display=swap" rel="stylesheet">
-            <style>
-                @page { size: A4 portrait; margin: 0; }
-                body { font-family: 'Battambong', 'Kantumruy Pro', sans-serif; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; margin: 0; padding: 15mm; background-color: white; }
-                table { width: 100%; border-collapse: collapse; }
-                tr    { page-break-inside: avoid; page-break-after: auto; }
-                thead { display: table-header-group; }
-                tfoot { display: table-footer-group; }
-            </style>
-        </head>
-        <body>${contentHTML}</body>
-        </html>
-    `);
-    doc.close();
-
-    iframe.contentWindow.document.fonts.ready.then(() => {
-        iframe.contentWindow.focus(); iframe.contentWindow.print();
-        setTimeout(() => { document.body.removeChild(iframe); }, 1000);
-    });
+const handlePrint = () => {
+    executeNativePrint(getPrintDataPayload());
 };
 
-const generatePDF = async () => {
-    processing.value = { active: true, message: 'កំពុងបំបែកទិន្នន័យ...', progress: 10 };
-    
-    try {
-        const pages = [];
-        
-        // កាត់បន្ថយកម្ពស់សរុបបន្តិច ដើម្បីកុំឱ្យជាន់ Footer
-        const MAX_PAGE_HEIGHT = 920; 
-        const PAGE_TITLE_HEIGHT = 120; 
-        const TABLE_HEADER_HEIGHT = 60;
-
-        let currentRows = [];
-        let currentHeight = PAGE_TITLE_HEIGHT + TABLE_HEADER_HEIGHT; 
-        let rowCounter = 1;
-        let allRows = [...filteredSellers.value];
-
-        // 1. Paginate Rows strictly based on exact height estimation
-        for (let row of allRows) {
-            let numProducts = row.productsList ? row.productsList.length : 1;
-            let rowHeight = 70 + (numProducts * 30); 
-
-            if (currentHeight + rowHeight > MAX_PAGE_HEIGHT && currentRows.length > 0) {
-                pages.push({ rows: currentRows, summary: {} });
-                currentRows = [];
-                currentHeight = TABLE_HEADER_HEIGHT; 
-            }
-            
-            currentRows.push({ ...row, printIndex: rowCounter++ });
-            currentHeight += rowHeight;
-        }
-
-        // 2. Estimate Summary Section Heights
-        let grandTotalUnitCount = Object.keys(grandTotals.value.all.units || {}).length;
-        let hTop = 260 + (Math.ceil(grandTotalUnitCount / 2) * 45); // Top Grand Total Height
-
-        let countOverallItems = itemizedSummary.value.overall.retail.length + itemizedSummary.value.overall.wholesale.length;
-        let hOverall = countOverallItems === 0 ? 0 : 120 + (countOverallItems * 35); // Overall Breakdown Height
-
-        let countPPItems = itemizedSummary.value.phnomPenh.retail.length + itemizedSummary.value.phnomPenh.wholesale.length;
-        let hPP = countPPItems === 0 ? 0 : 130 + (countPPItems * 35); // PP Height
-
-        let countProvItems = itemizedSummary.value.provinces.retail.length + itemizedSummary.value.provinces.wholesale.length;
-        let hProv = countProvItems === 0 ? 0 : 130 + (countProvItems * 35); // Provinces Height
-
-        let hRegion = hPP + hProv;
-        if (hRegion > 0) hRegion += 60; // Added safety buffer
-
-        let summaryObj = { top: false, overall: false, region: false };
-
-        // Append Top Summary
-        if (currentHeight + hTop <= MAX_PAGE_HEIGHT) {
-            summaryObj.top = true;
-            currentHeight += hTop;
-        } else {
-            pages.push({ rows: currentRows, summary: summaryObj });
-            currentRows = [];
-            summaryObj = { top: true, overall: false, region: false };
-            currentHeight = hTop;
-        }
-
-        // Append Overall Items Summary
-        if (hOverall > 0) {
-            if (currentHeight + hOverall <= MAX_PAGE_HEIGHT) {
-                summaryObj.overall = true;
-                currentHeight += hOverall;
-            } else {
-                pages.push({ rows: currentRows, summary: summaryObj });
-                currentRows = [];
-                summaryObj = { top: false, overall: true, region: false };
-                currentHeight = hOverall;
-            }
-        }
-
-        // Append Region Summary
-        if (hRegion > 0) {
-            if (currentHeight + hRegion <= MAX_PAGE_HEIGHT) {
-                summaryObj.region = true;
-                currentHeight += hRegion;
-            } else {
-                pages.push({ rows: currentRows, summary: summaryObj });
-                currentRows = [];
-                summaryObj = { top: false, overall: false, region: true };
-                currentHeight = hRegion;
-            }
-        }
-
-        pages.push({ rows: currentRows, summary: summaryObj });
-
-        const pdf = new jsPDF('p', 'mm', 'a4'); 
-        const pdfWidth = 210; 
-        const pdfHeightA4 = 297; 
-        
-        for (let i = 0; i < pages.length; i++) {
-            processing.value.message = `កំពុងថតចម្លងទំព័រទី ${i+1} នៃ ${pages.length}...`;
-            printStaging.value.innerHTML = generatePageHTML(pages[i], i + 1, pages.length, false);
-            
-            await nextTick(); 
-            await document.fonts.ready;
-            await new Promise(r => setTimeout(r, 600)); 
-
-            const canvas = await html2canvas(printStaging.value.querySelector('.print-page'), { 
-                scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff"
-            });
-            
-            const imgData = canvas.toDataURL('image/jpeg', 1.0);
-            if (i > 0) pdf.addPage();
-            
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeightA4);
-            processing.value.progress = 10 + Math.round(((i + 1) / pages.length) * 80);
-        }
-
-        processing.value.message = 'កំពុងរក្សាទុកឯកសារ...';
-        processing.value.progress = 100;
-        pdf.save(`Sales_Report_${dateFilterType.value}.pdf`);
-        
-    } catch(e) {
-        console.error(e);
-        triggerAlert('error', 'បរាជ័យ', 'មិនអាចទាញយក PDF បានទេ');
-    } finally {
-        if(printStaging.value) printStaging.value.innerHTML = '';
-        processing.value.active = false;
-    }
+const handlePDF = async () => {
+    await generatePDF(getPrintDataPayload(), printStaging.value, processing);
 };
 
-const generatePageHTML = (pageData, pageNum, totalPages, isNativePrint = false) => {
-    
-    const rows = isNativePrint ? pageData : (pageData.rows || []);
-    const summary = isNativePrint ? { top: true, overall: true, region: true } : (pageData.summary || {});
-
-    const renderRow = (item) => {
-        let salesHTML = '';
-        if (item.hasSales) {
-            salesHTML = `<div style="overflow: hidden;">` + 
-                Object.entries(item.unitCounts || {}).filter(([u, c]) => c > 0).map(([u, c]) => 
-                    `<div style="display: inline-block; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 3px 6px; margin: 0 4px 4px 0;">
-                        <span style="font-weight: 900; color: #1e293b; font-size: 11px;">${c.toLocaleString()}</span>
-                        <span style="color: #64748b; font-size: 10px; font-weight: bold; margin-left: 2px;">${translateUnit(u)}</span>
-                     </div>`
-                ).join('') + `</div>`;
-        } else {
-            salesHTML = `<span style="font-size: 11px; font-weight: bold; color: #94a3b8;">-</span>`;
-        }
-
-        let productsHTML = '';
-        if (item.hasSales && item.productsList && item.productsList.length > 0) {
-            productsHTML = `<div style="overflow: hidden;">` + 
-                item.productsList.map(p => 
-                    `<div style="display: inline-block; color: #4338ca; background-color: #eef2ff; border: 1px solid #e0e7ff; padding: 3px 6px; border-radius: 4px; font-size: 9px; margin: 0 4px 4px 0;">
-                        <strong style="font-weight: 900;">${p.name}</strong> <span style="color: #6366f1;">• ${p.qty} ${translateUnit(p.unit)}</span>
-                    </div>`
-                ).join('') + `</div>`;
-        } else {
-            productsHTML = `<span style="font-size: 11px; font-weight: bold; color: #94a3b8;">-</span>`;
-        }
-
-        let revenueHTML = '';
-        if (item.hasSales) {
-            revenueHTML = `
-                <div style="text-align: right;">
-                    <span style="color:#059669; font-size:14px; font-weight:900; background: #ecfdf5; padding: 2px 6px; border-radius: 4px; display: inline-block;">${item.revenueUSD.toLocaleString()} $</span><br/>
-                    <span style="color:#2563eb; font-size:10px; font-weight:bold; padding-right: 2px; display: inline-block; margin-top: 3px;">${item.revenueKHR.toLocaleString()} ៛</span>
-                </div>`;
-        } else {
-            revenueHTML = `<div style="text-align: right; color:#94a3b8; font-weight:bold; font-size:12px;">-</div>`;
-        }
-
-        let catBadge = '';
-        if (item.category === 'បោះដុំ') {
-            catBadge = `<span style="background-color: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff; padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">បោះដុំ</span>`;
-        } else if (item.category === 'លក់រាយ') {
-            catBadge = `<span style="background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">លក់រាយ</span>`;
-        } else if (item.category === 'សរុបរួម') {
-            catBadge = `<span style="background-color: #f0fdf4; color: #166534; border: 1px solid #dcfce7; padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">សរុបរួម</span>`;
-        } else {
-            catBadge = '-';
-        }
-
-        const dealerBadge = item.role === 'dealer' 
-            ? `<span style="background-color: #fffbeb; color: #d97706; border: 1px solid #fde68a; padding: 1px 4px; border-radius: 3px; font-size: 8px; font-weight: 900; vertical-align: middle; margin-left: 4px;">DEALER</span>` 
-            : '';
-
-        return `
-            <tr style="break-inside: avoid; page-break-inside: avoid; ${!item.hasSales ? 'background-color: #f8fafc;' : 'border-bottom: 1px solid #f1f5f9;'}">
-                <td style="padding: 12px 8px; text-align: center; vertical-align: top; font-weight: 900; color: #94a3b8; font-size: 12px;">${item.printIndex}</td>
-                <td style="padding: 12px 8px; vertical-align: top;">
-                    <p style="font-weight: bold; color: #1e293b; font-size: 13px; margin: 0; display: flex; align-items: center;">
-                        ${item.fullName} ${dealerBadge}
-                    </p>
-                    <p style="font-family: monospace; color: #64748b; font-size: 10px; margin: 2px 0 0 0;">ID: ${item.idNumber || 'N/A'}</p>
-                </td>
-                <td style="padding: 12px 8px; vertical-align: top; text-align: center;">${item.hasSales ? catBadge : '-'}</td>
-                <td style="padding: 12px 8px; vertical-align: top;">${productsHTML}</td>
-                <td style="padding: 12px 8px; vertical-align: top;">${salesHTML}</td>
-                <td style="padding: 12px 8px; text-align: center; vertical-align: top; font-weight: bold; color: #334155; font-size: 12px;">
-                    ${item.hasSales ? item.totalClients.toLocaleString() + ' នាក់' : '-'}
-                </td>
-                <td style="padding: 12px 8px; vertical-align: top;">${revenueHTML}</td>
-            </tr>
-        `;
-    };
-
-    // 1. Build Top Grand Total
-    let topGrandTotalHTML = '';
-    if (summary.top) {
-        const unitsArray = Object.entries(grandTotals.value.all.units || {});
-        let unitRows = '';
-        for (let i = 0; i < unitsArray.length; i += 2) {
-            const [u1, c1] = unitsArray[i];
-            const item2 = unitsArray[i + 1];
-            const cell1 = `
-                <td style="width: 50%; padding: 4px 8px 4px 0; vertical-align: top;">
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; overflow: hidden;">
-                        <span style="color: #475569; font-size: 12px; font-weight: bold; float: left;">${translateUnit(u1)}</span>
-                        <span style="font-weight: 900; color: #0f172a; font-size: 14px; float: right;">${c1.toLocaleString()}</span>
-                        <div style="clear: both;"></div>
-                    </div>
-                </td>`;
-            const cell2 = item2 ? `
-                <td style="width: 50%; padding: 4px 0 4px 8px; vertical-align: top;">
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; overflow: hidden;">
-                        <span style="color: #475569; font-size: 12px; font-weight: bold; float: left;">${translateUnit(item2[0])}</span>
-                        <span style="font-weight: 900; color: #0f172a; font-size: 14px; float: right;">${item2[1].toLocaleString()}</span>
-                        <div style="clear: both;"></div>
-                    </div>
-                </td>` : `<td style="width: 50%;"></td>`;
-            unitRows += `<tr>${cell1}${cell2}</tr>`;
-        }
-        
-        const unitsTableHTML = unitsArray.length > 0 
-            ? `<table style="width: 100%; border-collapse: collapse; border: none;"><tbody>${unitRows}</tbody></table>`
-            : `<p style="color: #94a3b8; font-size: 12px; margin: 0;">គ្មានទិន្នន័យ</p>`;
-
-        let breakdownHTML = '';
-        if (activeCategory.value === 'all') {
-            breakdownHTML = `
-                <table style="width: 100%; margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
-                    <tr>
-                        <td style="width: 48%; background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; vertical-align: top;">
-                            <p style="font-size: 10px; color: #64748b; font-weight: 900; margin: 0 0 8px 0;">លក់រាយ (RETAIL)</p>
-                            <p style="margin: 0; font-size: 16px; font-weight: 900; color: #059669;">${grandTotals.value.retail.usd.toLocaleString()} $</p>
-                            <p style="margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #2563eb;">${grandTotals.value.retail.khr.toLocaleString()} ៛</p>
-                            <div style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
-                                <p style="margin: 0; font-size: 10px; font-weight: bold; color: #475569;">អតិថិជន: ${grandTotals.value.retail.clients.toLocaleString()} នាក់</p>
-                                <p style="margin: 2px 0 0 0; font-size: 10px; font-weight: bold; color: #475569;">បរិមាណលក់: ${grandTotals.value.retail.totalUnitsCount.toLocaleString()}</p>
-                            </div>
-                        </td>
-                        <td style="width: 4%;"></td>
-                        <td style="width: 48%; background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; vertical-align: top;">
-                            <p style="font-size: 10px; color: #64748b; font-weight: 900; margin: 0 0 8px 0;">បោះដុំ (WHOLESALE)</p>
-                            <p style="margin: 0; font-size: 16px; font-weight: 900; color: #059669;">${grandTotals.value.wholesale.usd.toLocaleString()} $</p>
-                            <p style="margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #2563eb;">${grandTotals.value.wholesale.khr.toLocaleString()} ៛</p>
-                            <div style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
-                                <p style="margin: 0; font-size: 10px; font-weight: bold; color: #475569;">អតិថិជន: ${grandTotals.value.wholesale.clients.toLocaleString()} នាក់</p>
-                                <p style="margin: 2px 0 0 0; font-size: 10px; font-weight: bold; color: #475569;">បរិមាណលក់: ${grandTotals.value.wholesale.totalUnitsCount.toLocaleString()}</p>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-            `;
-        }
-
-        topGrandTotalHTML = `
-            <table style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 20px;">
-                <tr>
-                    <td style="width: 55%; vertical-align: top; padding-right: 15px;">
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px;">
-                            <h3 style="font-size: 14px; font-weight: 900; color: #1e293b; margin: 0 0 15px 0;">
-                                <span style="display:inline-block; background: #e0e7ff; color: #4f46e5; padding: 2px 6px; border-radius: 6px; margin-right: 5px;">📊</span> សរុបបរិមាណលក់តាមប្រភេទ
-                            </h3>
-                            ${unitsTableHTML}
-                        </div>
-                    </td>
-                    <td style="width: 45%; vertical-align: top;">
-                        <div style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-                            <div style="background: #1e293b; padding: 12px 15px;">
-                                <h3 style="font-size: 14px; font-weight: 900; color: white; margin: 0;">សរុបរួម (Grand Total)</h3>
-                            </div>
-                            <div style="padding: 15px; background: #f8fafc;">
-                                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                                    <tr>
-                                        <td style="padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1; color: #64748b; font-weight: bold;">អតិថិជនសរុប:</td>
-                                        <td style="padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1; text-align: right; font-weight: 900; color: #0f172a;">${grandTotals.value.all.clients.toLocaleString()} នាក់</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding-top: 8px; padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1; color: #64748b; font-weight: bold;">សរុបទំនិញ (Products):</td>
-                                        <td style="padding-top: 8px; padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1; text-align: right; font-weight: 900; color: #059669; font-size: 14px;">
-                                            ${grandTotals.value.all.usd.toLocaleString()} $
-                                            ${grandTotals.value.all.khr > 0 ? `<br/><span style="color: #2563eb; font-size: 11px;">${grandTotals.value.all.khr.toLocaleString()} ៛</span>` : ''}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding-top: 8px; padding-bottom: 8px; border-bottom: 1px solid #cbd5e1; color: #64748b; font-weight: bold;">ថ្លៃដឹកជញ្ជូន (Delivery):</td>
-                                        <td style="padding-top: 8px; padding-bottom: 8px; border-bottom: 1px solid #cbd5e1; text-align: right; font-weight: 900; color: #ea580c;">
-                                            ${grandTotals.value.all.deliveryUSD > 0 ? grandTotals.value.all.deliveryUSD.toLocaleString() + ' $' : ''}
-                                            ${grandTotals.value.all.deliveryUSD > 0 && grandTotals.value.all.deliveryKHR > 0 ? ' | ' : ''}
-                                            ${grandTotals.value.all.deliveryKHR > 0 ? grandTotals.value.all.deliveryKHR.toLocaleString() + ' ៛' : ''}
-                                            ${grandTotals.value.all.deliveryUSD === 0 && grandTotals.value.all.deliveryKHR === 0 ? '0 $' : ''}
-                                        </td>
-                                    </tr>
-                                </table>
-                                ${breakdownHTML}
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        `;
-    }
-
-    // 2. Build Overall Summary
-    let overallHTML = '';
-    if (summary.overall) {
-        let retailHTML = '';
-        if (itemizedSummary.value.overall.retail.length > 0) {
-            retailHTML = `
-                <div style="margin-bottom: 15px;">
-                    <div style="background: #e0e7ff; color: #4f46e5; font-size: 12px; font-weight: bold; padding: 6px 12px; border-radius: 6px; display: inline-block; margin-bottom: 10px;">សរុបការលក់រាយ និងឈុត (Retail & Combo)</div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; background: white;">
-                        <thead style="background: #f8fafc; border-bottom: 1px solid #cbd5e1; color: #64748b;">
-                            <tr>
-                                <th style="padding: 6px; text-align: left;">មុខទំនិញ</th>
-                                <th style="padding: 6px; text-align: center;">ចំនួន</th>
-                                <th style="padding: 6px; text-align: right;">តម្លៃឯកតា</th>
-                                <th style="padding: 6px; text-align: right;">សរុប</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${itemizedSummary.value.overall.retail.map(item => `
-                                <tr style="border-bottom: 1px dashed #e2e8f0;">
-                                    <td style="padding: 6px; font-weight: bold; color: #334155;">${item.name}</td>
-                                    <td style="padding: 6px; text-align: center; color: #475569;">${item.qty} ${translateUnit(item.unit)}</td>
-                                    <td style="padding: 6px; text-align: right; color: #475569;">${formatCurrency(item.unitPrice, item.currency)}</td>
-                                    <td style="padding: 6px; text-align: right; font-weight: bold; color: #059669;">${formatCurrency(item.total, item.currency)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        let wholesaleHTML = '';
-        if (itemizedSummary.value.overall.wholesale.length > 0) {
-            wholesaleHTML = `
-                <div style="margin-bottom: 15px;">
-                    <div style="background: #f3e8ff; color: #7e22ce; font-size: 12px; font-weight: bold; padding: 6px 12px; border-radius: 6px; display: inline-block; margin-bottom: 10px;">សរុបការបោះដុំ (Wholesale)</div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; background: white;">
-                        <thead style="background: #f8fafc; border-bottom: 1px solid #cbd5e1; color: #64748b;">
-                            <tr>
-                                <th style="padding: 6px; text-align: left;">មុខទំនិញ</th>
-                                <th style="padding: 6px; text-align: center;">ចំនួន</th>
-                                <th style="padding: 6px; text-align: right;">តម្លៃឯកតា</th>
-                                <th style="padding: 6px; text-align: right;">សរុប</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${itemizedSummary.value.overall.wholesale.map(item => `
-                                <tr style="border-bottom: 1px dashed #e2e8f0;">
-                                    <td style="padding: 6px; font-weight: bold; color: #334155;">${item.name}</td>
-                                    <td style="padding: 6px; text-align: center; color: #475569;">${item.qty} ${translateUnit(item.unit)}</td>
-                                    <td style="padding: 6px; text-align: right; color: #475569;">${formatCurrency(item.unitPrice, item.currency)}</td>
-                                    <td style="padding: 6px; text-align: right; font-weight: bold; color: #059669;">${formatCurrency(item.total, item.currency)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-        
-        overallHTML = retailHTML + wholesaleHTML;
-    }
-
-    // 3. Build Regional Summary
-    let regionHTML = '';
-    if (summary.region) {
-        const buildRegionHTML = (title, regionData, colorHex, bgColor) => {
-            if (regionData.retail.length === 0 && regionData.wholesale.length === 0) return '';
-
-            let html = `
-                <div style="margin-top: 25px; padding: 15px; border-radius: 12px; border: 1px solid ${colorHex}40; background: ${bgColor}; break-inside: avoid; page-break-inside: avoid;">
-                    <table style="width: 100%; margin-bottom: 15px; border-bottom: 2px solid ${colorHex}40; padding-bottom: 10px;">
-                        <tr>
-                            <td style="text-align: left;">
-                                <h3 style="font-size: 15px; font-weight: 900; color: ${colorHex}; margin: 0;">📍 ${title}</h3>
-                            </td>
-                            <td style="text-align: right;">
-                                <span style="background: white; color: #475569; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; border: 1px solid #cbd5e1;">
-                                    អតិថិជនសរុប: ${regionData.clientCount} នាក់
-                                </span>
-                            </td>
-                        </tr>
-                    </table>
-            `;
-
-            const buildTable = (typeTitle, items) => {
-                if (items.length === 0) return '';
-                return `
-                    <div style="margin-bottom: 15px;">
-                        <h4 style="font-size: 12px; font-weight: bold; color: #64748b; margin: 0 0 8px 0;">${typeTitle}</h4>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 11px; background: white;">
-                            <thead style="background: #f8fafc; border-bottom: 1px solid #cbd5e1; color: #64748b;">
-                                <tr>
-                                    <th style="padding: 6px; text-align: left;">មុខទំនិញ</th>
-                                    <th style="padding: 6px; text-align: center;">ចំនួន</th>
-                                    <th style="padding: 6px; text-align: right;">តម្លៃឯកតា</th>
-                                    <th style="padding: 6px; text-align: right;">សរុប</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${items.map(item => `
-                                    <tr style="border-bottom: 1px dashed #e2e8f0;">
-                                        <td style="padding: 6px; font-weight: bold; color: #334155;">${item.name}</td>
-                                        <td style="padding: 6px; text-align: center; color: #475569;">${item.qty} ${translateUnit(item.unit)}</td>
-                                        <td style="padding: 6px; text-align: right; color: #475569;">${formatCurrency(item.unitPrice, item.currency)}</td>
-                                        <td style="padding: 6px; text-align: right; font-weight: bold; color: ${colorHex};">${formatCurrency(item.total, item.currency)}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            };
-
-            html += buildTable('លក់រាយ (Retail)', regionData.retail);
-            html += buildTable('បោះដុំ (Wholesale)', regionData.wholesale);
-
-            html += `
-                    <div style="text-align: right; padding-top: 10px; font-size: 12px; color: ${colorHex}; border-top: 1px dashed ${colorHex}40;">
-                        <table style="width: 100%; border: none;">
-                            <tr>
-                                <td style="text-align: right; color: #64748b; font-weight: bold; padding-bottom: 4px;">សរុបទំនិញតំបន់នេះ:</td>
-                                <td style="text-align: right; font-weight: 900; color: ${colorHex}; padding-bottom: 4px; width: 180px;">${regionData.usd.toLocaleString()} $ ${regionData.khr > 0 ? `| ${regionData.khr.toLocaleString()} ៛` : ''}</td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: right; color: #64748b; font-weight: bold; padding-bottom: 4px;">ថ្លៃដឹកជញ្ជូន:</td>
-                                <td style="text-align: right; font-weight: 900; color: #ea580c; padding-bottom: 4px;">${regionData.deliveryUSD > 0 ? regionData.deliveryUSD.toLocaleString() + ' $' : '0 $'} ${regionData.deliveryKHR > 0 ? `| ${regionData.deliveryKHR.toLocaleString()} ៛` : ''}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-            `;
-            return html;
-        };
-
-        regionHTML += buildRegionHTML('រាជធានីភ្នំពេញ', itemizedSummary.value.phnomPenh, '#0284c7', '#f0f9ff');
-        regionHTML += buildRegionHTML('តាមបណ្តាខេត្ត', itemizedSummary.value.provinces, '#ea580c', '#fff7ed');
-    }
-
-    let allSummariesCombined = '';
-    if (summary.top || summary.overall || summary.region) {
-        let titleHTML = '';
-        if (summary.overall || summary.region) {
-            titleHTML = `<h3 style="font-size: 18px; font-weight: 900; color: #1e293b; margin-bottom: 20px; text-align: center;">របាយការណ៍លម្អិតតាមមុខទំនិញ និងតំបន់</h3>`;
-        }
-
-        let topMargin = summary.top ? '30px' : '0px';
-        let topPadding = summary.top ? '20px' : '0px';
-        let topBorder = summary.top ? '2px solid #cbd5e1' : 'none';
-
-        allSummariesCombined = `
-            <div style="margin-top: ${topMargin}; padding-top: ${topPadding}; border-top: ${topBorder}; width: 100%;">
-                ${topGrandTotalHTML}
-                ${titleHTML}
-                ${overallHTML}
-                ${regionHTML}
-            </div>
-        `;
-    }
-
-    let tableHTML = '';
-    if (rows.length > 0) {
-        const tableHeader = `
-            <thead style="color: #334155; font-size: 11px; font-weight: 900; display: table-header-group;">
-                <tr>
-                    <th style="padding: 12px 8px; width: 5%; text-align: center; border-bottom: 2px solid #cbd5e1;">#</th>
-                    <th style="padding: 12px 8px; width: 18%; border-bottom: 2px solid #cbd5e1;">តំណាងលក់</th>
-                    <th style="padding: 12px 8px; width: 8%; text-align: center; border-bottom: 2px solid #cbd5e1;">ប្រភេទ</th>
-                    <th style="padding: 12px 8px; width: 27%; border-bottom: 2px solid #cbd5e1;">មុខទំនិញ</th>
-                    <th style="padding: 12px 8px; width: 15%; border-bottom: 2px solid #cbd5e1;">បរិមាណលក់</th>
-                    <th style="padding: 12px 8px; width: 12%; text-align: center; border-bottom: 2px solid #cbd5e1;">អតិថិជន</th>
-                    <th style="padding: 12px 8px; width: 15%; text-align: right; border-bottom: 2px solid #cbd5e1;">ចំណូល</th>
-                </tr>
-            </thead>
-        `;
-
-        tableHTML = `
-            <table style="width: 100%; text-align: left; border-collapse: collapse; background-color: #ffffff;">
-                ${tableHeader}
-                <tbody>${rows.map(renderRow).join('')}</tbody>
-            </table>
-        `;
-    }
-
-    // លុប Fixed Height ចេញ
-    const pageStyles = isNativePrint
-        ? `width: 100%; box-sizing: border-box; font-family: 'Battambang', 'Kantumruy Pro', sans-serif; line-height: 1.5; padding: 15px;`
-        : `width: 794px; min-height: 1123px; height: auto; background: white; padding: 40px; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'Battambang', 'Kantumruy Pro', sans-serif; line-height: 1.5; position: relative;`;
-
-    const mainTitle = (pageNum === 1 || isNativePrint) 
-        ? `<div style="text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #4f46e5;"><h1 style="font-size: 24px; font-weight: 900; color: #4338ca; margin: 0; text-align: center; width: 100%;">របាយការណ៍លក់សរុប</h1></div>` 
-        : '';
-
-    // ប្តូរ Footer ពី Absolute ទៅជា Flex Margin Auto ដើម្បីកុំឱ្យជាន់ទិន្នន័យពីលើ
-    const footerHTML = isNativePrint ? '' : `
-        <div style="margin-top: auto; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 11px; font-weight: bold; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; background: white; width: 100%;">
-            <div>
-                <span style="background-color: #f8fafc; padding: 3px 8px; border-radius: 4px; border: 1px solid #e2e8f0; color: #1e293b; font-size: 11px; font-weight: 900;">កាលបរិច្ឆេទ: ${reportDateLabel.value}</span>
-                <span style="margin-left: 10px;">ថ្ងៃបញ្ចេញរបាយការណ៍ • ${new Date().toLocaleString('km-KH')}</span>
-            </div>
-            <div>ទំព័រទី ${pageNum} នៃ ${totalPages}</div>
-        </div>
-    `;
-
-    return `
-        <div class="print-page" style="${pageStyles}">
-            <div style="padding-bottom: 60px;">
-                ${mainTitle}
-                ${tableHTML}
-                ${allSummariesCombined}
-            </div>
-            ${footerHTML}
-        </div>
-    `;
-};
-
-// --- HELPERS ---
-const translateUnit = (unitVal) => {
-  if (!unitVal) return '';
-  const found = availableUnits.value.find(u => u.value === unitVal);
-  if (found) return found.label;
-  const u = unitVal.toLowerCase().trim();
-  if (u === 'bottle' || u === 'bottles') return 'ដប';
-  if (u === 'pack' || u === 'packs') return 'កញ្ចប់';
-  if (u === 'case' || u === 'cases') return 'កេះ';
-  if (u === 'set' || u === 'sets') return 'ឈុត';
-  return unitVal; 
-};
 </script>
 
 <style scoped>

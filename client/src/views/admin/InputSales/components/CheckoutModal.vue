@@ -16,6 +16,17 @@
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
+
+              <div class="flex border-b border-slate-200 px-6 pt-2 bg-slate-50 shrink-0">
+                  <button @click="activeTab = 'delivery'" class="px-4 py-3 text-sm font-black border-b-2 transition-colors flex items-center gap-2" :class="activeTab === 'delivery' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                      ផ្ញើតាមខេត្ត/ក្រុង
+                  </button>
+                  <button @click="activeTab = 'direct'" class="px-4 py-3 text-sm font-black border-b-2 transition-colors flex items-center gap-2" :class="activeTab === 'direct' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-400 hover:text-slate-600'">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                      ភ្ញៀវទិញផ្ទាល់
+                  </button>
+              </div>
               
               <div class="p-6 overflow-y-visible space-y-6">
                 
@@ -45,123 +56,206 @@
                   </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-slate-100">
-                  <div class="relative customer-dropdown-container z-[55]">
-                      <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ឈ្មោះអតិថិជន <span class="text-rose-500">*</span></label>
-                      <input 
-                          v-model="form.customerName" 
-                          @focus="showCustomerDropdown = true" 
-                          @input="handleCustomerInput"
-                          type="text" required placeholder="បញ្ចូលឈ្មោះអតិថិជន..." 
-                          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all"
-                      >
-                      <div v-if="showCustomerDropdown && filteredCustomers.length > 0" class="absolute z-[100] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto py-1 custom-scrollbar">
-                          <div 
-                              v-for="(cust, idx) in filteredCustomers" :key="idx" 
-                              @click.stop="selectCustomer(cust)"
-                              class="px-4 py-2 hover:bg-blue-50 cursor-pointer flex flex-col border-b border-slate-50 last:border-0 transition-colors"
+                <div v-if="activeTab === 'delivery'" class="space-y-6 animate-fade-in">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-slate-100">
+                      <div class="relative customer-dropdown-container z-[55]">
+                          <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ឈ្មោះអតិថិជន <span class="text-rose-500">*</span></label>
+                          <input 
+                              v-model="form.customerName" 
+                              @focus="showCustomerDropdown = true" 
+                              @input="handleCustomerInput"
+                              type="text" required placeholder="បញ្ចូលឈ្មោះអតិថិជន..." 
+                              class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all"
                           >
-                              <span class="text-sm font-black text-slate-800">{{ cust.name }}</span>
-                              <span class="text-[10px] text-slate-500 font-bold mt-0.5">{{ cust.phone }} | {{ cust.province }}</span>
+                          <div v-if="showCustomerDropdown && filteredCustomers.length > 0" class="absolute z-[100] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto py-1 custom-scrollbar">
+                              <div 
+                                  v-for="(cust, idx) in filteredCustomers" :key="idx" 
+                                  @click.stop="selectCustomer(cust)"
+                                  class="px-4 py-2 hover:bg-blue-50 cursor-pointer flex flex-col border-b border-slate-50 last:border-0 transition-colors"
+                              >
+                                  <span class="text-sm font-black text-slate-800">{{ cust.name }}</span>
+                                  <span class="text-[10px] text-slate-500 font-bold mt-0.5">{{ cust.phone }} | {{ cust.province }}</span>
+                              </div>
                           </div>
                       </div>
-                  </div>
-                  
-                  <div>
-                    <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">លេខទូរស័ព្ទ <span class="text-rose-500">*</span></label>
-                    <input v-model="form.customerPhone" type="text" placeholder="បញ្ចូលលេខ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all">
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 z-[50]">
-                  <div class="relative">
-                    <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ខេត្ត/ក្រុង <span class="text-rose-500">*</span></label>
-                    <input type="text" v-model="provinceSearch" @focus="showProvinceDropdown = true" @input="handleProvinceInput" placeholder="ជ្រើសរើសខេត្ត/ក្រុង..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all">
-                    <svg class="w-4 h-4 absolute right-4 top-[38px] text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    <div v-if="showProvinceDropdown" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto z-[100] p-1 custom-scrollbar">
-                      <div v-if="filteredProvinces.length === 0" class="p-3 text-center text-xs text-slate-400 font-bold">រកមិនឃើញទិន្នន័យ</div>
-                      <div v-else v-for="prov in filteredProvinces" :key="prov" @click.stop="selectProvince(prov)" class="px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer text-sm font-bold text-slate-700 transition-colors">{{ prov }}</div>
-                    </div>
-                  </div>
-                  <div class="relative">
-                    <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2" :class="!form.province ? 'opacity-50' : ''">សាខាទទួលអីវ៉ាន់ <span class="text-rose-500">*</span></label>
-                    <input type="text" v-model="form.district" @focus="showDistrictDropdown = true" @input="showDistrictDropdown = true" :disabled="!form.province" :placeholder="!form.province ? 'សូមរើសខេត្តសិន...' : 'វាយបញ្ចូល ឬរើស...'" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all disabled:bg-slate-100 disabled:cursor-not-allowed">
-                    <div v-if="showDistrictDropdown && form.province && filteredDistricts.length > 0" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto z-[100] p-1 custom-scrollbar">
-                      <div v-for="dist in filteredDistricts" :key="dist" @click.stop="selectDistrict(dist)" class="px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer text-sm font-bold text-slate-700 transition-colors">{{ dist }}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-slate-100">
-                  <div>
-                    <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">កាលបរិច្ឆេទ</label>
-                    <input v-model="form.date" type="datetime-local" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none cursor-pointer transition-all">
-                  </div>
-                  <div>
-                    <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ការបង់ប្រាក់</label>
-                    <div class="relative">
-                      <select v-model="form.paymentMethod" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none appearance-none cursor-pointer transition-all">
-                        <option value="CASH">សាច់ប្រាក់ (CASH)</option>
-                        <option value="BANK TRANSFER">វេរប្រាក់ (BANK TRANSFER)</option>
-                        <option value="KHQR">ស្កេនកូដ (KHQR)</option>
-                      </select>
-                      <svg class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                    <label class="block text-[11px] font-black text-sky-600 uppercase tracking-widest mb-2">ថ្លៃដឹកជញ្ជូន (DELIVERY FEE)</label>
-                    <div class="flex bg-slate-50 border border-sky-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-500/20 focus-within:bg-white transition-all shadow-sm">
-                        <input v-model.number="form.deliveryFee" type="number" step="any" min="0" placeholder="0.00" class="w-full bg-transparent px-4 py-3 text-sm font-black text-sky-700 outline-none">
-                        <select v-model="form.deliveryCurrency" class="bg-sky-50 border-l border-sky-200 px-3 font-black text-sky-700 outline-none cursor-pointer">
-                            <option value="USD">$ (USD)</option>
-                            <option value="KHR">៛ (KHR)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div v-if="form.paymentMethod === 'KHQR'" class="pt-2">
-                  <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">រូបភាពវិក្កយបត្រវេរប្រាក់ (ជម្រើស)</label>
-                  <div class="flex items-center gap-4">
-                    <div class="relative shrink-0">
-                      <input type="file" accept="image/*" @change="handleImageUpload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                      <div class="w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-300 hover:border-indigo-400 rounded-xl flex flex-col items-center justify-center text-slate-400 transition-colors">
-                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                        <span class="text-[9px] font-bold">Upload</span>
+                      
+                      <div>
+                        <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">លេខទូរស័ព្ទ <span class="text-rose-500">*</span></label>
+                        <input v-model="form.customerPhone" type="text" placeholder="បញ្ចូលលេខ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all">
                       </div>
                     </div>
-                    <div v-if="form.paymentImage" class="relative w-20 h-20 rounded-xl border border-slate-200 shadow-sm overflow-hidden group">
-                      <img :src="form.paymentImage" class="w-full h-full object-cover">
-                      <button @click.stop="form.paymentImage = ''" class="absolute top-1 right-1 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                      </button>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 z-[50]">
+                      <div class="relative">
+                        <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ខេត្ត/ក្រុង <span class="text-rose-500">*</span></label>
+                        <input type="text" v-model="provinceSearch" @focus="showProvinceDropdown = true" @input="handleProvinceInput" placeholder="ជ្រើសរើសខេត្ត/ក្រុង..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all">
+                        <svg class="w-4 h-4 absolute right-4 top-[38px] text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <div v-if="showProvinceDropdown" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto z-[100] p-1 custom-scrollbar">
+                          <div v-if="filteredProvinces.length === 0" class="p-3 text-center text-xs text-slate-400 font-bold">រកមិនឃើញទិន្នន័យ</div>
+                          <div v-else v-for="prov in filteredProvinces" :key="prov" @click.stop="selectProvince(prov)" class="px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer text-sm font-bold text-slate-700 transition-colors">{{ prov }}</div>
+                        </div>
+                      </div>
+                      <div class="relative">
+                        <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2" :class="!form.province ? 'opacity-50' : ''">សាខាទទួលអីវ៉ាន់ <span class="text-rose-500">*</span></label>
+                        <input type="text" v-model="form.district" @focus="showDistrictDropdown = true" @input="showDistrictDropdown = true" :disabled="!form.province" :placeholder="!form.province ? 'សូមរើសខេត្តសិន...' : 'វាយបញ្ចូល ឬរើស...'" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all disabled:bg-slate-100 disabled:cursor-not-allowed">
+                        <div v-if="showDistrictDropdown && form.province && filteredDistricts.length > 0" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto z-[100] p-1 custom-scrollbar">
+                          <div v-for="dist in filteredDistricts" :key="dist" @click.stop="selectDistrict(dist)" class="px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer text-sm font-bold text-slate-700 transition-colors">{{ dist }}</div>
+                        </div>
+                      </div>
                     </div>
-                    <div v-if="isCompressing" class="text-[11px] font-bold text-indigo-500 flex items-center gap-2">
-                        <svg class="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> កំពុងបង្រួមរូបភាព...
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-slate-100">
+                      <div>
+                        <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">កាលបរិច្ឆេទ</label>
+                        <input v-model="form.date" type="datetime-local" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none cursor-pointer transition-all">
+                      </div>
+                      <div class="grid grid-cols-2 gap-3">
+                          <div>
+                            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ការបង់ប្រាក់</label>
+                            <div class="relative">
+                              <select v-model="form.paymentMethod" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-8 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none appearance-none cursor-pointer transition-all">
+                                <option value="CASH">សាច់ប្រាក់</option>
+                                <option value="KHQR">វេរប្រាក់</option>
+                                <option value="BANK">ធនាគារ</option>
+                              </select>
+                              <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </div>
+                          </div>
+                          <div>
+                              <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ស្ថានភាព</label>
+                              <div class="relative">
+                                  <select v-model="form.paymentStatus" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-8 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none appearance-none cursor-pointer transition-all">
+                                      <option value="PAID">ទូទាត់រួច (PAID)</option>
+                                      <option value="PENDING">ជំពាក់ (PENDING)</option>
+                                  </select>
+                                  <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                              </div>
+                          </div>
+                      </div>
                     </div>
-                  </div>
+
+                    <div>
+                        <label class="block text-[11px] font-black text-sky-600 uppercase tracking-widest mb-2">ថ្លៃដឹកជញ្ជូន (DELIVERY FEE)</label>
+                        <div class="flex bg-slate-50 border border-sky-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-500/20 focus-within:bg-white transition-all shadow-sm">
+                            <input v-model.number="form.deliveryFee" type="number" step="any" min="0" placeholder="0.00" class="w-full bg-transparent px-4 py-3 text-sm font-black text-sky-700 outline-none">
+                            <select v-model="form.deliveryCurrency" class="bg-sky-50 border-l border-sky-200 px-3 font-black text-sky-700 outline-none cursor-pointer">
+                                <option value="USD">$ (USD)</option>
+                                <option value="KHR">៛ (KHR)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div v-if="form.paymentMethod === 'KHQR'" class="pt-2">
+                      <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">រូបភាពវិក្កយបត្រវេរប្រាក់ (ជម្រើស)</label>
+                      <div class="flex items-center gap-4">
+                        <div class="relative shrink-0">
+                          <input type="file" accept="image/*" @change="handleImageUpload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                          <div class="w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-300 hover:border-indigo-400 rounded-xl flex flex-col items-center justify-center text-slate-400 transition-colors">
+                            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                            <span class="text-[9px] font-bold">Upload</span>
+                          </div>
+                        </div>
+                        <div v-if="form.paymentImage" class="relative w-20 h-20 rounded-xl border border-slate-200 shadow-sm overflow-hidden group">
+                          <img :src="form.paymentImage" class="w-full h-full object-cover">
+                          <button @click.stop="form.paymentImage = ''" class="absolute top-1 right-1 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                          </button>
+                        </div>
+                        <div v-if="isCompressing" class="text-[11px] font-bold text-indigo-500 flex items-center gap-2">
+                            <svg class="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> កំពុងបង្រួមរូបភាព...
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="pt-2">
+                      <div class="flex items-center justify-between mb-2">
+                          <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">ចំណាំបញ្ជាក់ការទូទាត់ (Payment Note)</label>
+                          <button 
+                              v-if="form.province === 'រាជធានីភ្នំពេញ'" 
+                              type="button" 
+                              @click="addDeliveryGuyNote"
+                              class="text-[10px] font-bold bg-amber-50 text-amber-600 px-2.5 py-1 rounded border border-amber-200 hover:bg-amber-100 transition-colors"
+                          >
+                              + ទូទាត់តាមអ្នកដឹកជញ្ជូន
+                          </button>
+                      </div>
+                      <input v-model="form.paymentNote" type="text" list="payment-notes" placeholder="ឧ. បានទូទាត់រួច, នៅខ្វះ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:border-blue-400 outline-none transition-all shadow-inner">
+                      <datalist id="payment-notes">
+                        <option value="បានទូទាត់រួច"></option><option value="មិនទាន់ទូទាត់"></option><option value="កក់ប្រាក់ខ្លះ"></option><option value="បង់ពេលឥវ៉ាន់ដល់"></option>
+                      </datalist>
+                    </div>
                 </div>
 
-                <div class="pt-2">
-                  <div class="flex items-center justify-between mb-2">
-                      <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">ចំណាំបញ្ជាក់ការទូទាត់ (Payment Note)</label>
-                      
-                      <button 
-                          v-if="form.province === 'រាជធានីភ្នំពេញ'" 
-                          type="button" 
-                          @click="addDeliveryGuyNote"
-                          class="text-[10px] font-bold bg-amber-50 text-amber-600 px-2.5 py-1 rounded border border-amber-200 hover:bg-amber-100 transition-colors"
-                      >
-                          + ទូទាត់តាមអ្នកដឹកជញ្ជូន
-                      </button>
-                  </div>
-                  <input v-model="form.paymentNote" type="text" list="payment-notes" placeholder="ឧ. បានទូទាត់រួច, នៅខ្វះ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:border-blue-400 outline-none transition-all shadow-inner">
-                  <datalist id="payment-notes">
-                    <option value="បានទូទាត់រួច"></option><option value="មិនទាន់ទូទាត់"></option><option value="កក់ប្រាក់ខ្លះ"></option><option value="បង់ពេលឥវ៉ាន់ដល់"></option>
-                  </datalist>
-                </div>
+                <div v-if="activeTab === 'direct'" class="space-y-6 animate-fade-in pt-4 border-t border-slate-100">
+                    
+                    <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex items-start gap-3">
+                        <svg class="w-6 h-6 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <div>
+                            <p class="text-sm font-black text-emerald-800 mb-1">អតិថិជនមកទិញផ្ទាល់ (Walk-in Customer)</p>
+                            <p class="text-[11px] text-emerald-600 font-bold leading-relaxed">មិនចាំបាច់បញ្ចូលឈ្មោះ លេខទូរស័ព្ទ ឬទីតាំងទេ។ វានឹងកត់ត្រាចូលជា "អតិថិជនទូទៅ" និងទីតាំង "ទិញផ្ទាល់" ដោយស្វ័យប្រវត្តិ។</p>
+                        </div>
+                    </div>
 
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div>
+                        <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">កាលបរិច្ឆេទ</label>
+                        <input v-model="form.date" type="datetime-local" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 outline-none cursor-pointer transition-all">
+                      </div>
+                      <div class="grid grid-cols-2 gap-3">
+                          <div>
+                            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ការបង់ប្រាក់</label>
+                            <div class="relative">
+                              <select v-model="form.paymentMethod" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-8 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 outline-none appearance-none cursor-pointer transition-all">
+                                <option value="CASH">សាច់ប្រាក់ (CASH)</option>
+                                <option value="KHQR">វេរប្រាក់ (KHQR)</option>
+                                <option value="BANK">ធនាគារ (BANK)</option>
+                              </select>
+                              <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </div>
+                          </div>
+                          <div>
+                              <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ស្ថានភាព</label>
+                              <div class="relative">
+                                  <select v-model="form.paymentStatus" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-8 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 outline-none appearance-none cursor-pointer transition-all">
+                                      <option value="PAID">ទូទាត់រួច (PAID)</option>
+                                      <option value="PENDING">ជំពាក់ (PENDING)</option>
+                                  </select>
+                                  <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                              </div>
+                          </div>
+                      </div>
+                    </div>
+
+                    <div v-if="form.paymentMethod === 'KHQR'">
+                      <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">រូបភាពវិក្កយបត្រវេរប្រាក់ (ជម្រើស)</label>
+                      <div class="flex items-center gap-4">
+                        <div class="relative shrink-0">
+                          <input type="file" accept="image/*" @change="handleImageUpload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                          <div class="w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-300 hover:border-emerald-400 rounded-xl flex flex-col items-center justify-center text-slate-400 transition-colors">
+                            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                            <span class="text-[9px] font-bold">Upload</span>
+                          </div>
+                        </div>
+                        <div v-if="form.paymentImage" class="relative w-20 h-20 rounded-xl border border-slate-200 shadow-sm overflow-hidden group">
+                          <img :src="form.paymentImage" class="w-full h-full object-cover">
+                          <button @click.stop="form.paymentImage = ''" class="absolute top-1 right-1 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                          </button>
+                        </div>
+                        <div v-if="isCompressing" class="text-[11px] font-bold text-emerald-500 flex items-center gap-2">
+                            <svg class="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> កំពុងបង្រួមរូបភាព...
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ចំណាំបញ្ជាក់ការទូទាត់ (Payment Note)</label>
+                      <input v-model="form.paymentNote" type="text" list="payment-notes" placeholder="ឧ. បានទូទាត់រួច, នៅខ្វះ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:border-emerald-400 outline-none transition-all shadow-inner">
+                      <datalist id="payment-notes">
+                        <option value="បានទូទាត់រួច"></option><option value="មិនទាន់ទូទាត់"></option><option value="កក់ប្រាក់ខ្លះ"></option>
+                      </datalist>
+                    </div>
+                </div>
                 <div class="bg-slate-800 text-white rounded-[1.25rem] p-5 mt-4 shadow-lg border border-slate-700 relative overflow-hidden">
                   <div class="flex justify-between items-center mb-2">
                     <span class="text-sm font-bold text-slate-300">ទំនិញសរុប:</span>
@@ -177,7 +271,7 @@
 
               <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3 shrink-0 rounded-b-[24px]">
                 <button type="button" @click="$emit('close')" class="px-6 py-3 rounded-xl font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 transition-colors text-sm">បោះបង់</button>
-                <button type="button" @click="onSubmit" :disabled="isSubmitting" class="px-8 py-3 rounded-xl font-black text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg shadow-emerald-500/30 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 text-sm">
+                <button type="button" @click="onSubmit" :disabled="isSubmitting" class="px-8 py-3 rounded-xl font-black text-white bg-gradient-to-r shadow-lg transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 text-sm" :class="activeTab === 'delivery' ? 'from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/30' : 'from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-emerald-500/30'">
                   <svg v-if="isSubmitting" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                   <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
                   បញ្ជាក់ការទូទាត់
@@ -207,6 +301,9 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'confirm']);
 
+// Tabs State
+const activeTab = ref('delivery'); // 'delivery' or 'direct'
+
 // Initial Form State
 const getLocalISOString = () => {
     const tzoffset = (new Date()).getTimezoneOffset() * 60000;
@@ -215,7 +312,7 @@ const getLocalISOString = () => {
 
 const form = reactive({
     sellerId: '', sellerName: '', customerName: '', customerPhone: '',
-    province: '', district: '', paymentMethod: 'CASH', paymentNote: '', 
+    province: '', district: '', paymentMethod: 'CASH', paymentStatus: 'PAID', paymentNote: '', 
     date: getLocalISOString(), paymentImage: '',
     deliveryFee: 0, deliveryCurrency: 'USD'
 });
@@ -224,6 +321,7 @@ const form = reactive({
 watch(() => props.show, (newVal) => {
     if (newVal) {
         form.date = getLocalISOString();
+        // Reset tab logic slightly if needed, but keeping user's last tab preference is nice
     }
 });
 
@@ -232,19 +330,20 @@ const resetForm = () => {
     form.sellerId = ''; form.sellerName = '';
     form.customerName = ''; form.customerPhone = '';
     form.province = ''; form.district = '';
-    form.paymentMethod = 'CASH'; form.paymentNote = '';
+    form.paymentMethod = 'CASH'; form.paymentStatus = 'PAID'; form.paymentNote = '';
     form.paymentImage = '';
     form.deliveryFee = 0; form.deliveryCurrency = 'USD';
     form.date = getLocalISOString();
     provinceSearch.value = '';
     sellerSearchQuery.value = '';
+    activeTab.value = 'delivery'; // Reset to default
 };
 defineExpose({ resetForm });
 
-// Calculate Final Total including Delivery Fee
+// Calculate Final Total including Delivery Fee (Delivery fee only applies to Delivery Tab)
 const checkoutFinalTotalUSD = computed(() => {
     let deliveryUSD = 0;
-    if (form.deliveryFee > 0) {
+    if (activeTab.value === 'delivery' && form.deliveryFee > 0) {
         deliveryUSD = form.deliveryCurrency === 'USD' ? form.deliveryFee : (form.deliveryFee / 4000);
     }
     return props.cartTotalUSD + deliveryUSD;
@@ -337,7 +436,7 @@ const selectCustomer = (cust) => {
     form.customerName = cust.name;
     form.customerPhone = cust.phone;
     form.province = cust.province;
-    provinceSearch.value = cust.province; // Sync Search Input
+    provinceSearch.value = cust.province; 
     form.district = cust.district;
     showCustomerDropdown.value = false;
 };
@@ -385,10 +484,24 @@ const handleImageUpload = async (event) => {
 };
 
 const onSubmit = () => { 
-    emit('confirm', { ...form, finalTotalUSD: checkoutFinalTotalUSD.value }); 
+    // Format data based on active tab before submitting
+    const payload = { ...form, finalTotalUSD: checkoutFinalTotalUSD.value };
+    
+    if (activeTab.value === 'direct') {
+        payload.customerName = 'អតិថិជនទូទៅ';
+        payload.customerPhone = '';
+        payload.province = '';
+        payload.district = '';
+        payload.deliveryFee = 0;
+        payload.isDirectCustomer = true; // special flag for parent to know
+    } else {
+        payload.isDirectCustomer = false;
+    }
+
+    emit('confirm', payload); 
 };
 
-const formatPrice = (val, currency = 'USD') => Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (currency === 'USD' ? ' $' : ' ៛');
+const formatPrice = (val, currency = 'USD') => Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 3 }) + (currency === 'USD' ? ' $' : ' ៛');
 </script>
 
 <style scoped>
@@ -399,4 +512,6 @@ const formatPrice = (val, currency = 'USD') => Number(val).toLocaleString(undefi
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
 select { -webkit-appearance: none; -moz-appearance: none; }
+.animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 </style>

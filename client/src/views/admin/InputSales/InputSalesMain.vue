@@ -64,6 +64,7 @@
                     </div>
                 </div>
             </div>
+
         </div>
 
         <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
@@ -169,28 +170,6 @@
             </div>
         </div>
 
-        <div class="md:hidden fixed bottom-6 left-0 right-0 px-4 flex justify-center pointer-events-none z-[35]">
-            <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0 translate-y-10" enter-to-class="opacity-100 translate-y-0" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-10">
-                <button 
-                    v-if="!showMobileCart && cart.length > 0" 
-                    @click="showMobileCart = true" 
-                    class="pointer-events-auto w-full max-w-sm bg-slate-800 text-white p-4 rounded-[1.5rem] shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center justify-between active:scale-95 transition-transform"
-                >
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center relative">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                            <span class="absolute -top-2 -right-2 bg-rose-500 text-white w-6 h-6 flex items-center justify-center rounded-full text-xs font-black border-2 border-slate-800 animate-pulse">{{ cart.length }}</span>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-[10px] text-slate-300 font-bold uppercase tracking-wider">មើលកន្ត្រកទំនិញ</p>
-                            <p class="text-sm font-black">{{ formatPrice(cartTotalUSD, 'USD') }}</p>
-                        </div>
-                    </div>
-                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
-                </button>
-            </transition>
-        </div>
-
         <CheckoutModal ref="checkoutModalRef" :show="isCheckoutModalOpen" :cartLength="cart.length" :cartTotalUSD="cartTotalUSD" :sellers="sellers" :savedCustomers="savedCustomers" :isSubmitting="isSubmitting" @close="isCheckoutModalOpen = false" @confirm="submitSale" />
         <SuccessModal :show="isSuccessModalOpen" :isSendingToBot="isSendingToBot" @close="closeSuccessModal" @print="printInvoice" @download-pdf="downloadPDF" @share-app="shareToTelegramApp" @send-bot="sendToTelegramBotGroup" />
     </div>
@@ -213,8 +192,6 @@ import { collection, getDocs, addDoc, query, where, onSnapshot, doc, updateDoc, 
 import { onAuthStateChanged } from 'firebase/auth';
 import Toast from '@/components/Toast.vue';
 import { useNotificationStore } from '@/stores/notification';
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 
 // 📦 ការ Import Components ខាងក្រៅ
 import POSTodaySales from '../reports/pos/POSTodaySales.vue'; 
@@ -256,8 +233,15 @@ const reservationTimer = ref(null);
 
 // --- UTILS ---
 const triggerAlert = (type, title, message) => { if (type === 'error') notification.error(message); else notification.success(message); };
-const formatDate = (dateStr) => { if(!dateStr) return ''; return new Intl.DateTimeFormat('km-KH', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(dateStr)); };
-const formatPrice = (val, currency = 'USD') => { if (val === undefined || val === null) return '0.00'; return Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (currency === 'USD' ? ' $' : ' ៛'); };
+
+// កែសម្រួល formatPrice ឲ្យបង្ហាញកន្ទុយ ៣ ខ្ទង់ (តាមទិន្នន័យជាក់ស្តែង មិនបង្គត់ឡើង)
+const formatPrice = (val, currency = 'USD') => { 
+    if (val === undefined || val === null) return '0.00'; 
+    // ប្តូរពី minimumFractionDigits: 2 ទៅបង្ហាញតាមទិន្នន័យជាក់ស្តែង
+    let formattedNum = Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+    return formattedNum + (currency === 'USD' ? ' $' : ' ៛'); 
+};
+
 const translateHardcodedUnit = (unit) => { const map = { bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ', set: 'ឈុត' }; return map[unit] || unit; };
 
 // --- FETCH DATA (REALTIME & CUSTOMERS) ---
@@ -372,6 +356,8 @@ const calculateItemUnitPrice = (item) => {
 };
 
 const calculateItemPrice = (item) => calculateItemUnitPrice(item) * item.qty;
+
+// រក្សាកន្ទុយ ៣ខ្ទង់សម្រាប់តម្លៃសរុប (បើមាន)
 const cartTotalUSD = computed(() => cart.value.reduce((total, item) => total + calculateItemPrice(item), 0));
 
 const getBadgeLabel = (item) => {
@@ -433,6 +419,8 @@ const updateActiveCartBackend = async () => {
     const adminId = auth.currentUser.uid;
     const cartRef = doc(db, 'active_carts', adminId);
     if (cart.value.length === 0) { await deleteDoc(cartRef).catch(e => {}); clearInterval(reservationTimer.value); timeLeft.value = ""; showMobileCart.value = false; return; }
+    
+    // ប្តូរពី ២នាទី ទៅ ៥នាទី
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).getTime();
     
     const plainItems = cart.value.map(item => ({ 
@@ -569,7 +557,14 @@ const submitSale = async (formData) => {
     try {
         const adminId = auth.currentUser.uid;
         const receiptCode = `INV-${Date.now().toString().slice(-6)}`;
-        const combinedLocation = `${formData.district}, ${formData.province}`;
+        
+        // Handle location based on whether they used the direct customer tab or full shipping form
+        let combinedLocation = '';
+        if (formData.isDirectCustomer) {
+            combinedLocation = 'ទិញផ្ទាល់'; // Special tag for direct customers
+        } else {
+            combinedLocation = `${formData.district}, ${formData.province}`;
+        }
 
         const itemsToSave = cart.value.map((item, index) => ({
             id: item.product.id, cartItemId: `${item.product.id}_${Date.now()}_${index}`,
@@ -587,7 +582,7 @@ const submitSale = async (formData) => {
             customerName: formData.customerName, customerPhone: formData.customerPhone,
             location: combinedLocation, province: formData.province, district: formData.district,
             paymentMethod: formData.paymentMethod, paymentNote: formData.paymentNote || '',
-            paymentImage: '', paymentStatus: 'PAID', 
+            paymentImage: '', paymentStatus: formData.paymentStatus, 
             deliveryFee: formData.deliveryFee || 0, deliveryCurrency: formData.deliveryCurrency,
             totalAmount: formData.finalTotalUSD, currency: 'USD',
             items: itemsToSave
@@ -625,103 +620,12 @@ const submitSale = async (formData) => {
 const closeSuccessModal = () => {
     cart.value = []; isSuccessModalOpen.value = false; lastSavedSale.value = null; mainTab.value = 'today'; 
 };
-
-// --- PRINT / PDF / TELEGRAM ---
-const generateTelegramText = () => {
-    if (!lastSavedSale.value) return '';
-    const sale = lastSavedSale.value;
-    let text = `🛒 *វិក្កយបត្រថ្មី (INVOICE)*\nលេខ: \`${sale.receiptId}\`\nថ្ងៃទី: ${formatDate(sale.createdAt)}\n--------------------------------\n👤 *អតិថិជន:* ${sale.customerName}\n📞 *ទូរស័ព្ទ:* ${sale.customerPhone}\n📍 *ទីតាំង:* ${sale.location}\n👨‍💼 *អ្នកលក់:* ${sale.sellerName}\n--------------------------------\n`;
-    let subtotal = 0;
-    sale.items.forEach((item, i) => { 
-        const lineTotal = item.price * item.qty;
-        subtotal += lineTotal;
-        text += `${i+1}. ${item.name} (${item.type})\n   ➔ ${item.qty} ${translateHardcodedUnit(item.unit)} x $${item.price} = *$${lineTotal}*\n`; 
-    });
-    text += `--------------------------------\n`;
-    if (sale.deliveryFee > 0) {
-        text += `🚚 *សរុបទំនិញ:* $${subtotal}\n`;
-        text += `🛵 *ថ្លៃដឹកជញ្ជូន:* ${formatPrice(sale.deliveryFee, sale.deliveryCurrency)}\n`;
-        text += `💰 *សរុបរួមទាំងអស់:* *$${sale.totalAmount}*\n`;
-    } else {
-        text += `💰 *សរុបរួម:* *$${sale.totalAmount}*\n`;
-    }
-    text += `💳 *បង់ប្រាក់តាម:* ${sale.paymentMethod}\n`;
-    if(sale.paymentNote) text += `📝 *ចំណាំ:* ${sale.paymentNote}\n`;
-    return encodeURIComponent(text);
-};
-
-const shareToTelegramApp = () => window.open(`tg://msg_url?text=${generateTelegramText()}`, '_blank');
-
-const sendToTelegramBotGroup = async () => {
-    isSendingToBot.value = true;
-    try {
-        const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN; const chatId = import.meta.env.VITE_TELEGRAM_GROUP_ID;
-        if (!botToken || !chatId) return notification.error("សូមកំណត់ Bot Token និង Group ID នៅក្នុង File .env");
-
-        const textResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: chatId, text: decodeURIComponent(generateTelegramText()), parse_mode: 'Markdown' })
-        });
-        
-        if (textResponse.ok) { notification.success("បានផ្ញើទៅកាន់ Telegram ជោគជ័យ!"); } 
-        else notification.error("បរាជ័យក្នុងការផ្ញើ");
-    } catch (error) { notification.error("បរាជ័យភ្ជាប់ទៅម៉ាស៊ីនមេ"); } 
-    finally { isSendingToBot.value = false; }
-};
-
-const generateInvoiceHTML = () => {
-    if (!lastSavedSale.value) return '';
-    const sale = lastSavedSale.value;
-    let itemsHTML = ''; let subtotal = 0;
-    sale.items.forEach((item, index) => {
-        const lineTotal = item.price * item.qty;
-        subtotal += lineTotal;
-        itemsHTML += `<tr style="border-bottom: 1px dashed #e2e8f0;">
-            <td style="padding: 12px 10px; text-align: center; color: #64748b;">${index + 1}</td>
-            <td style="padding: 12px 10px; font-weight: bold; color: #1e293b;">${item.name} <span style="font-size: 10px; color: #94a3b8;">(${item.type})</span></td>
-            <td style="padding: 12px 10px; text-align: center;">${item.qty} ${translateHardcodedUnit(item.unit)}</td>
-            <td style="padding: 12px 10px; text-align: right;">${formatPrice(item.price, 'USD')}</td>
-            <td style="padding: 12px 10px; text-align: right; font-weight: bold;">${formatPrice(lineTotal, 'USD')}</td>
-        </tr>`;
-    });
-    
-    let deliveryHtml = '';
-    if (sale.deliveryFee > 0) {
-        deliveryHtml = `<tr><td colspan="4" style="text-align: right; padding: 10px; font-size: 13px; color: #64748b;">សរុបទំនិញ:</td><td style="text-align: right; padding: 10px; font-weight: bold;">${formatPrice(subtotal, 'USD')}</td></tr>
-        <tr><td colspan="4" style="text-align: right; padding: 10px; font-size: 13px; color: #64748b;">ថ្លៃដឹកជញ្ជូន:</td><td style="text-align: right; padding: 10px; font-weight: bold;">${formatPrice(sale.deliveryFee, sale.deliveryCurrency)}</td></tr>`;
-    }
-
-    return `<div class="print-page" style="width: 148mm; min-height: 210mm; background: white; padding: 15mm; font-family: 'Battambong', sans-serif; color: #0f172a; box-sizing: border-box; margin: 0 auto; position: relative;">
-        <div style="text-align: center; border-bottom: 2px solid #cbd5e1; padding-bottom: 15px; margin-bottom: 20px;"><h2 style="margin: 0; font-size: 26px; font-weight: 900;">វិក្កយបត្រ (INVOICE)</h2></div>
-        <table style="width: 100%; font-size: 13px; margin-bottom: 25px; border: none;"><tr><td style="width: 50%; vertical-align: top; line-height: 1.8;"><div><strong>អតិថិជន:</strong> ${sale.customerName}</div><div style="color: #475569;"><strong>ទូរស័ព្ទ:</strong> ${sale.customerPhone}</div><div style="color: #475569;"><strong>ទីតាំង:</strong> ${sale.location}</div></td><td style="width: 50%; vertical-align: top; text-align: right; line-height: 1.8;"><div><strong>លេខ:</strong> ${sale.receiptId}</div><div style="color: #475569;"><strong>កាលបរិច្ឆេទ:</strong> ${formatDate(sale.createdAt)}</div><div style="color: #475569;"><strong>អ្នកលក់:</strong> ${sale.sellerName}</div></td></tr></table>
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 30px;"><thead style="background: #f1f5f9; border-top: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8;"><tr><th style="padding: 12px 10px;">#</th><th style="padding: 12px 10px; text-align: left;">បរិយាយទំនិញ</th><th style="padding: 12px 10px;">ចំនួន</th><th style="padding: 12px 10px; text-align: right;">តម្លៃឯកតា</th><th style="padding: 12px 10px; text-align: right;">សរុប</th></tr></thead><tbody>${itemsHTML}${deliveryHtml}</tbody></table>
-        <table style="width: 100%; border: none; margin-top: 20px;"><tr><td style="width: 50%; vertical-align: top;"><div style="font-size: 12px; color: #64748b; margin-bottom: 10px;">ការបង់ប្រាក់: <strong>${sale.paymentMethod}</strong></div>${sale.paymentNote ? `<div style="background: #f8fafc; padding: 10px; border-left: 3px solid #059669; border-radius: 4px; font-size: 12px; white-space: pre-line;"><strong>ចំណាំ:</strong><br/>${sale.paymentNote}</div>` : ''}</td><td style="width: 50%; vertical-align: bottom; text-align: right;"><div style="border-top: 2px solid #cbd5e1; padding-top: 15px; display: inline-block; min-width: 200px;"><div style="font-size: 20px; font-weight: 900;"><span style="font-size: 14px; color: #64748b; margin-right: 15px;">សរុបរួម:</span><span style="color: #059669;">${formatPrice(sale.totalAmount, 'USD')}</span></div></div></td></tr></table>
-        <div style="position: absolute; bottom: 15mm; left: 15mm; right: 15mm; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px dashed #e2e8f0; padding-top: 15px;"><p style="margin: 0; font-weight: bold;">សូមអរគុណសម្រាប់ការគាំទ្រ!</p><p style="margin: 4px 0 0 0;">ទំនិញដែលទិញរួចមិនអាចដូរវិញបានទេ</p></div>
-    </div>`;
-};
-
-const printInvoice = () => {
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute'; iframe.style.width = '0'; iframe.style.height = '0'; iframe.style.border = 'none';
-    document.body.appendChild(iframe); iframe.contentWindow.document.open();
-    iframe.contentWindow.document.write(`<html><head><title>Invoice</title><link href="https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&display=swap" rel="stylesheet"><style>@page { size: A5 portrait; margin: 0; } body { font-family: 'Battambong', sans-serif; margin: 0; padding: 0; background-color: white; display: flex; justify-content: center; }</style></head><body>${generateInvoiceHTML()}</body></html>`);
-    iframe.contentWindow.document.close();
-    iframe.contentWindow.document.fonts.ready.then(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => { document.body.removeChild(iframe); closeSuccessModal(); }, 1000); });
-};
-
-const downloadPDF = async () => {
-    printStaging.value.innerHTML = generateInvoiceHTML(); await nextTick(); await document.fonts.ready; await new Promise(r => setTimeout(r, 500)); 
-    const canvas = await html2canvas(printStaging.value.querySelector('.print-page'), { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
-    const imgData = canvas.toDataURL('image/jpeg', 1.0); const pdf = new jsPDF('p', 'mm', 'a5'); 
-    const propsImg = pdf.getImageProperties(imgData); pdf.addImage(imgData, 'JPEG', 0, 0, 148, (propsImg.height * 148) / propsImg.width);
-    pdf.save(`Invoice_${lastSavedSale.value.receiptId}.pdf`); printStaging.value.innerHTML = ''; closeSuccessModal();
-};
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&family=Kantumruy+Pro:wght@400;700&display=swap');
-.font-khmer { font-family: 'Battambong', 'Kantumruy Pro', sans-serif; }
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+@import url('https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&display=swap');
+.font-khmer { font-family: 'Battambong', sans-serif; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
@@ -730,6 +634,8 @@ const downloadPDF = async () => {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 .animate-slide-down { animation: slideDown 0.2s ease-out forwards; transform-origin: top; }
 @keyframes slideDown { from { opacity: 0; transform: scaleY(0.95); } to { opacity: 1; transform: scaleY(1); } }
+.animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
