@@ -15,6 +15,30 @@ export const translateUnit = (unitVal, availableUnits) => {
   return unitVal;
 };
 
+// ✅ Helper Function: Group Items By Name (បូកបញ្ចូលទំនិញឈ្មោះដូចគ្នា)
+const groupItemsByName = (items) => {
+    if (!items || items.length === 0) return [];
+    const grouped = {};
+    
+    items.forEach(item => {
+        const name = item.name;
+        if (!grouped[name]) {
+            grouped[name] = {
+                name: name,
+                qty: 0,
+                total: 0,
+                unit: item.unit
+            };
+        }
+        // បូកបរិមាណ និង ទឹកប្រាក់សរុប
+        grouped[name].qty += Number(item.qty || 0);
+        // បើមាន item.total ស្រាប់យក item.total, បើអត់ទេ យក price * qty
+        grouped[name].total += Number(item.total || (Number(item.price || 0) * Number(item.qty || 0)) || 0);
+    });
+    
+    return Object.values(grouped);
+};
+
 // ==========================================
 // 1. សម្រាប់គូរតារាងវិក្កយបត្រ (Row Tables)
 // ==========================================
@@ -23,7 +47,11 @@ const generateTablePageHTML = (pageData, pageNum, totalPages, data, isNativePrin
 
   const renderRow = (item) => {
       let salesHTML = item.hasSales ? `<ul style="margin:0; padding-left:12px; font-size:12px; color:#334155; line-height:1.5;">` + Object.entries(item.unitCounts || {}).filter(([u, c]) => c > 0).map(([u, c]) => `<li><strong style="color:#0f172a;">${c.toLocaleString()}</strong> ${translateUnit(u, data.availableUnits)}</li>`).join("") + `</ul>` : `<span style="color:#94a3b8;">-</span>`;
-      let productsHTML = item.hasSales && item.productsList && item.productsList.length > 0 ? `<ul style="margin:0; padding-left:15px; font-size:11px; color:#4338ca; line-height:1.6;">` + item.productsList.map((p) => `<li><strong style="font-weight:900;">${p.name}</strong> <span style="color:#64748b;">(${p.qty} ${translateUnit(p.unit, data.availableUnits)})</span></li>`).join("") + `</ul>` : `<span style="color:#94a3b8;">-</span>`;
+      
+      // ✅ ប្រើ groupItemsByName ក្នុងតារាងអ្នកលក់នីមួយៗផងដែរ
+      const groupedProductsList = groupItemsByName(item.productsList || []);
+      let productsHTML = item.hasSales && groupedProductsList.length > 0 ? `<ul style="margin:0; padding-left:15px; font-size:11px; color:#4338ca; line-height:1.6;">` + groupedProductsList.map((p) => `<li><strong style="font-weight:900;">${p.name}</strong> <span style="color:#64748b;">(${p.qty} ${translateUnit(p.unit, data.availableUnits)})</span></li>`).join("") + `</ul>` : `<span style="color:#94a3b8;">-</span>`;
+      
       let revenueHTML = item.hasSales ? `<div style="text-align:right;"><span style="color:#059669; font-size:14px; font-weight:900; display:block;">${item.revenueUSD.toLocaleString()} $</span><span style="color:#2563eb; font-size:12px; font-weight:bold; display:block; margin-top:2px;">${item.revenueKHR.toLocaleString()} ៛</span></div>` : `<div style="text-align:right; color:#94a3b8;">-</div>`;
       let catBadge = item.category === "បោះដុំ" ? `<span style="color:#7e22ce; font-weight:900; font-size:12px;">បោះដុំ</span>` : item.category === "លក់រាយ" ? `<span style="color:#475569; font-weight:bold; font-size:12px;">លក់រាយ</span>` : `<span style="color:#166534; font-weight:bold; font-size:12px;">សរុបរួម</span>`;
       if (!item.hasSales) catBadge = "-";
@@ -82,16 +110,30 @@ const chunkArray = (arr, size) => {
     return chunks;
 };
 
+// ✅ តារាងថ្មី លុបជួរ "តម្លៃឯកតា" ចេញ និងបង្ហាញតែចំនួន & សរុប
 const buildChunkTable = (items, data) => {
     if (!items || items.length === 0) return `<div style="font-size:11px; color:#94a3b8; padding: 10px 0; text-align:center;">- មិនមានទិន្នន័យ -</div>`;
+    
     let rows = items.map(i => `
         <tr style="border-bottom: 1px dashed #e2e8f0;">
-            <td style="padding: 6px 4px; font-weight: bold; color: #334155; width: 45%;">${i.name}</td>
-            <td style="padding: 6px 4px; text-align: center; color: #475569; width: 20%;">${i.qty} ${translateUnit(i.unit, data.availableUnits)}</td>
-            <td style="padding: 6px 4px; text-align: right; font-weight: bold; color: #0f172a; width: 35%;">${formatCurrency(i.total)}</td>
+            <td style="padding: 6px 4px; font-weight: bold; color: #334155; width: 60%;">${i.name}</td>
+            <td style="padding: 6px 4px; text-align: center; color: #475569; width: 15%;">${i.qty} ${translateUnit(i.unit, data.availableUnits)}</td>
+            <td style="padding: 6px 4px; text-align: right; font-weight: bold; color: #0f172a; width: 25%;">${formatCurrency(i.total)}</td>
         </tr>
     `).join('');
-    return `<table style="width: 100%; border-collapse: collapse; font-size: 11px;"><tbody>${rows}</tbody></table>`;
+
+    return `
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+            <thead style="background: #f8fafc; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; color: #64748b;">
+                <tr>
+                    <th style="padding: 6px 4px; text-align: left;">ឈ្មោះទំនិញសរុប</th>
+                    <th style="padding: 6px 4px; text-align: center;">ចំនួន</th>
+                    <th style="padding: 6px 4px; text-align: right;">សរុបទឹកប្រាក់</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>
+    `;
 };
 
 const buildTotalBlock = (dataObj, titleStr) => {
@@ -122,7 +164,7 @@ const buildTotalBlock = (dataObj, titleStr) => {
 // 💡 មុខងារវាស់កម្ពស់ HTML ពិតប្រាកដ ដើម្បីកាត់ទំព័រ
 const generateSummaryPagesHTML = (data, isNativePrint = false) => {
     const rData = data.regionalReportSummary;
-    const MAX_ROWS = 16; // កំណត់ត្រឹម ១៤ ជួរក្នុងមួយកង់ ដើម្បីសុវត្ថិភាពកុំឱ្យហួសក្រដាស
+    const MAX_ROWS = 16; 
 
     let pages = [];
     let currentBlocks = [];
@@ -150,33 +192,34 @@ const generateSummaryPagesHTML = (data, isNativePrint = false) => {
         </div>
     `;
 
-    // Measure Element for calculating heights accurately
     const measureDiv = document.createElement('div');
-    measureDiv.style.width = '714px'; // 794px - 80px padding
+    measureDiv.style.width = '714px'; 
     measureDiv.style.fontFamily = "'Battambang', sans-serif";
     measureDiv.style.position = 'absolute';
     measureDiv.style.visibility = 'hidden';
     measureDiv.style.top = '-9999px';
     document.body.appendChild(measureDiv);
 
-    const MAX_CONTENT_HEIGHT = 920; // ទំហំសុវត្ថិភាពបំផុត (A4 = 1123 - padding - footer)
+    const MAX_CONTENT_HEIGHT = 920; 
 
     const processRegion = (title, icon, color, regionData, totalLabel) => {
         let isFirstInRegion = true;
         let blocksToAdd = [];
 
-        // 1. បង្កើត Block សម្រាប់រាល់ Status (Paid, Pending...)
         const addStatusBlocks = (statusTitle, statusIcon, statusColor, sData) => {
             if (!sData || (sData.wholesaleUSD === 0 && sData.retailUSD === 0)) return;
 
-            const wsChunks = chunkArray(sData.wholesaleItems || [], MAX_ROWS);
-            const rtChunks = chunkArray(sData.retailItems || [], MAX_ROWS);
+            // ✅ Group ទំនិញតាមឈ្មោះ មុននឹងកាត់ Chunk ចូលតារាង
+            const groupedWholesale = groupItemsByName(sData.wholesaleItems || []);
+            const groupedRetail = groupItemsByName(sData.retailItems || []);
+
+            const wsChunks = chunkArray(groupedWholesale, MAX_ROWS);
+            const rtChunks = chunkArray(groupedRetail, MAX_ROWS);
             const totalChunks = Math.max(wsChunks.length, rtChunks.length, 1);
 
             for (let i = 0; i < totalChunks; i++) {
                 let wsHtml = ''; let rtHtml = '';
                 
-                // ជួរឈរឆ្វេង (បោះដុំ)
                 if (i === 0) {
                     wsHtml += `<div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; background: #f1f5f9; padding: 6px 10px; border-radius: 4px; margin-bottom: 5px; color: #7e22ce;"><span>លក់បោះដុំ</span><span>${formatCurrency(sData.wholesaleUSD)} <span style="font-size:10px; font-weight:normal; color:#64748b;">(${sData.wholesaleClients} នាក់)</span></span></div>`;
                 } else if (wsChunks[i] && wsChunks[i].length > 0) {
@@ -184,7 +227,6 @@ const generateSummaryPagesHTML = (data, isNativePrint = false) => {
                 }
                 wsHtml += buildChunkTable(wsChunks[i], data);
 
-                // ជួរឈរស្តាំ (លក់រាយ)
                 if (i === 0) {
                     rtHtml += `<div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; background: #f1f5f9; padding: 6px 10px; border-radius: 4px; margin-bottom: 5px; color: #475569;"><span>លក់រាយ</span><span>${formatCurrency(sData.retailUSD)} <span style="font-size:10px; font-weight:normal; color:#64748b;">(${sData.retailClients} នាក់)</span></span></div>`;
                 } else if (rtChunks[i] && rtChunks[i].length > 0) {
@@ -194,7 +236,6 @@ const generateSummaryPagesHTML = (data, isNativePrint = false) => {
 
                 let titleHtml = (i === 0) ? `<h4 style="margin: 0 0 10px 0; color: ${statusColor}; font-size: 14px; font-weight: 900; border-bottom: 2px solid ${statusColor}40; padding-bottom: 6px;">${statusIcon} ${statusTitle}</h4>` : '';
 
-                // 2-Column Flexbox Layout 
                 blocksToAdd.push(`
                     <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px;">
                         ${titleHtml}
@@ -214,35 +255,28 @@ const generateSummaryPagesHTML = (data, isNativePrint = false) => {
         
         blocksToAdd.push(buildTotalBlock(regionData, totalLabel));
 
-        // 2. ធ្វើការវាស់ និងបញ្ជូល Block ចូលក្នុងទំព័រ (Smart Pagination)
         blocksToAdd.forEach((block) => {
             if (isFirstInRegion) {
                 currentBlocks.push(buildRegionHeader(title, icon, color, false));
                 isFirstInRegion = false;
             }
-
             measureDiv.innerHTML = currentBlocks.join('') + block;
-            
-            // បើកម្ពស់ហួសក្រដាស A4 ទើបកាត់ចូលទំព័រថ្មី
             if (measureDiv.clientHeight > MAX_CONTENT_HEIGHT) {
-                flushPage(); // Save ទំព័រចាស់សិន
-                currentBlocks.push(buildRegionHeader(title, icon, color, true)); // ដាក់ Header បញ្ជាក់ "បន្ត" នៅទំព័រថ្មី
+                flushPage();
+                currentBlocks.push(buildRegionHeader(title, icon, color, true));
             }
-            
             currentBlocks.push(block);
         });
     };
 
-    // រុញទិន្នន័យចូលកាត់
     if (pages.length === 0) currentBlocks.push(`<div style="text-align: center; border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; margin-bottom: 20px;"><h3 style="font-size: 20px; font-weight: 900; color: #1e293b; margin: 0;">របាយការណ៍លម្អិតតាមមុខទំនិញ និងតំបន់</h3></div>`);
     
     processRegion("តំបន់ទិន្នន័យរួម (ភ្នំពេញ + ខេត្ត)", "📊", "#475569", rData.overall, "បូកសរុប ទំនិញបានទូទាត់រួច និង មិនទាន់បានទូទាត់");
     processRegion("តំបន់ទិន្នន័យ: រាជធានីភ្នំពេញ", "📍", "#0284c7", rData.phnomPenh, "បូកសរុប (ទូទាត់រួច + មិនទាន់ទូទាត់ + ទិញផ្ទាល់)");
     processRegion("តំបន់ទិន្នន័យ: តាមបណ្ដាលខេត្ត", "📍", "#d97706", rData.provinces, "បូកសរុប (ទូទាត់រួច + មិនទាន់ទូទាត់)");
 
-    flushPage(); // Save ទំព័រចុងក្រោយបង្អស់
-    document.body.removeChild(measureDiv); // សម្អាតចោល
-
+    flushPage();
+    document.body.removeChild(measureDiv);
     return pages;
 };
 
@@ -262,7 +296,6 @@ export const executeNativePrint = (data) => {
   }
 
   const summaryPagesHTML = generateSummaryPagesHTML(data, true).join("");
-
   const contentHTML = `<div>${tablePagesHTML}${summaryPagesHTML}</div>`;
 
   const iframe = document.createElement("iframe");
@@ -315,7 +348,6 @@ export const generatePDF = async (data, printStagingEl, processingRef) => {
       tablePages.push(allRows.slice(i, i + ROWS_PER_PAGE).map((r, idx) => ({...r, printIndex: i + idx + 1})));
     }
 
-    // ១. គូរទំព័រតារាង
     for (let i = 0; i < tablePages.length; i++) {
       processingRef.value.message = `កំពុងគូរតារាងទំព័រទី ${i + 1}...`;
       printStagingEl.innerHTML = generateTablePageHTML({ rows: tablePages[i] }, i + 1, tablePages.length, data, false);
@@ -329,7 +361,6 @@ export const generatePDF = async (data, printStagingEl, processingRef) => {
       processingRef.value.progress = 10 + Math.round(((i + 1) / tablePages.length) * 30);
     }
 
-    // ២. គូរទំព័រសរុប (ដែលបានរៀបចំ និងកាត់រួចជាស្រេចដោយអូតូ)
     processingRef.value.message = `កំពុងគូររបាយការណ៍តំបន់លម្អិត...`;
     const summaryPagesArr = generateSummaryPagesHTML(data, false);
 
