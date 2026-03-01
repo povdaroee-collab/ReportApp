@@ -1,12 +1,16 @@
 <template>
   <div class="h-[100dvh] flex flex-col bg-[#F8FAFC] overflow-hidden font-khmer relative">
-    <Teleport to="body"><div class="fixed top-4 right-4 z-[9999] w-full max-w-sm pointer-events-none flex flex-col gap-2"><div class="pointer-events-auto"><Toast /></div></div></Teleport>
+    <Teleport to="body">
+        <div class="fixed top-4 right-4 z-[9999] w-full max-w-sm pointer-events-none flex flex-col gap-2">
+            <div class="pointer-events-auto"><Toast /></div>
+        </div>
+    </Teleport>
 
-    <div class="bg-white px-4 md:px-6 pt-3 pb-0 border-b border-slate-200/60 flex items-center gap-6 shadow-sm relative z-[40] shrink-0">
-        <button @click="mainTab = 'pos'" class="pb-3 text-sm font-black border-b-2 transition-all flex items-center gap-2" :class="mainTab === 'pos' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'">
+    <div class="bg-white px-4 md:px-6 pt-3 pb-0 border-b border-slate-200/60 flex items-center gap-6 shadow-sm relative z-[40] shrink-0 overflow-x-auto no-scrollbar">
+        <button @click="mainTab = 'pos'" class="pb-3 text-sm font-black border-b-2 transition-all flex items-center gap-2 whitespace-nowrap" :class="mainTab === 'pos' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg> ប្រព័ន្ធបញ្ជូលការលក់ (POS)
         </button>
-        <button @click="mainTab = 'today'" class="pb-3 text-sm font-black border-b-2 transition-all flex items-center gap-2" :class="mainTab === 'today' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'">
+        <button @click="mainTab = 'today'" class="pb-3 text-sm font-black border-b-2 transition-all flex items-center gap-2 whitespace-nowrap" :class="mainTab === 'today' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg> ព័ត៌មានលក់ថ្ងៃនេះ <span class="bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded-full animate-pulse shadow-sm">Live</span>
         </button>
     </div>
@@ -14,25 +18,24 @@
     <div v-show="mainTab === 'pos'" class="flex-1 overflow-hidden flex relative">
         
         <div class="flex-1 flex flex-col h-full bg-[#F4F7FE] relative overflow-hidden">
-            <div class="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 p-4 shadow-sm z-20 shrink-0">
-                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div class="flex items-center gap-3 w-full md:w-auto">
+            
+            <div class="bg-white/90 backdrop-blur-xl border-b border-slate-200/60 p-3 md:p-4 shadow-sm z-20 shrink-0">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 md:gap-4">
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
                         <button @click="$router.back()" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
                         <div>
-                            <h1 class="text-xl font-black text-slate-800 leading-tight">ប្រព័ន្ធបញ្ជូលការលក់ (POS)</h1>
-                            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider mt-0.5">Smart Auto-Pricing POS</p>
+                            <h1 class="text-lg md:text-xl font-black text-slate-800 leading-tight">ប្រព័ន្ធបញ្ជូលការលក់ (POS)</h1>
+                            <p class="text-slate-500 text-[9px] md:text-[10px] font-bold uppercase tracking-wider mt-0.5">Smart Auto-Pricing POS</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3 w-full md:w-auto">
-                        <div class="relative w-full md:w-80">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></span>
-                            <input v-model="searchQuery" type="text" placeholder="ស្វែងរកទំនិញ ឬ ឈុត..." class="w-full bg-slate-100 border border-slate-200/60 rounded-xl pl-9 pr-4 py-2.5 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all shadow-inner">
-                        </div>
+                    <div class="relative w-full sm:w-72 md:w-80 shrink-0">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></span>
+                        <input v-model="searchQuery" type="text" placeholder="ស្វែងរកទំនិញ ឬ ឈុត..." class="w-full bg-slate-100/80 border border-slate-200/60 rounded-xl pl-9 pr-4 py-2.5 text-[13px] md:text-sm font-bold focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all shadow-inner">
                     </div>
                 </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-slate-50/50 relative pb-24 md:pb-6">
+            <div class="flex-1 overflow-y-auto p-3 md:p-6 custom-scrollbar relative pb-28 md:pb-6 touch-pan-y">
                 <div v-if="isLoadingProducts" class="flex flex-col items-center justify-center h-full opacity-60">
                     <div class="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-blue-600 mb-4"></div>
                     <p class="text-xs font-bold text-slate-500">កំពុងទាញយកទំនិញ និងឈុត...</p>
@@ -41,23 +44,26 @@
                     <svg class="w-16 h-16 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                     <p class="font-bold">រកមិនឃើញទំនិញទេ</p>
                 </div>
-                <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5 max-w-[100rem] mx-auto">
-                    <div v-for="product in filteredProducts" :key="product.id" @click="addToCart(product)" class="bg-white rounded-[1.25rem] p-3 border border-slate-200 shadow-sm transition-all cursor-pointer group relative flex flex-col h-full" :class="getTotalRetailStock(product) > 0 ? 'hover:shadow-lg hover:border-blue-300 active:scale-95' : 'opacity-60 cursor-not-allowed grayscale-[50%]' ">
-                        <div v-if="product.isCombo" class="absolute -top-2 -left-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-md z-10 flex items-center gap-1 border border-orange-200">🎁 ឈុត</div>
-                        <div class="w-full aspect-square rounded-xl bg-slate-50 mb-3 overflow-hidden border border-slate-100 relative flex items-center justify-center shrink-0">
+                <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5 max-w-[100rem] mx-auto">
+                    <div v-for="product in filteredProducts" :key="product.id" @click="addToCart(product)" class="bg-white rounded-2xl md:rounded-[1.25rem] p-2.5 md:p-3 border border-slate-200 shadow-sm transition-all cursor-pointer group relative flex flex-col h-full select-none" :class="getTotalRetailStock(product) > 0 ? 'hover:shadow-lg hover:border-blue-300 active:scale-95' : 'opacity-60 cursor-not-allowed grayscale-[50%]' ">
+                        <div v-if="product.isCombo" class="absolute -top-2 -left-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] md:text-[10px] font-black px-2 py-1 rounded-lg shadow-md z-10 flex items-center gap-1 border border-orange-200">🎁 ឈុត</div>
+                        
+                        <div class="w-full aspect-square rounded-xl bg-slate-50 mb-2.5 md:mb-3 overflow-hidden border border-slate-100 relative flex items-center justify-center shrink-0">
                             <img v-if="product.image && (product.image.startsWith('http') || product.image.startsWith('data:image'))" :src="product.image" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                             <div v-else class="text-slate-300 text-3xl font-black">{{ product.name.charAt(0) }}</div>
-                            <div class="absolute top-2 right-2 px-2 py-0.5 rounded-md text-[10px] font-black bg-white/95 backdrop-blur-sm border shadow-sm" :class="getTotalRetailStock(product) > 0 ? 'text-emerald-600 border-emerald-100' : 'text-rose-600 border-rose-100'">ស្តុក: {{ getTotalRetailStock(product).toLocaleString() }} {{ translateHardcodedUnit(product.isCombo ? 'set' : (product.retailUnit || 'bottle')) }}</div>
-                            <div v-if="getTotalRetailStock(product) <= 0" class="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center"><span class="bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">អស់ពីស្តុក</span></div>
+                            <div class="absolute top-1.5 right-1.5 md:top-2 md:right-2 px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-black bg-white/95 backdrop-blur-sm border shadow-sm" :class="getTotalRetailStock(product) > 0 ? 'text-emerald-600 border-emerald-100' : 'text-rose-600 border-rose-100'">ស្តុក: {{ getTotalRetailStock(product).toLocaleString() }}</div>
+                            <div v-if="getTotalRetailStock(product) <= 0" class="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center"><span class="bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">អស់ស្តុក</span></div>
                         </div>
+                        
                         <div class="flex-1 flex flex-col">
-                            <h3 class="font-black text-sm text-slate-800 leading-tight mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors">{{ product.name }}</h3>
-                            <p class="text-[9px] text-slate-400 font-mono mb-2">{{ product.barcode || 'NO-BARCODE' }}</p>
+                            <h3 class="font-black text-xs md:text-sm text-slate-800 leading-tight mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors">{{ product.name }}</h3>
+                            <p class="text-[8px] md:text-[9px] text-slate-400 font-mono mb-1.5 line-clamp-1">{{ product.barcode || 'NO-BARCODE' }}</p>
+                            
                             <div class="mt-auto pt-2 border-t border-slate-100 flex flex-col gap-1.5">
-                                <div v-if="!product.isCombo && product.itemsPerCase && product.itemsPerCase > 1" class="text-[9px] text-slate-500 font-bold bg-slate-50 px-2 py-1 rounded border border-slate-100"><span class="text-slate-600">១{{ translateHardcodedUnit(product.unit) }} = {{ product.itemsPerCase }} {{ translateHardcodedUnit(product.retailUnit) }}</span></div>
-                                <div class="flex items-end justify-between mt-1">
-                                    <div class="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded"><span>1 {{ translateHardcodedUnit(product.isCombo ? 'set' : (product.retailUnit || 'bottle')) }}</span></div>
-                                    <div class="text-right"><p class="text-[15px] font-black text-indigo-600">{{ formatPrice(product.retailPrice, product.currency) }}</p></div>
+                                <div v-if="!product.isCombo && product.itemsPerCase && product.itemsPerCase > 1" class="text-[8px] md:text-[9px] text-slate-500 font-bold bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100 w-fit"><span class="text-slate-600">១{{ translateHardcodedUnit(product.unit) }} = {{ product.itemsPerCase }}{{ translateHardcodedUnit(product.retailUnit) }}</span></div>
+                                <div class="flex items-end justify-between mt-0.5">
+                                    <div class="text-[9px] md:text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded"><span>1 {{ translateHardcodedUnit(product.isCombo ? 'set' : (product.retailUnit || 'bottle')) }}</span></div>
+                                    <div class="text-right"><p class="text-[13px] md:text-[15px] font-black text-indigo-600">{{ formatPrice(product.retailPrice, product.currency) }}</p></div>
                                 </div>
                             </div>
                         </div>
@@ -65,117 +71,117 @@
                 </div>
             </div>
 
+            <button v-if="cart.length > 0 && !showMobileCart" @click="showMobileCart = true" class="md:hidden fixed bottom-6 right-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white w-14 h-14 rounded-full shadow-2xl z-[45] flex items-center justify-center transition-transform active:scale-95 border-2 border-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                <span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-bounce-short">{{ cart.length }}</span>
+            </button>
         </div>
 
         <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
-            <div v-if="showMobileCart" @click="showMobileCart = false" class="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[45]"></div>
+            <div v-show="showMobileCart" @click="showMobileCart = false" class="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[45]"></div>
         </transition>
 
         <div 
             :class="showMobileCart ? 'translate-y-0' : 'translate-y-full md:translate-y-0'"
-            class="fixed md:static inset-x-0 bottom-0 h-[85vh] md:h-full w-full md:w-[360px] xl:w-[450px] bg-slate-50 md:border-l border-slate-200 shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.2)] md:shadow-[-10px_0_30px_rgba(0,0,0,0.04)] flex flex-col z-[50] md:z-30 transition-transform duration-300 ease-in-out rounded-t-[2rem] md:rounded-none shrink-0"
+            class="fixed md:static inset-x-0 bottom-0 h-[88vh] md:h-full w-full md:w-[360px] xl:w-[420px] bg-slate-50 md:border-l border-slate-200 shadow-[0_-20px_40px_-15px_rgba(0,0,0,0.3)] md:shadow-[-10px_0_30px_rgba(0,0,0,0.04)] flex flex-col z-[50] md:z-30 transition-transform duration-300 ease-out rounded-t-[2rem] md:rounded-none shrink-0 will-change-transform"
         >
-            <div class="p-4 md:p-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0 shadow-sm z-20 rounded-t-[2rem] md:rounded-none pt-6 md:pt-4">
+            <div class="p-4 md:p-5 border-b border-slate-200 flex items-center justify-between bg-white shrink-0 shadow-sm z-20 rounded-t-[2rem] md:rounded-none pt-6 md:pt-5 relative">
                 <div class="absolute top-2.5 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-slate-200 rounded-full md:hidden"></div>
                 <div class="flex flex-col">
                     <h2 class="text-lg font-black text-slate-800 flex items-center gap-2"><svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg> កន្ត្រកទំនិញ</h2>
-                    <div v-if="timeLeft" class="mt-1 flex items-center gap-1.5 text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md w-fit animate-pulse"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> ផុតកំណត់ក្នុង: {{ timeLeft }}</div>
+                    <div v-if="timeLeft" class="mt-1 flex items-center gap-1 text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md w-fit animate-pulse"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> ផុតកំណត់ក្នុង: {{ timeLeft }}</div>
                 </div>
                 
                 <div class="flex items-center gap-3">
-                    <span class="bg-blue-100 text-blue-600 px-2.5 py-0.5 rounded-lg text-xs font-black border border-blue-200">{{ cart.length }}</span>
-                    <button @click="showMobileCart = false" class="md:hidden w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors">
+                    <span class="bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-lg text-[11px] font-black border border-blue-200">{{ cart.length }} មុខ</span>
+                    <button @click="showMobileCart = false" class="md:hidden w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors active:scale-95">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto custom-scrollbar p-4">
-                <div v-if="cart.length === 0" class="h-full flex flex-col items-center justify-center text-slate-400 opacity-60 min-h-[250px]">
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-4 touch-pan-y">
+                
+                <div v-if="cart.length === 0" class="h-full flex flex-col items-center justify-center text-slate-400 opacity-60 min-h-[300px]">
                     <svg class="w-20 h-20 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                    <p class="font-bold text-sm">មិនទាន់មានទំនិញក្នុងកន្ត្រកទេ</p>
+                    <p class="font-bold text-sm">មិនទាន់មានទំនិញទេ</p>
                     <p class="text-[10px] mt-1">សូមចុចលើទំនិញដើម្បីបញ្ជូល</p>
                 </div>
-                <div v-else class="block">
+                
+                <div v-else class="block pb-16 md:pb-4">
                     <div class="space-y-3 mb-4">
-                        <div v-for="(item, index) in cart" :key="item.product.id + item.selectedUnit" class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2 relative group hover:border-blue-400 transition-colors">
-                            <button @click="removeFromCart(index)" class="absolute -top-2.5 -right-2.5 w-7 h-7 bg-rose-100 text-rose-600 hover:bg-rose-500 hover:text-white rounded-full flex items-center justify-center shadow-md border-2 border-white z-10"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                        <div v-for="(item, index) in cart" :key="item.product.id + item.selectedUnit" class="bg-white border border-slate-200 rounded-2xl p-3 md:p-4 shadow-sm flex flex-col relative group hover:border-blue-300 transition-colors">
                             
-                            <div class="flex justify-between items-start gap-2">
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-sm text-slate-800 leading-tight">{{ item.product.name }}</h4>
-                                    <span v-if="!item.isManualPrice" class="inline-block mt-1.5 px-2 py-0.5 rounded text-[10px] font-black border" :class="getBadgeClass(item)">{{ getBadgeLabel(item) }}</span>
-                                    <span v-else class="inline-block mt-1.5 px-2 py-0.5 rounded text-[10px] font-black border bg-slate-100 text-slate-600 border-slate-300">កំណត់តម្លៃដោយដៃ</span>
+                            <button @click="removeFromCart(index)" class="absolute -top-2 -right-2 w-7 h-7 bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-full flex items-center justify-center shadow-md border border-rose-100 transition-colors z-10"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                            
+                            <div class="flex justify-between items-start gap-2 mb-2">
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="font-bold text-sm text-slate-800 leading-tight pr-4 line-clamp-2">{{ item.product.name }}</h4>
+                                    <span v-if="!item.isManualPrice" class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black border" :class="getBadgeClass(item)">{{ getBadgeLabel(item) }}</span>
+                                    <span v-else class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black border bg-slate-100 text-slate-600 border-slate-300">កំណត់តម្លៃដោយដៃ</span>
                                 </div>
-                                <span class="text-base font-black text-emerald-600 whitespace-nowrap bg-emerald-50/50 px-2 py-1 rounded-lg border border-emerald-100 mt-0.5">{{ formatPrice(calculateItemPrice(item), item.product.currency) }}</span>
+                                <span class="text-sm md:text-base font-black text-emerald-600 whitespace-nowrap bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100 shrink-0">{{ formatPrice(calculateItemPrice(item), item.product.currency) }}</span>
                             </div>
                             
-                            <div class="flex items-end justify-between mt-2 pt-3 border-t border-slate-100">
-                                <div class="flex flex-col gap-1.5">
-                                    <div class="relative inline-flex">
-                                        <select :value="item.selectedUnit" @change="handleUnitChange(index, $event)" class="appearance-none bg-slate-100 border border-slate-200 text-slate-700 py-1.5 pl-3 pr-8 rounded-lg text-xs font-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer transition-all shadow-sm">
+                            <div class="flex flex-col sm:flex-row flex-wrap items-start sm:items-end justify-between mt-2 pt-2 border-t border-slate-100 gap-3">
+                                <div class="flex flex-col gap-2 w-full sm:w-auto flex-1">
+                                    <div class="relative w-full sm:w-fit">
+                                        <select :value="item.selectedUnit" @change="handleUnitChange(index, $event)" class="w-full appearance-none bg-slate-100/80 border border-slate-200 text-slate-700 py-2 pl-3 pr-8 rounded-xl text-xs font-black focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none cursor-pointer transition-all">
                                             <option value="retail">{{ item.product.isCombo ? 'ឈុត' : translateHardcodedUnit(item.product.retailUnit || 'bottle') + ' (រាយ)' }}</option>
                                             <option v-if="!item.product.isCombo && item.product.itemsPerCase > 1" value="case">{{ translateHardcodedUnit(item.product.unit || 'case') }} (ដុំ)</option>
                                         </select>
                                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></div>
                                     </div>
-                                    <div class="text-[10px] font-bold text-slate-400 mt-0.5">
-                                        <span v-if="!item.product.isCombo">១ដប: <span class="text-slate-600">{{ formatPrice(getSingleBasePrice(item), item.product.currency) }}</span></span>
-                                        <span v-if="!item.product.isCombo && item.product.itemsPerCase > 1" class="mx-1">|</span>
-                                        <span v-if="!item.product.isCombo && item.product.itemsPerCase > 1">១កេះ: <span class="text-slate-600">{{ formatPrice(getSingleCasePrice(item), item.product.currency) }}</span></span>
-                                        <span v-if="item.product.isCombo">១ឈុត: <span class="text-slate-600">{{ formatPrice(getSingleBasePrice(item), item.product.currency) }}</span></span>
+                                    <div class="flex items-center gap-2">
+                                        <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                            <div class="relative inline-block w-7 h-4 rounded-full transition-colors duration-300" :class="item.isManualPrice ? 'bg-blue-500' : 'bg-slate-300'">
+                                                <input type="checkbox" v-model="item.isManualPrice" class="sr-only" @change="handleManualPriceToggle(index)">
+                                                <span class="absolute left-0.5 top-0.5 bg-white w-3 h-3 rounded-full transition-transform duration-300 shadow-sm" :class="item.isManualPrice ? 'translate-x-3' : 'translate-x-0'"></span>
+                                            </div>
+                                            <span class="text-[10px] font-bold text-slate-500">កែតម្លៃ</span>
+                                        </label>
+                                        <div v-if="item.isManualPrice" class="relative w-20 animate-fade-in">
+                                            <span class="absolute inset-y-0 left-0 pl-1.5 flex items-center text-[10px] font-black text-blue-600">{{ item.product.currency === 'USD' ? '$' : '៛' }}</span>
+                                            <input type="number" v-model.number="item.manualPrice" step="any" min="0" class="w-full pl-5 pr-1 py-1 bg-blue-50 border border-blue-200 rounded-md text-xs font-black outline-none focus:border-blue-500 focus:bg-white text-blue-700">
+                                        </div>
+                                        <div v-else class="text-[9px] font-bold text-slate-400">
+                                            <span v-if="!item.product.isCombo">១ដប: {{ formatPrice(getSingleBasePrice(item), item.product.currency) }}</span>
+                                        </div>
                                     </div>
                                 </div>
-                                
-                                <div class="flex items-center gap-2 shrink-0">
-                                    <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden h-10 shadow-sm">
-                                        <button @click="updateQty(index, -1)" class="w-10 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors text-xl font-bold">-</button>
-                                        <input 
-                                            v-model="item.inputQty" 
-                                            @change="commitQty(index)" 
-                                            @keyup.enter="$event.target.blur()" 
-                                            type="number" min="1" 
-                                            class="w-12 h-full bg-white text-center text-sm font-black border-x border-slate-200 outline-none p-0"
-                                        >
-                                        <button @click="updateQty(index, 1)" class="w-10 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors text-xl font-bold">+</button>
+                                <div class="flex items-center justify-end w-full sm:w-auto shrink-0 mt-1 sm:mt-0">
+                                    <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden h-9 shadow-sm w-[110px]">
+                                        <button @click="updateQty(index, -1)" class="w-10 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 active:bg-slate-300 transition-colors text-lg font-bold">−</button>
+                                        <input v-model="item.inputQty" @change="commitQty(index)" @keyup.enter="$event.target.blur()" type="number" min="1" class="w-full h-full bg-white text-center text-sm font-black border-x border-slate-200 outline-none p-0 focus:ring-inner">
+                                        <button @click="updateQty(index, 1)" class="w-10 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 active:bg-slate-300 transition-colors text-lg font-bold">+</button>
                                     </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                                <label class="flex items-center gap-2 cursor-pointer select-none">
-                                    <div class="relative inline-block w-8 h-4 rounded-full transition-colors duration-300" :class="item.isManualPrice ? 'bg-blue-500' : 'bg-slate-300'">
-                                        <input type="checkbox" v-model="item.isManualPrice" class="sr-only" @change="handleManualPriceToggle(index)">
-                                        <span class="absolute left-0.5 top-0.5 bg-white w-3 h-3 rounded-full transition-transform duration-300 shadow-sm" :class="item.isManualPrice ? 'translate-x-4' : 'translate-x-0'"></span>
-                                    </div>
-                                    <span class="text-[11px] font-bold text-slate-600">តម្លៃដោយដៃ</span>
-                                </label>
-                                <div v-if="item.isManualPrice" class="flex items-center gap-1 animate-fade-in">
-                                    <div class="relative w-24">
-                                        <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-[11px] font-black text-blue-600">{{ item.product.currency === 'USD' ? '$' : '៛' }}</span>
-                                        <input type="number" v-model.number="item.manualPrice" step="any" min="0" class="w-full pl-6 pr-2 py-1.5 bg-blue-50/50 border border-blue-200 rounded-lg text-xs font-black outline-none focus:border-blue-500 focus:bg-white text-blue-700">
-                                    </div>
-                                    <span class="text-[10px] font-bold text-slate-400">/ 1{{ translateHardcodedUnit(item.selectedUnit === 'case' ? (item.product.unit||'case') : (item.product.isCombo?'set':item.product.retailUnit||'bottle')) }}</span>
                                 </div>
                             </div>
-
                         </div>
                     </div>
-                    
-                    <div class="bg-white p-5 border border-slate-200 shadow-sm rounded-2xl mt-4">
-                        <div class="flex justify-between items-end mb-4"><span class="text-sm font-black text-slate-500 uppercase tracking-widest">សរុបប្រាក់ (Total)</span><span class="text-3xl font-black text-emerald-600 leading-none">{{ formatPrice(cartTotalUSD, 'USD') }}</span></div>
-                        <button @click="openCheckoutModal" :disabled="cart.length === 0" class="w-full py-4 rounded-xl font-black text-base shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg> បន្តការទូទាត់ប្រាក់</button>
+
+                    <div class="bg-white p-4 md:p-5 border border-slate-200 shadow-sm rounded-2xl mt-4">
+                        <div class="flex justify-between items-end mb-3">
+                            <span class="text-xs font-black text-slate-500 uppercase tracking-widest">សរុប (Total)</span>
+                            <span class="text-3xl font-black text-emerald-600 leading-none tracking-tight">{{ formatPrice(cartTotalUSD, 'USD') }}</span>
+                        </div>
+                        <button @click="openCheckoutModal" class="w-full py-3.5 rounded-xl font-black text-[15px] shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg> 
+                            បន្តការទូទាត់ប្រាក់
+                        </button>
                     </div>
+
                 </div>
             </div>
+
         </div>
 
         <CheckoutModal ref="checkoutModalRef" :show="isCheckoutModalOpen" :cartLength="cart.length" :cartTotalUSD="cartTotalUSD" :sellers="sellers" :savedCustomers="savedCustomers" :isSubmitting="isSubmitting" @close="isCheckoutModalOpen = false" @confirm="submitSale" />
         <SuccessModal :show="isSuccessModalOpen" :isSendingToBot="isSendingToBot" @close="closeSuccessModal" @print="printInvoice" @download-pdf="downloadPDF" @share-app="shareToTelegramApp" @send-bot="sendToTelegramBotGroup" />
     </div>
 
-    <div v-if="mainTab === 'today'" class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 animate-fade-in bg-[#F4F7FE]">
-        <div class="max-w-[90rem] mx-auto w-full">
+    <div v-if="mainTab === 'today'" class="flex-1 overflow-y-auto custom-scrollbar p-0 md:p-6 animate-fade-in bg-[#F4F7FE]">
+        <div class="max-w-[90rem] mx-auto w-full h-full">
             <POSTodaySales @triggerAlert="triggerAlert" />
         </div>
     </div>
@@ -234,10 +240,9 @@ const reservationTimer = ref(null);
 // --- UTILS ---
 const triggerAlert = (type, title, message) => { if (type === 'error') notification.error(message); else notification.success(message); };
 
-// កែសម្រួល formatPrice ឲ្យបង្ហាញកន្ទុយ ៣ ខ្ទង់ (តាមទិន្នន័យជាក់ស្តែង មិនបង្គត់ឡើង)
+// កែសម្រួល formatPrice ឲ្យបង្ហាញកន្ទុយ ៣ ខ្ទង់
 const formatPrice = (val, currency = 'USD') => { 
     if (val === undefined || val === null) return '0.00'; 
-    // ប្តូរពី minimumFractionDigits: 2 ទៅបង្ហាញតាមទិន្នន័យជាក់ស្តែង
     let formattedNum = Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 3 });
     return formattedNum + (currency === 'USD' ? ' $' : ' ៛'); 
 };
@@ -323,7 +328,6 @@ const filteredProducts = computed(() => {
     return mixedProducts.value.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
 });
 
-// រកតម្លៃ ១ដប ឬ ១ឈុត
 const getSingleBasePrice = (item) => {
     const { product, qty, selectedUnit } = item;
     const targetUnit = product.isCombo ? 'set' : (selectedUnit === 'case' ? 'case' : 'bottle');
@@ -348,7 +352,6 @@ const getSingleCasePrice = (item) => {
     return basePrice * (Number(item.product.itemsPerCase) || 1);
 };
 
-// គណនាតម្លៃឯកតារួម (រួមបញ្ចូលជម្រើសតម្លៃដោយដៃ)
 const calculateItemUnitPrice = (item) => {
     if (item.isManualPrice) return Number(item.manualPrice) || 0;
     if (item.product.isCombo) return getSingleBasePrice(item);
@@ -357,7 +360,6 @@ const calculateItemUnitPrice = (item) => {
 
 const calculateItemPrice = (item) => calculateItemUnitPrice(item) * item.qty;
 
-// រក្សាកន្ទុយ ៣ខ្ទង់សម្រាប់តម្លៃសរុប (បើមាន)
 const cartTotalUSD = computed(() => cart.value.reduce((total, item) => total + calculateItemPrice(item), 0));
 
 const getBadgeLabel = (item) => {
@@ -421,7 +423,7 @@ const updateActiveCartBackend = async () => {
     if (cart.value.length === 0) { await deleteDoc(cartRef).catch(e => {}); clearInterval(reservationTimer.value); timeLeft.value = ""; showMobileCart.value = false; return; }
     
     // ប្តូរពី ២នាទី ទៅ ៥នាទី
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).getTime();
+    const expiresAt = new Date(Date.now() + 9 * 60 * 1000).getTime();
     
     const plainItems = cart.value.map(item => ({ 
         id: item.product.id, qty: item.qty, selectedUnit: item.selectedUnit, 
@@ -558,10 +560,9 @@ const submitSale = async (formData) => {
         const adminId = auth.currentUser.uid;
         const receiptCode = `INV-${Date.now().toString().slice(-6)}`;
         
-        // Handle location based on whether they used the direct customer tab or full shipping form
         let combinedLocation = '';
         if (formData.isDirectCustomer) {
-            combinedLocation = 'ទិញផ្ទាល់'; // Special tag for direct customers
+            combinedLocation = 'ទិញផ្ទាល់'; 
         } else {
             combinedLocation = `${formData.district}, ${formData.province}`;
         }
@@ -591,7 +592,6 @@ const submitSale = async (formData) => {
         const docRef = await addDoc(collection(db, 'sales_reports'), payload);
         lastSavedSale.value = { id: docRef.id, ...payload };
 
-        // ដកស្តុកចេញ (clear reservation)
         for (const item of cart.value) {
             if (item.product.isCombo) {
                 for (const subItem of item.product.items) {
@@ -625,19 +625,19 @@ const closeSuccessModal = () => {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&display=swap');
 .font-khmer { font-family: 'Battambong', sans-serif; }
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-.animate-slide-down { animation: slideDown 0.2s ease-out forwards; transform-origin: top; }
-@keyframes slideDown { from { opacity: 0; transform: scaleY(0.95); } to { opacity: 1; transform: scaleY(1); } }
-.animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.animate-bounce-short { animation: bounceShort 1s ease-in-out infinite; }
+@keyframes bounceShort { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15%); } }
 
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
 select { -webkit-appearance: none; -moz-appearance: none; }
+.will-change-transform { will-change: transform; }
 </style>
