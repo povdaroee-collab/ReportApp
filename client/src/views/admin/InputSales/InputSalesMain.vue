@@ -117,8 +117,7 @@
                             <div class="flex justify-between items-start gap-2 mb-2">
                                 <div class="flex-1 min-w-0">
                                     <h4 class="font-bold text-sm text-slate-800 leading-tight pr-4 line-clamp-2">{{ item.product.name }}</h4>
-                                    <span v-if="!item.isManualPrice" class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black border" :class="getBadgeClass(item)">{{ getBadgeLabel(item) }}</span>
-                                    <span v-else class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black border bg-slate-100 text-slate-600 border-slate-300">កំណត់តម្លៃដោយដៃ</span>
+                                    <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black border" :class="getBadgeClass(item)">{{ getBadgeLabel(item) }}</span>
                                 </div>
                                 <span class="text-sm md:text-base font-black text-emerald-600 whitespace-nowrap bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100 shrink-0">{{ formatPrice(calculateItemPrice(item), item.product.currency) }}</span>
                             </div>
@@ -233,6 +232,8 @@ const printStaging = ref(null);
 
 let unsubscribeProducts = null; 
 let unsubscribeCombos = null;
+let unsubscribeSellers = null; // ថ្មី
+let unsubscribeSales = null;   // ថ្មី
 
 const timeLeft = ref("");
 const reservationTimer = ref(null);
@@ -240,7 +241,6 @@ const reservationTimer = ref(null);
 // --- UTILS ---
 const triggerAlert = (type, title, message) => { if (type === 'error') notification.error(message); else notification.success(message); };
 
-// កែសម្រួល formatPrice ឲ្យបង្ហាញកន្ទុយ ៣ ខ្ទង់
 const formatPrice = (val, currency = 'USD') => { 
     if (val === undefined || val === null) return '0.00'; 
     let formattedNum = Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 3 });
@@ -262,31 +262,40 @@ onMounted(() => {
                     combosGlobal.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isCombo: true }));
                     combineProductsAndCombos();
                 });
-                const snapSellers = await getDocs(query(collection(db, "users"), where("role", "in", ["seller", "dealer"]), where("createdBy", "==", user.uid)));
-                sellers.value = snapSellers.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const qSellers = query(collection(db, "users"), where("role", "in", ["seller", "dealer"]), where("createdBy", "==", user.uid));
+unsubscribeSellers = onSnapshot(qSellers, (snapshot) => {
+    sellers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+});
 
-                // ទាញយកប្រវត្តិអតិថិជនពី sales_reports
-                const snapSales = await getDocs(query(collection(db, 'sales_reports'), where('createdBy', '==', user.uid)));
-                const uniqueCustomers = {};
-                snapSales.docs.forEach(doc => {
-                    const data = doc.data();
-                    if (data.customerName && !uniqueCustomers[data.customerName]) {
-                        uniqueCustomers[data.customerName] = {
-                            name: data.customerName,
-                            phone: data.customerPhone || '',
-                            province: data.province || '',
-                            district: data.district || ''
-                        };
-                    }
-                });
-                savedCustomers.value = Object.values(uniqueCustomers);
+// 4. ប្រវត្តិអតិថិជន (Realtime)
+const qSales = query(collection(db, 'sales_reports'), where('createdBy', '==', user.uid));
+unsubscribeSales = onSnapshot(qSales, (snapshot) => {
+    const uniqueCustomers = {};
+    snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.customerName && !uniqueCustomers[data.customerName]) {
+            uniqueCustomers[data.customerName] = {
+                name: data.customerName,
+                phone: data.customerPhone || '',
+                province: data.province || '',
+                district: data.district || ''
+            };
+        }
+    });
+    savedCustomers.value = Object.values(uniqueCustomers);
+});
 
             } catch (error) { console.error(error); }
         } else router.push('/');
     });
 });
 
-onUnmounted(() => { if (unsubscribeProducts) unsubscribeProducts(); if (unsubscribeCombos) unsubscribeCombos(); });
+onUnmounted(() => { 
+    if (unsubscribeProducts) unsubscribeProducts(); 
+    if (unsubscribeCombos) unsubscribeCombos(); 
+    if (unsubscribeSellers) unsubscribeSellers(); // ថ្មី
+    if (unsubscribeSales) unsubscribeSales();     // ថ្មី
+});
 
 const combineProductsAndCombos = () => {
     mixedProducts.value = [...originalStocks.value, ...combosGlobal.value];
@@ -362,10 +371,13 @@ const calculateItemPrice = (item) => calculateItemUnitPrice(item) * item.qty;
 
 const cartTotalUSD = computed(() => cart.value.reduce((total, item) => total + calculateItemPrice(item), 0));
 
+// ✅ Smart Logic បង្ហាញពាក្យ "បោះដុំ" ឬ "លក់រាយ" ករណីបញ្ចូលតម្លៃដោយដៃ
 const getBadgeLabel = (item) => {
-    if (item.isManualPrice) return 'តម្លៃដោយដៃ';
-    const { product, qty, selectedUnit } = item;
+    const { product, selectedUnit, isManualPrice, manualPrice, qty } = item;
     const targetUnit = product.isCombo ? 'set' : (selectedUnit === 'case' ? 'case' : 'bottle');
+    
+    // ១. ស្វែងរកតម្លៃបោះដុំខ្ពស់បំផុត (Wholesale Price) ដែលបានកំណត់ក្នុងប្រព័ន្ធ
+    let sysWholesalePrice = null;
     
     if (product.wholesaleTiers && Array.isArray(product.wholesaleTiers) && product.wholesaleTiers.length > 0) {
         let unitTiers = product.wholesaleTiers.filter(t => t.unit === targetUnit);
@@ -373,13 +385,39 @@ const getBadgeLabel = (item) => {
         
         if (unitTiers.length > 0) {
             const sorted = [...unitTiers].sort((a, b) => Number(b.minQty) - Number(a.minQty));
-            const appliedTier = sorted.find(t => qty >= Number(t.minQty));
-            if (appliedTier && Number(appliedTier.price) > 0) {
-                if (product.isCombo) return 'តម្លៃបោះដុំ (ឈុត)';
-                return targetUnit === 'case' ? 'តម្លៃបោះដុំ (កេះ)' : 'តម្លៃបោះដុំ (រាយ)';
+            
+            // បើកែតម្លៃដោយដៃ (Manual Price): ចាប់យកតម្លៃ Wholesale គោល យកមកប្រៀបធៀប
+            if (isManualPrice) {
+                // យកតម្លៃបោះដុំដំបូងគេបង្អស់ (តម្លៃដែលថោកជាងគេ តែត្រូវការ Qty តិច) ជាគោល
+                const firstTier = [...unitTiers].sort((a,b) => Number(a.minQty) - Number(b.minQty))[0];
+                if (firstTier && Number(firstTier.price) > 0) {
+                    sysWholesalePrice = Number(firstTier.price);
+                }
+            } 
+            // បើអត់កែតម្លៃដោយដៃ: ប្រើលក្ខខណ្ឌ Qty ធម្មតា
+            else {
+                const appliedTier = sorted.find(t => qty >= Number(t.minQty));
+                if (appliedTier && Number(appliedTier.price) > 0) {
+                    if (product.isCombo) return 'តម្លៃបោះដុំ (ឈុត)';
+                    return targetUnit === 'case' ? 'តម្លៃបោះដុំ (កេះ)' : 'តម្លៃបោះដុំ (រាយ)';
+                }
             }
         }
     }
+
+    // ២. ប្រៀបធៀបតម្លៃបញ្ចូលដោយដៃ (Manual) ជាមួយតម្លៃប្រព័ន្ធ
+    if (isManualPrice) {
+        const currentManualPrice = Number(manualPrice) || 0;
+        
+        // បើតម្លៃវាយបញ្ចូល តិចជាង ឬស្មើ តម្លៃបោះដុំក្នុងប្រព័ន្ធ -> ចាត់ទុកជាបោះដុំ
+        if (sysWholesalePrice !== null && currentManualPrice > 0 && currentManualPrice <= sysWholesalePrice) {
+             return targetUnit === 'case' ? 'តម្លៃបោះដុំ (កេះ)' : 'តម្លៃបោះដុំ (រាយ)';
+        }
+        
+        return 'តម្លៃលក់រាយ (កែដោយដៃ)';
+    }
+
+    // ៣. លក្ខខណ្ឌដើម
     return product.isCombo ? 'តម្លៃឈុត' : 'តម្លៃលក់រាយ';
 };
 
@@ -422,7 +460,6 @@ const updateActiveCartBackend = async () => {
     const cartRef = doc(db, 'active_carts', adminId);
     if (cart.value.length === 0) { await deleteDoc(cartRef).catch(e => {}); clearInterval(reservationTimer.value); timeLeft.value = ""; showMobileCart.value = false; return; }
     
-    // ប្តូរពី ២នាទី ទៅ ៥នាទី
     const expiresAt = new Date(Date.now() + 9 * 60 * 1000).getTime();
     
     const plainItems = cart.value.map(item => ({ 
@@ -620,6 +657,36 @@ const submitSale = async (formData) => {
 const closeSuccessModal = () => {
     cart.value = []; isSuccessModalOpen.value = false; lastSavedSale.value = null; mainTab.value = 'today'; 
 };
+
+// ==========================================
+// មុខងារសម្រាប់ផ្ទាំង Success Modal (កុំឱ្យ Error ពណ៌លឿង)
+// ==========================================
+
+const printInvoice = () => {
+    console.log("Print Invoice Clicked");
+};
+
+const downloadPDF = () => {
+    console.log("Download PDF Clicked");
+};
+
+const shareToTelegramApp = () => {
+    if (!lastSavedSale.value) return;
+    const text = encodeURIComponent(`មានវិក្កយបត្រថ្មី: ${lastSavedSale.value.receiptId}\nសរុបទឹកប្រាក់: $${lastSavedSale.value.totalAmount}`);
+    window.open(`https://t.me/share/url?url=&text=${text}`, '_blank');
+};
+
+const sendToTelegramBotGroup = async () => {
+    if (!lastSavedSale.value) return;
+    isSendingToBot.value = true;
+    try {
+        console.log("Sending to Bot Group...");
+    } catch (error) {
+        console.error(error);
+    } finally {
+        isSendingToBot.value = false;
+    }
+};
 </script>
 
 <style scoped>
@@ -639,7 +706,5 @@ const closeSuccessModal = () => {
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
 select { -webkit-appearance: none; -moz-appearance: none; }
- HEAD
 .will-change-transform { will-change: transform; }
 </style>
-
