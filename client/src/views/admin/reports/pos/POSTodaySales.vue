@@ -1,79 +1,90 @@
 <template>
   <div class="w-full flex flex-col gap-6 animate-fade-in-up pb-24">
         
-        <div class="bg-white p-2 rounded-[20px] shadow-sm border border-slate-200/80 flex flex-wrap lg:flex-nowrap items-center gap-2 print:hidden">
-            <div class="flex flex-1 sm:flex-none overflow-x-auto no-scrollbar bg-slate-50 p-1.5 rounded-[14px] border border-slate-100">
-                <button @click="setFilterType('today')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'today' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ថ្ងៃនេះ</button>
-                <button @click="setFilterType('month')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'month' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ខែនេះ</button>
-                <button @click="setFilterType('specific')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'specific' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ជ្រើសរើសថ្ងៃ</button>
-                <button @click="setFilterType('range')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'range' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ចាប់ពីថ្ងៃ - ដល់ថ្ងៃ</button>
+        <div class="bg-white p-3 rounded-[20px] shadow-sm border border-slate-200/80 flex flex-col xl:flex-row justify-between xl:items-center gap-4 print:hidden">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full xl:w-auto">
+                <div class="flex flex-1 sm:flex-none overflow-x-auto no-scrollbar bg-slate-50 p-1.5 rounded-[14px] border border-slate-100">
+                    <button @click="setFilterType('today')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'today' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ថ្ងៃនេះ</button>
+                    <button @click="setFilterType('month')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'month' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ខែនេះ</button>
+                    <button @click="setFilterType('specific')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'specific' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ជ្រើសរើសថ្ងៃ</button>
+                    <button @click="setFilterType('range')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'range' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ចាប់ពីថ្ងៃ - ដល់ថ្ងៃ</button>
+                </div>
+
+                <div class="flex items-center gap-3 animate-fade-in px-2" v-if="filterType !== 'today' && filterType !== 'month'">
+                    <div v-if="filterType === 'specific'" class="w-full sm:w-auto relative">
+                        <input type="date" v-model="specificDate" class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 outline-none">
+                    </div>
+                    <div v-if="filterType === 'range'" class="w-full flex items-center gap-2">
+                        <input type="date" v-model="startDate" class="flex-1 bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500/20 outline-none">
+                        <span class="text-slate-400 font-bold text-xs">-</span>
+                        <input type="date" v-model="endDate" class="flex-1 bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500/20 outline-none">
+                    </div>
+                </div>
             </div>
 
-            <div class="w-px h-8 bg-slate-200 hidden lg:block mx-2"></div>
-
-            <div class="flex-1 flex items-center gap-3 animate-fade-in px-2" v-if="filterType !== 'today' && filterType !== 'month'">
-                <div v-if="filterType === 'specific'" class="w-full sm:w-auto relative">
-                    <input type="date" v-model="specificDate" class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 outline-none">
-                </div>
-                <div v-if="filterType === 'range'" class="w-full flex items-center gap-2">
-                    <input type="date" v-model="startDate" class="flex-1 bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500/20 outline-none">
-                    <span class="text-slate-400 font-bold text-xs">-</span>
-                    <input type="date" v-model="endDate" class="flex-1 bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500/20 outline-none">
-                </div>
-            </div>
-
-            <div class="w-px h-8 bg-slate-200 hidden lg:block mx-2"></div>
-
-            <div class="relative w-full lg:w-72 px-2 lg:px-0 mt-2 lg:mt-0 flex gap-2">
-                <div class="relative flex-1">
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
+                <div class="relative w-full sm:w-64">
                     <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     <input v-model="searchQuery" type="text" placeholder="ស្វែងរកវិក្កយបត្រ, អតិថិជន..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
                 </div>
-                <button @click="handlePrint" :disabled="filteredSales.length === 0" class="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm hover:bg-slate-700 transition-colors disabled:opacity-50">Print</button>
-                <button @click="handlePDF" :disabled="filteredSales.length === 0" class="bg-rose-50 text-rose-600 border border-rose-200 px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm hover:bg-rose-100 transition-colors disabled:opacity-50">PDF</button>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <button @click="showSummaryCards = !showSummaryCards" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border shadow-sm" :class="showSummaryCards ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'">
+                        <svg v-if="showSummaryCards" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        <span class="hidden sm:block">{{ showSummaryCards ? 'លាក់ទិន្នន័យសរុប' : 'បង្ហាញទិន្នន័យសរុប' }}</span>
+                        <span class="sm:hidden">Stats</span>
+                    </button>
+
+                    <button @click="handlePrint" :disabled="filteredSales.length === 0" class="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm hover:bg-slate-700 transition-colors disabled:opacity-50">Print</button>
+                    <button @click="handlePDF" :disabled="filteredSales.length === 0" class="bg-rose-50 text-rose-600 border border-rose-200 px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm hover:bg-rose-100 transition-colors disabled:opacity-50">PDF</button>
+                </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6 print:hidden">
-            <div class="bg-gradient-to-br from-indigo-500 to-blue-600 rounded-[20px] p-6 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
-                <div class="relative z-10 flex flex-col h-full justify-between">
-                    <p class="text-blue-100 text-[11px] font-black uppercase tracking-widest mb-1 flex items-center gap-2">ចំណូលទំនិញសុទ្ធ (Products)</p>
-                    <h3 class="text-3xl font-black">{{ totalStats.productsUSD.toLocaleString() }} <span class="text-lg opacity-80">$</span></h3>
-                    <p class="text-sm font-bold opacity-90 mt-1">{{ totalStats.productsKHR.toLocaleString() }} ៛</p>
+        <transition enter-active-class="transition duration-300 ease-out origin-top" enter-from-class="transform scale-y-95 opacity-0" enter-to-class="transform scale-y-100 opacity-100" leave-active-class="transition duration-200 ease-in origin-top" leave-from-class="transform scale-y-100 opacity-100" leave-to-class="transform scale-y-95 opacity-0">
+            <div v-show="showSummaryCards" class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-2 print:hidden">
+                <div class="bg-gradient-to-br from-indigo-500 to-blue-600 rounded-[20px] p-6 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+                    <div class="relative z-10 flex flex-col h-full justify-between">
+                        <p class="text-blue-100 text-[11px] font-black uppercase tracking-widest mb-1 flex items-center gap-2">ចំណូលទំនិញសុទ្ធ (Products)</p>
+                        <h3 class="text-3xl font-black">{{ totalStats.productsUSD.toLocaleString() }} <span class="text-lg opacity-80">$</span></h3>
+                        <p class="text-sm font-bold opacity-90 mt-1">{{ totalStats.productsKHR.toLocaleString() }} ៛</p>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="bg-gradient-to-br from-orange-400 to-rose-500 rounded-[20px] p-6 text-white shadow-lg shadow-rose-500/20 relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
-                <div class="relative z-10 flex flex-col h-full justify-between">
-                    <p class="text-orange-100 text-[11px] font-black uppercase tracking-widest mb-1 flex items-center gap-2">ថ្លៃដឹកជញ្ជូនសរុប (Delivery)</p>
-                    <h3 class="text-3xl font-black">{{ totalStats.deliveryUSD.toLocaleString() }} <span class="text-lg opacity-80">$</span></h3>
-                    <p class="text-sm font-bold opacity-90 mt-1">{{ totalStats.deliveryKHR.toLocaleString() }} ៛</p>
+                
+                <div class="bg-gradient-to-br from-orange-400 to-rose-500 rounded-[20px] p-6 text-white shadow-lg shadow-rose-500/20 relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+                    <div class="relative z-10 flex flex-col h-full justify-between">
+                        <p class="text-orange-100 text-[11px] font-black uppercase tracking-widest mb-1 flex items-center gap-2">ថ្លៃដឹកជញ្ជូនសរុប (Delivery)</p>
+                        <h3 class="text-3xl font-black">{{ totalStats.deliveryUSD.toLocaleString() }} <span class="text-lg opacity-80">$</span></h3>
+                        <p class="text-sm font-bold opacity-90 mt-1">{{ totalStats.deliveryKHR.toLocaleString() }} ៛</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="bg-white rounded-[20px] p-6 border border-slate-200/80 shadow-sm flex flex-col justify-between">
-                <div class="flex items-center justify-between mb-4">
-                    <p class="text-slate-400 text-[11px] font-black uppercase tracking-widest">អតិថិជនសរុប (CLIENTS)</p>
-                    <div class="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-[14px] flex items-center justify-center">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <div class="bg-white rounded-[20px] p-6 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-slate-400 text-[11px] font-black uppercase tracking-widest">អតិថិជនសរុប (CLIENTS)</p>
+                        <div class="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-[14px] flex items-center justify-center">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        </div>
                     </div>
-                </div>
-                <div>
-                    <h3 class="text-3xl font-black text-slate-800">{{ validSales.length }} <span class="text-sm text-slate-400 font-bold">នាក់ / វិក្កយបត្រ</span></h3>
-                    
-                    <div class="flex gap-2 mt-3 pt-3 border-t border-slate-100">
-                        <span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
-                            ភ្នំពេញ: <span class="text-indigo-600">{{ totalStats.ppClients }} នាក់</span>
-                        </span>
-                        <span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
-                            ខេត្ត: <span class="text-amber-600">{{ totalStats.provClients }} នាក់</span>
-                        </span>
+                    <div>
+                        <h3 class="text-3xl font-black text-slate-800">{{ validSales.length }} <span class="text-sm text-slate-400 font-bold">នាក់ / វិក្កយបត្រ</span></h3>
+                        
+                        <div class="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+                            <span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                                ភ្នំពេញ: <span class="text-indigo-600">{{ totalStats.ppClients }} នាក់</span>
+                            </span>
+                            <span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                                ខេត្ត: <span class="text-amber-600">{{ totalStats.provClients }} នាក់</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </transition>
 
         <div v-if="isLoading" class="flex flex-col items-center justify-center py-24 opacity-60 print:hidden">
             <div class="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-indigo-600 mb-4"></div>
@@ -92,13 +103,14 @@
             <div v-for="(sale, index) in paginatedSales" :key="sale.id" class="bg-white rounded-[20px] border shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden group transition-all" :class="sale.paymentStatus === 'CANCELED' ? 'border-rose-200 bg-rose-50/30' : (isSaleIncomplete(sale) ? 'border-amber-300 bg-amber-50/10' : 'border-slate-200/80 hover:border-indigo-300')">
                 
                 <div class="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/50 transition-colors" @click="toggleExpand(sale.id)">
+                    
                     <div class="flex items-center gap-4 w-full sm:w-auto" :class="{'opacity-70': sale.paymentStatus === 'CANCELED'}">
                         <div class="w-12 h-12 rounded-[14px] flex items-center justify-center border shrink-0 transition-colors" :class="sale.paymentStatus === 'CANCELED' ? 'bg-slate-200 text-slate-500 border-slate-300' : (expandedRows.has(sale.id) ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/30' : 'bg-slate-50 text-indigo-500 border-slate-200 group-hover:bg-white')">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-1">
-                                <h3 class="font-black text-sm sm:text-base line-clamp-1" :class="sale.paymentStatus === 'CANCELED' ? 'text-slate-500 line-through' : 'text-slate-800'">{{ sale.customerName || 'ទូទៅ / មិនមានឈ្មោះ' }}</h3>
+                                <h3 class="font-black text-sm sm:text-base line-clamp-1" :class="sale.paymentStatus === 'CANCELED' ? 'text-slate-500 line-through' : 'text-slate-800'">{{ sale.customerName || 'អតិថិជនទិញផ្ទាល់' }}</h3>
                                 
                                 <span v-if="sale.paymentStatus === 'PAID'" class="bg-emerald-50 text-emerald-600 text-[9px] px-1.5 py-0.5 rounded border border-emerald-200 font-black shrink-0">PAID</span>
                                 <span v-else-if="sale.paymentStatus === 'CANCELED'" class="bg-rose-100 text-rose-600 text-[9px] px-1.5 py-0.5 rounded border border-rose-200 font-black shrink-0">CANCELED</span>
@@ -256,25 +268,43 @@
                         </select>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5" :class="{'text-amber-500': !editForm.customerName}">ឈ្មោះអតិថិជន *</label>
-                            <input v-model="editForm.customerName" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" :class="{'border-amber-300 bg-amber-50': !editForm.customerName}">
+                    <div v-if="editForm.customerName === 'អតិថិជនទិញផ្ទាល់' || editForm.customerName === 'ទូទៅ'" class="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center shadow-sm mb-2">
+                        <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                         </div>
-                        <div>
-                            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5" :class="{'text-amber-500': !editForm.customerPhone}">លេខទូរស័ព្ទ *</label>
-                            <input v-model="editForm.customerPhone" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" :class="{'border-amber-300 bg-amber-50': !editForm.customerPhone}">
-                        </div>
+                        <h4 class="font-black text-emerald-800 text-sm">អតិថិជនទិញផ្ទាល់ (Walk-in Customer)</h4>
+                        <p class="text-xs text-emerald-600 mt-1 font-bold">មិនតម្រូវឲ្យបញ្ជាក់ លេខទូរស័ព្ទ ឬ ទីតាំង នោះទេ។</p>
+                        <button @click="editForm.customerName = ''" type="button" class="mt-4 px-4 py-2 bg-white border border-emerald-300 text-emerald-700 text-xs font-black rounded-lg shadow-sm hover:bg-emerald-100 transition-colors">
+                            ប្តូរទៅជាអតិថិជនធម្មតា (ចុះឈ្មោះ)
+                        </button>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5" :class="{'text-amber-500': !editForm.province}">ខេត្ត/ក្រុង *</label>
-                            <input v-model="editForm.province" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" :class="{'border-amber-300 bg-amber-50': !editForm.province}">
+                    <div v-else class="flex flex-col gap-5 mb-2">
+                        <div class="flex justify-end -mb-3">
+                            <button @click="editForm.customerName = 'អតិថិជនទិញផ្ទាល់'; editForm.customerPhone = ''; editForm.province = ''; editForm.district = '';" type="button" class="text-[10px] font-black text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors border border-indigo-100">
+                                + កំណត់ជា "អតិថិជនទិញផ្ទាល់"
+                            </button>
                         </div>
-                        <div>
-                            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">សាខា (ស្រុក/ខណ្ឌ/ឃុំ)</label>
-                            <input v-model="editForm.district" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5" :class="{'text-amber-500': !editForm.customerName}">ឈ្មោះអតិថិជន *</label>
+                                <input v-model="editForm.customerName" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" :class="{'border-amber-300 bg-amber-50': !editForm.customerName}">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5" :class="{'text-amber-500': !editForm.customerPhone}">លេខទូរស័ព្ទ *</label>
+                                <input v-model="editForm.customerPhone" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" :class="{'border-amber-300 bg-amber-50': !editForm.customerPhone}">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5" :class="{'text-amber-500': !editForm.province}">ខេត្ត/ក្រុង *</label>
+                                <input v-model="editForm.province" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" :class="{'border-amber-300 bg-amber-50': !editForm.province}">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">សាខា (ស្រុក/ខណ្ឌ/ឃុំ)</label>
+                                <input v-model="editForm.district" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
+                            </div>
                         </div>
                     </div>
 
@@ -451,6 +481,7 @@
     <div ref="invoiceStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1] opacity-0 print:opacity-100 bg-white"></div>
     <div ref="printStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1] opacity-0 print:opacity-100 bg-white w-[1000px]"></div>
 
+  
 </template>
 
 <script setup>
@@ -472,6 +503,9 @@ const availableUnits = ref([]);
 const printStaging = ref(null);
 const invoiceStaging = ref(null);
 const processing = ref({ active: false, message: '', progress: 0 });
+
+// ✅ State សម្រាប់បង្ហាញ/លាក់កាតសរុប (Auto-Hide)
+const showSummaryCards = ref(false);
 
 // Filters
 const filterType = ref('today');
@@ -501,7 +535,7 @@ const getTodayString = () => {
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`; 
 };
 
-// ✅ HELPER: Function ត្រួតពិនិត្យថាជាទំនិញបោះដុំឬអត់ដោយប្រើ .includes()
+// HELPER: Function ត្រួតពិនិត្យថាជាទំនិញបោះដុំឬអត់ដោយប្រើ .includes()
 const checkIsWholesale = (typeStr) => {
     if (!typeStr) return false;
     const str = String(typeStr).toLowerCase();
@@ -663,8 +697,12 @@ const totalStats = computed(() => {
     };
 });
 
+// ✅ បិទសញ្ញាព្រមាន "មិនពេញលេញ" សម្រាប់អតិថិជនទិញផ្ទាល់
 const isSaleIncomplete = (sale) => {
-    return !sale.customerName || sale.customerName === 'ទូទៅ' || !sale.customerPhone || !sale.location;
+    if (sale.customerName === 'អតិថិជនទិញផ្ទាល់' || sale.customerName === 'ទូទៅ') {
+        return false;
+    }
+    return !sale.customerName || !sale.customerPhone || !sale.location;
 };
 
 const expandedRows = ref(new Set());
@@ -795,7 +833,6 @@ const filteredMiniPosProducts = computed(() => {
     return availableProducts.value.filter(p => p.name && p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
 });
 
-// ✅ ជួសជុល Logic ពេលបូកទំនិញថ្មី
 const addItemToEditForm = (product) => {
     let isWholesale = false;
     let price = product.retailPrice || 0;
@@ -818,7 +855,6 @@ const addItemToEditForm = (product) => {
 
 const removeItemFromEdit = (index) => { editForm.items.splice(index, 1); };
 
-// ✅ ជួសជុល Logic ប្តូរតម្លៃនិង Type ដុំ/រាយស្វ័យប្រវត្តិ
 const recalculateEditItem = (item) => {
     const product = availableProducts.value.find(p => p.id === item.id);
     if (product && !item.isCombo) {
@@ -827,7 +863,7 @@ const recalculateEditItem = (item) => {
 
         if (wQty > 0 && currentQty >= wQty) {
             item.price = Number(product.wholesalePrice) || Number(item.price);
-            item.type = 'តម្លៃបោះដុំ'; // ប្រើពាក្យខ្មែរដូចដែលបង Save ចូល DB
+            item.type = 'តម្លៃបោះដុំ'; 
         } else {
             item.price = Number(product.retailPrice) || Number(item.price);
             item.type = 'តម្លៃលក់រាយ';
@@ -874,7 +910,6 @@ const saveEdit = async () => {
     } finally { isSaving.value = false; }
 };
 
-// ... Print Logic សម្រាប់ Today Sales ធម្មតា (រក្សាដដែល) ...
 const generateSingleInvoiceHTML = (sale) => {
     let itemsHTML = '';
     sale.items.forEach((item, index) => {

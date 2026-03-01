@@ -124,7 +124,7 @@
                           <div>
                               <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">ស្ថានភាព</label>
                               <div class="relative">
-                                  <select v-model="form.paymentStatus" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-8 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none appearance-none cursor-pointer transition-all">
+                                  <select v-model="form.paymentStatus" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-8 py-3 text-slate-800 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none appearance-none cursor-pointer transition-all" :class="form.paymentStatus === 'PENDING' ? 'text-amber-600 bg-amber-50 border-amber-200' : 'text-emerald-600'">
                                       <option value="PAID">ទូទាត់រួច (PAID)</option>
                                       <option value="PENDING">ជំពាក់ (PENDING)</option>
                                   </select>
@@ -192,7 +192,7 @@
                         <svg class="w-6 h-6 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <div>
                             <p class="text-sm font-black text-emerald-800 mb-1">អតិថិជនមកទិញផ្ទាល់ (Walk-in Customer)</p>
-                            <p class="text-[11px] text-emerald-600 font-bold leading-relaxed">មិនចាំបាច់បញ្ចូលឈ្មោះ លេខទូរស័ព្ទ ឬទីតាំងទេ។ វានឹងកត់ត្រាចូលជា "អតិថិជនទូទៅ" និងទីតាំង "ទិញផ្ទាល់" ដោយស្វ័យប្រវត្តិ។</p>
+                            <p class="text-[11px] text-emerald-600 font-bold leading-relaxed">មិនចាំបាច់បញ្ចូលឈ្មោះ លេខទូរស័ព្ទ ឬទីតាំងទេ។ វានឹងកត់ត្រាចូលជា "អតិថិជនទិញផ្ទាល់" និងទីតាំង "ទិញផ្ទាល់" ដោយស្វ័យប្រវត្តិ។</p>
                         </div>
                     </div>
 
@@ -256,6 +256,7 @@
                       </datalist>
                     </div>
                 </div>
+
                 <div class="bg-slate-800 text-white rounded-[1.25rem] p-5 mt-4 shadow-lg border border-slate-700 relative overflow-hidden">
                   <div class="flex justify-between items-center mb-2">
                     <span class="text-sm font-bold text-slate-300">ទំនិញសរុប:</span>
@@ -269,13 +270,28 @@
 
               </div>
 
-              <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3 shrink-0 rounded-b-[24px]">
-                <button type="button" @click="$emit('close')" class="px-6 py-3 rounded-xl font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 transition-colors text-sm">បោះបង់</button>
-                <button type="button" @click="onSubmit" :disabled="isSubmitting" class="px-8 py-3 rounded-xl font-black text-white bg-gradient-to-r shadow-lg transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 text-sm" :class="activeTab === 'delivery' ? 'from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/30' : 'from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-emerald-500/30'">
+              <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0 rounded-b-[24px]">
+                
+                <button type="button" @click="clearForm" class="px-5 py-3 rounded-xl font-bold text-slate-500 bg-white border border-slate-300 hover:bg-slate-100 transition-colors text-sm">
+                    សម្អាត
+                </button>
+                
+                <button type="button" @click="$emit('close')" class="px-5 py-3 rounded-xl font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 transition-colors text-sm hidden sm:block">
+                    បោះបង់
+                </button>
+
+                <button 
+                    type="button" 
+                    @click="onSubmit" 
+                    :disabled="!isFormValid || isSubmitting" 
+                    class="px-8 py-3 rounded-xl font-black text-white bg-gradient-to-r shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm" 
+                    :class="activeTab === 'delivery' ? 'from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/30' : 'from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-emerald-500/30'"
+                >
                   <svg v-if="isSubmitting" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                   <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
                   បញ្ជាក់ការទូទាត់
                 </button>
+
               </div>
 
             </DialogPanel>
@@ -304,7 +320,6 @@ const emit = defineEmits(['close', 'confirm']);
 // Tabs State
 const activeTab = ref('delivery'); // 'delivery' or 'direct'
 
-// Initial Form State
 const getLocalISOString = () => {
     const tzoffset = (new Date()).getTimezoneOffset() * 60000;
     return (new Date(Date.now() - tzoffset)).toISOString().slice(0, 16);
@@ -317,30 +332,69 @@ const form = reactive({
     deliveryFee: 0, deliveryCurrency: 'USD'
 });
 
-// Watch 'show' to Auto set DateTime when opened
 watch(() => props.show, (newVal) => {
     if (newVal) {
         form.date = getLocalISOString();
-        // Reset tab logic slightly if needed, but keeping user's last tab preference is nice
     }
 });
 
-// Method to expose form reset to parent
-const resetForm = () => {
-    form.sellerId = ''; form.sellerName = '';
-    form.customerName = ''; form.customerPhone = '';
-    form.province = ''; form.district = '';
-    form.paymentMethod = 'CASH'; form.paymentStatus = 'PAID'; form.paymentNote = '';
+// ✅ មុខងារសម្អាត (Clear Form)
+const clearForm = () => {
+    form.customerName = ''; 
+    form.customerPhone = '';
+    form.province = ''; 
+    form.district = '';
+    form.paymentMethod = 'CASH'; 
+    form.paymentStatus = 'PAID'; 
+    form.paymentNote = '';
     form.paymentImage = '';
-    form.deliveryFee = 0; form.deliveryCurrency = 'USD';
+    form.deliveryFee = 0; 
+    form.deliveryCurrency = 'USD';
     form.date = getLocalISOString();
+    
+    // Reset search inputs
     provinceSearch.value = '';
     sellerSearchQuery.value = '';
-    activeTab.value = 'delivery'; // Reset to default
+    form.sellerId = '';
+    form.sellerName = '';
+};
+
+// Update resetForm to use clearForm
+const resetForm = () => {
+    activeTab.value = 'delivery';
+    clearForm();
 };
 defineExpose({ resetForm });
 
-// Calculate Final Total including Delivery Fee (Delivery fee only applies to Delivery Tab)
+// ✅ មុខងារវៃឆ្លាត "រាជធានីភ្នំពេញ"
+watch(() => form.province, (newProv) => {
+    if (newProv === 'រាជធានីភ្នំពេញ' || newProv === 'ភ្នំពេញ') {
+        form.paymentNote = 'ទូទាត់តាមអ្នកដឹកជញ្ជូន';
+        form.paymentStatus = 'PENDING';
+    }
+});
+
+// ✅ លក្ខខណ្ឌរឹតបន្តឹងការចុច "បញ្ជាក់ការទូទាត់" (Form Validation)
+const isFormValid = computed(() => {
+    // ១. ឆែកចំនួនក្នុងកន្ត្រក (បើ 0 ឬ ផុតនាទី គឺមិនឲ្យចុចទេ)
+    if (props.cartLength === 0) return false;
+    
+    // ២. ត្រូវតែជ្រើសរើសអ្នកលក់ និងកាលបរិច្ឆេទ
+    if (!form.sellerId) return false;
+    if (!form.date) return false;
+
+    // ៣. ឆែកតាម Tab នីមួយៗ
+    if (activeTab.value === 'delivery') {
+        return form.customerName.trim() !== '' &&
+               form.customerPhone.trim() !== '' &&
+               form.province.trim() !== '' &&
+               form.district.trim() !== '';
+    } else {
+        // Tab ទិញផ្ទាល់ គ្រាន់តែមានអ្នកលក់គឺអាចទិញបានហើយ
+        return true; 
+    }
+});
+
 const checkoutFinalTotalUSD = computed(() => {
     let deliveryUSD = 0;
     if (activeTab.value === 'delivery' && form.deliveryFee > 0) {
@@ -352,30 +406,30 @@ const checkoutFinalTotalUSD = computed(() => {
 // Location Data
 const locationData = {
     "រាជធានីភ្នំពេញ": ["ខណ្ឌចំការមន", "ខណ្ឌដូនពេញ", "ខណ្ឌ៧មករា", "ខណ្ឌទួលគោក", "ខណ្ឌដង្កោ", "ខណ្ឌមានជ័យ", "ខណ្ឌឫស្សីកែវ", "ខណ្ឌសែនសុខ", "ខណ្ឌពោធិ៍សែនជ័យ", "ខណ្ឌជ្រោយចង្វារ", "ខណ្ឌព្រែកព្នៅ", "ខណ្ឌច្បារអំពៅ", "ខណ្ឌបឹងកេងកង", "ខណ្ឌកំបូល"],
-            "ខេត្តកណ្តាល": ["ក្រុងតាខ្មៅ", "ស្រុកកណ្តាលស្ទឹង", "ស្រុកគីវីស៊ុង", "ស្រុកខ្សាច់កណ្តាល", "ស្រុកកោះធំ", "ស្រុកលើកដែក", "ស្រុកល្វាឯម", "ស្រុកមុខកំពូល", "ស្រុកអង្គស្នួល", "ស្រុកពញាឮ", "ស្រុកស្អាង"],
-            "ខេត្តសៀមរាប": ["ក្រុងសៀមរាប", "ស្រុកអង្គរធំ", "ស្រុកអង្គរជុំ", "ស្រុកបន្ទាយស្រី", "ស្រុកជីក្រែង", "ស្រុកក្រឡាញ់", "ស្រុកពួក", "ស្រុកប្រាសាទបាគង", "ស្រុកស្រីស្នំ", "ស្រុកស្វាយលើ", "ស្រុកវ៉ារិន", "ស្រុកសូទ្រនិគម"],
-            "ខេត្តបាត់ដំបង": ["ក្រុងបាត់ដំបង", "ស្រុកបាណន់", "ស្រុកថ្មគោល", "ស្រុកបវេល", "ស្រុកឯកភ្នំ", "ស្រុកមោងឫស្សី", "ស្រុករតនមណ្ឌល", "ស្រុកសង្កែ", "ស្រុកសំឡូត", "ស្រុកសំពៅលូន", "ស្រុកភ្នំព្រឹក", "ស្រុកកំរៀង", "ស្រុកគាស់ក្រឡ", "ស្រុករុក្ខគិរី"],
-            "ខេត្តព្រះសីហនុ": ["ក្រុងព្រះសីហនុ", "ស្រុកព្រៃនប់", "ស្រុកស្ទឹងហាវ", "ស្រុកកំពង់សិលា", "ក្រុងកោះរ៉ុង"],
-            "ខេត្តកំពង់ចាម": ["ក្រុងកំពង់ចាម", "ស្រុកចំការលើ", "ស្រុកជើងព្រៃ", "ស្រុកកំពង់សៀម", "ស្រុកកងមាស", "ស្រុកកោះសូទិន", "ស្រុកព្រៃឈរ", "ស្រុកស្រីសន្ធរ", "ស្រុកស្ទឹងត្រង់", "ស្រុកបាធាយ"],
-            "ខេត្តត្បូងឃ្មុំ": ["ក្រុងសួង", "ស្រុកត្បូងឃ្មុំ", "ស្រុកអូររាំងឪ", "ស្រុកក្រូចឆ្មារ", "ស្រុកតំបែរ", "ស្រុកពញាក្រែក", "ស្រុកមេមត់"],
-            "ខេត្តកំពង់ឆ្នាំង": ["ក្រុងកំពង់ឆ្នាំង", "ស្រុកបរិបូរណ៍", "ស្រុកជលគីរី", "ស្រុកកំពង់លែង", "ស្រុកកំពង់ត្រឡាច", "ស្រុកតួនឡីសាប", "ស្រុកសាមគ្គីមានជ័យ", "ស្រុកទឹកផុស"],
-            "ខេត្តកំពង់ស្ពឺ": ["ក្រុងច្បារមន", "ស្រុកបរសេដ្ឋ", "ស្រុកគងពិសី", "ស្រុកភ្នំស្រួច", "ស្រុកឧដុង្គ", "ស្រុកសាមគ្គីមុនីជ័យ", "ស្រុកភ្នំស្រួច", "ស្រុកថ្ពង", "ស្រុកឱរ៉ាល់"],
-            "ខេត្តកំពង់ធំ": ["ក្រុងស្ទឹងសែន", "ស្រុកបារាយណ៍", "ស្រុកកំពង់ស្វាយ", "ស្រុកប្រាសាទបល្ល័ង្ក", "ស្រុកប្រាសាទសំបូរ", "ស្រុកសណ្តាន់", "ស្រុកសន្ទុក", "ស្រុកស្ទោង", "ស្រុកតាំងគោក"],
-            "ខេត្តកំពត": ["ក្រុងកំពត", "ស្រុកអង្គរជ័យ", "ស្រុកបន្ទាយមាស", "ស្រុកឈូក", "ស្រុកជុំគីរី", "ស្រុកដងទង់", "ស្រុកកំពង់ត្រាច", "ស្រុកទឹកឈូ"],
-            "ខេត្តកែប": ["ក្រុងកែប", "ស្រុកដំណាក់ចង្អើរ"],
-            "ខេត្តកោះកុង": ["ក្រុងខេមរភូមិន្ទ", "ស្រុកបូទុមសាគរ", "ស្រុកគិរីសាគរ", "ស្រុកកោះកុង", "ស្រុកមណ្ឌលសីមា", "ស្រុកស្រែអំបិល", "ស្រុកថ្មបាំង"],
-            "ខេត្តក្រចេះ": ["ក្រុងក្រចេះ", "ស្រុកឆ្លូង", "ស្រុកព្រែកប្រសប់", "ស្រុកសំបូរ", "ស្រុកស្នួល", "ស្រុកចិត្តបុរី"],
-            "ខេត្តមណ្ឌលគីរី": ["ក្រុងសែនមនោរម្យ", "ស្រុកកែវសីមា", "ស្រុកកោះញែក", "ស្រុកអូររាំង", "ស្រុកពេជ្រាដា"],
-            "ខេត្តរតនគីរី": ["ក្រុងបានលុង", "ស្រុកអណ្តូងមាស", "ស្រុកបរកែវ", "ស្រុកកូនមុំ", "ស្រុកលំផាត់", "ស្រុកអូរជុំ", "ស្រុកអូរយ៉ាដាវ", "ស្រុកតាវែង", "ស្រុកវើនសៃ"],
-            "ខេត្តស្ទឹងត្រែង": ["ក្រុងស្ទឹងត្រែង", "ស្រុកសេសាន", "ស្រុកសៀមបូក", "ស្រុកសៀមប៉ាង", "ស្រុកថាឡាបរិវ៉ាត់", "ស្រុកបុរីអូរស្វាយសែនជ័យ"],
-            "ខេត្តព្រះវិហារ": ["ក្រុងព្រះវិហារ", "ស្រុកជ័យសែន", "ស្រុកឆែប", "ស្រុកជាំក្សាន្ត", "ស្រុកគូលែន", "ស្រុកភ្នំត្បែងមានជ័យ", "ស្រុកសង្គមថ្មី", "ស្រុកត្បែងមានជ័យ"],
-            "ខេត្តឧត្តរមានជ័យ": ["ក្រុងសំរោង", "ស្រុកអន្លង់វែង", "ស្រុកបន្ទាយអំពិល", "ស្រុកចុងកាល់", "ស្រុកត្រពាំងប្រាសាទ"],
-            "ខេត្តបន្ទាយមានជ័យ": ["ក្រុងសិរីសោភ័ណ", "ក្រុងប៉ោយប៉ែត", "ស្រុកមង្គលបុរី", "ស្រុកភ្នំស្រុក", "ស្រុកព្រះនេត្រព្រះ", "ស្រុកអូរជ្រៅ", "ស្រុកថ្មពួក", "ស្រុកស្វាយចេក", "ស្រុកម៉ាឡៃ"],
-            "ខេត្តប៉ៃលិន": ["ក្រុងប៉ៃលិន", "ស្រុកសាលាក្រៅ"],
-            "ខេត្តពោធិ៍សាត់": ["ក្រុងពោធិ៍សាត់", "ស្រុកបាកាន", "ស្រុកកណ្តៀង", "ស្រុកភ្នំក្រវ៉ាញ", "ស្រុកវាលវែង", "ស្រុកតាលោសែនជ័យ"],
-            "ខេត្តព្រៃវែង": ["ក្រុងព្រៃវែង", "ស្រុកបាភ្នំ", "ស្រុកកំចាយមារ", "ស្រុកកញ្ជ្រៀច", "ស្រុកកោះស្រែទៀប", "ស្រុកពាមជរ", "ស្រុកពាមរ", "ស្រុកពារាំង", "ស្រុកព្រះស្តេច", "ស្រុកស្វាយអន្ទរ", "ស្រុកស៊ីធរកណ្តាល", "ស្រុកមេសាង"],
-            "ខេត្តស្វាយរៀង": ["ក្រុងស្វាយរៀង", "ក្រុងបាវិត", "ស្រុកចន្ទ្រា", "ស្រុកកំពង់រោទ៍", "ស្រុក រំដួល", "ស្រុក រមាសហែក", "ស្រុក ស្វាយជ្រំ", "ស្រុក ស្វាយទាប"],
-            "ខេត្តតាកែវ": ["ក្រុងដូនកែវ", "ស្រុកអង្គរបុរី", "ស្រុកបាទី", "ស្រុកបូរីជលសារ", "ស្រុកគិរីវង់", "ស្រុកកោះអណ្តែត", "ស្រុកព្រៃកប្បាស", "ស្រុកសំរោង", "ស្រុកត្រាំកក់", "ស្រុកទ្រាំង"]
+    "ខេត្តកណ្តាល": ["ក្រុងតាខ្មៅ", "ស្រុកកណ្តាលស្ទឹង", "ស្រុកគីវីស៊ុង", "ស្រុកខ្សាច់កណ្តាល", "ស្រុកកោះធំ", "ស្រុកលើកដែក", "ស្រុកល្វាឯម", "ស្រុកមុខកំពូល", "ស្រុកអង្គស្នួល", "ស្រុកពញាឮ", "ស្រុកស្អាង"],
+    "ខេត្តសៀមរាប": ["ក្រុងសៀមរាប", "ស្រុកអង្គរធំ", "ស្រុកអង្គរជុំ", "ស្រុកបន្ទាយស្រី", "ស្រុកជីក្រែង", "ស្រុកក្រឡាញ់", "ស្រុកពួក", "ស្រុកប្រាសាទបាគង", "ស្រុកស្រីស្នំ", "ស្រុកស្វាយលើ", "ស្រុកវ៉ារិន", "ស្រុកសូទ្រនិគម"],
+    "ខេត្តបាត់ដំបង": ["ក្រុងបាត់ដំបង", "ស្រុកបាណន់", "ស្រុកថ្មគោល", "ស្រុកបវេល", "ស្រុកឯកភ្នំ", "ស្រុកមោងឫស្សី", "ស្រុករតនមណ្ឌល", "ស្រុកសង្កែ", "ស្រុកសំឡូត", "ស្រុកសំពៅលូន", "ស្រុកភ្នំព្រឹក", "ស្រុកកំរៀង", "ស្រុកគាស់ក្រឡ", "ស្រុករុក្ខគិរី"],
+    "ខេត្តព្រះសីហនុ": ["ក្រុងព្រះសីហនុ", "ស្រុកព្រៃនប់", "ស្រុកស្ទឹងហាវ", "ស្រុកកំពង់សិលា", "ក្រុងកោះរ៉ុង"],
+    "ខេត្តកំពង់ចាម": ["ក្រុងកំពង់ចាម", "ស្រុកចំការលើ", "ស្រុកជើងព្រៃ", "ស្រុកកំពង់សៀម", "ស្រុកកងមាស", "ស្រុកកោះសូទិន", "ស្រុកព្រៃឈរ", "ស្រុកស្រីសន្ធរ", "ស្រុកស្ទឹងត្រង់", "ស្រុកបាធាយ"],
+    "ខេត្តត្បូងឃ្មុំ": ["ក្រុងសួង", "ស្រុកត្បូងឃ្មុំ", "ស្រុកអូររាំងឪ", "ស្រុកក្រូចឆ្មារ", "ស្រុកតំបែរ", "ស្រុកពញាក្រែក", "ស្រុកមេមត់"],
+    "ខេត្តកំពង់ឆ្នាំង": ["ក្រុងកំពង់ឆ្នាំង", "ស្រុកបរិបូរណ៍", "ស្រុកជលគីរី", "ស្រុកកំពង់លែង", "ស្រុកកំពង់ត្រឡាច", "ស្រុកតួនឡីសាប", "ស្រុកសាមគ្គីមានជ័យ", "ស្រុកទឹកផុស"],
+    "ខេត្តកំពង់ស្ពឺ": ["ក្រុងច្បារមន", "ស្រុកបរសេដ្ឋ", "ស្រុកគងពិសី", "ស្រុកភ្នំស្រួច", "ស្រុកឧដុង្គ", "ស្រុកសាមគ្គីមុនីជ័យ", "ស្រុកភ្នំស្រួច", "ស្រុកថ្ពង", "ស្រុកឱរ៉ាល់"],
+    "ខេត្តកំពង់ធំ": ["ក្រុងស្ទឹងសែន", "ស្រុកបារាយណ៍", "ស្រុកកំពង់ស្វាយ", "ស្រុកប្រាសាទបល្ល័ង្ក", "ស្រុកប្រាសាទសំបូរ", "ស្រុកសណ្តាន់", "ស្រុកសន្ទុក", "ស្រុកស្ទោង", "ស្រុកតាំងគោក"],
+    "ខេត្តកំពត": ["ក្រុងកំពត", "ស្រុកអង្គរជ័យ", "ស្រុកបន្ទាយមាស", "ស្រុកឈូក", "ស្រុកជុំគីរី", "ស្រុកដងទង់", "ស្រុកកំពង់ត្រាច", "ស្រុកទឹកឈូ"],
+    "ខេត្តកែប": ["ក្រុងកែប", "ស្រុកដំណាក់ចង្អើរ"],
+    "ខេត្តកោះកុង": ["ក្រុងខេមរភូមិន្ទ", "ស្រុកបូទុមសាគរ", "ស្រុកគិរីសាគរ", "ស្រុកកោះកុង", "ស្រុកមណ្ឌលសីមា", "ស្រុកស្រែអំបិល", "ស្រុកថ្មបាំង"],
+    "ខេត្តក្រចេះ": ["ក្រុងក្រចេះ", "ស្រុកឆ្លូង", "ស្រុកព្រែកប្រសប់", "ស្រុកសំបូរ", "ស្រុកស្នួល", "ស្រុកចិត្តបុរី"],
+    "ខេត្តមណ្ឌលគីរី": ["ក្រុងសែនមនោរម្យ", "ស្រុកកែវសីមា", "ស្រុកកោះញែក", "ស្រុកអូររាំង", "ស្រុកពេជ្រាដា"],
+    "ខេត្តរតនគីរី": ["ក្រុងបានលុង", "ស្រុកអណ្តូងមាស", "ស្រុកបរកែវ", "ស្រុកកូនមុំ", "ស្រុកលំផាត់", "ស្រុកអូរជុំ", "ស្រុកអូរយ៉ាដាវ", "ស្រុកតាវែង", "ស្រុកវើនសៃ"],
+    "ខេត្តស្ទឹងត្រែង": ["ក្រុងស្ទឹងត្រែង", "ស្រុកសេសាន", "ស្រុកសៀមបូក", "ស្រុកសៀមប៉ាង", "ស្រុកថាឡាបរិវ៉ាត់", "ស្រុកបុរីអូរស្វាយសែនជ័យ"],
+    "ខេត្តព្រះវិហារ": ["ក្រុងព្រះវិហារ", "ស្រុកជ័យសែន", "ស្រុកឆែប", "ស្រុកជាំក្សាន្ត", "ស្រុកគូលែន", "ស្រុកភ្នំត្បែងមានជ័យ", "ស្រុកសង្គមថ្មី", "ស្រុកត្បែងមានជ័យ"],
+    "ខេត្តឧត្តរមានជ័យ": ["ក្រុងសំរោង", "ស្រុកអន្លង់វែង", "ស្រុកបន្ទាយអំពិល", "ស្រុកចុងកាល់", "ស្រុកត្រពាំងប្រាសាទ"],
+    "ខេត្តបន្ទាយមានជ័យ": ["ក្រុងសិរីសោភ័ណ", "ក្រុងប៉ោយប៉ែត", "ស្រុកមង្គលបុរី", "ស្រុកភ្នំស្រុក", "ស្រុកព្រះនេត្រព្រះ", "ស្រុកអូរជ្រៅ", "ស្រុកថ្មពួក", "ស្រុកស្វាយចេក", "ស្រុកម៉ាឡៃ"],
+    "ខេត្តប៉ៃលិន": ["ក្រុងប៉ៃលិន", "ស្រុកសាលាក្រៅ"],
+    "ខេត្តពោធិ៍សាត់": ["ក្រុងពោធិ៍សាត់", "ស្រុកបាកាន", "ស្រុកកណ្តៀង", "ស្រុកភ្នំក្រវ៉ាញ", "ស្រុកវាលវែង", "ស្រុកតាលោសែនជ័យ"],
+    "ខេត្តព្រៃវែង": ["ក្រុងព្រៃវែង", "ស្រុកបាភ្នំ", "ស្រុកកំចាយមារ", "ស្រុកកញ្ជ្រៀច", "ស្រុកកោះស្រែទៀប", "ស្រុកពាមជរ", "ស្រុកពាមរ", "ស្រុកពារាំង", "ស្រុកព្រះស្តេច", "ស្រុកស្វាយអន្ទរ", "ស្រុកស៊ីធរកណ្តាល", "ស្រុកមេសាង"],
+    "ខេត្តស្វាយរៀង": ["ក្រុងស្វាយរៀង", "ក្រុងបាវិត", "ស្រុកចន្ទ្រា", "ស្រុកកំពង់រោទ៍", "ស្រុក រំដួល", "ស្រុក រមាសហែក", "ស្រុក ស្វាយជ្រំ", "ស្រុក ស្វាយទាប"],
+    "ខេត្តតាកែវ": ["ក្រុងដូនកែវ", "ស្រុកអង្គរបុរី", "ស្រុកបាទី", "ស្រុកបូរីជលសារ", "ស្រុកគិរីវង់", "ស្រុកកោះអណ្តែត", "ស្រុកព្រៃកប្បាស", "ស្រុកសំរោង", "ស្រុកត្រាំកក់", "ស្រុកទ្រាំង"]
 };
 const allProvinces = Object.keys(locationData);
 const provinceSearch = ref('');
@@ -488,12 +542,12 @@ const onSubmit = () => {
     const payload = { ...form, finalTotalUSD: checkoutFinalTotalUSD.value };
     
     if (activeTab.value === 'direct') {
-        payload.customerName = 'អតិថិជនទូទៅ';
+        payload.customerName = 'អតិថិជនទិញផ្ទាល់'; // ✅ ប្តូរឈ្មោះកត់ត្រាសម្រាប់អតិថិជនទិញផ្ទាល់
         payload.customerPhone = '';
         payload.province = '';
         payload.district = '';
         payload.deliveryFee = 0;
-        payload.isDirectCustomer = true; // special flag for parent to know
+        payload.isDirectCustomer = true; 
     } else {
         payload.isDirectCustomer = false;
     }

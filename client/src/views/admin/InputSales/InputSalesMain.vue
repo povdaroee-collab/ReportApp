@@ -639,9 +639,7 @@ const closeSuccessModal = () => {
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
 select { -webkit-appearance: none; -moz-appearance: none; }
-<<<<<<< HEAD
+ HEAD
 .will-change-transform { will-change: transform; }
 </style>
-=======
-</style>
->>>>>>> 7ef763cf8e628c9f59966f1d6ca03b916e81f63d
+
