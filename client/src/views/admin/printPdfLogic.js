@@ -7,33 +7,51 @@ export const translateUnit = (unitVal, availableUnits) => {
   if (!unitVal) return "";
   const found = availableUnits.find((u) => u.value === unitVal);
   if (found) return found.label;
-  const u = unitVal.toLowerCase().trim();
+  const u = String(unitVal).toLowerCase().trim();
   if (u === "bottle" || u === "bottles") return "ដប";
   if (u === "pack" || u === "packs") return "កញ្ចប់";
   if (u === "case" || u === "cases") return "កេះ";
-  if (u === "set" || u === "sets") return "ឈុត";
+  if (u === "set" || u === "sets" || u === "ឈុត") return "ឈុត";
   return unitVal;
 };
 
-// ✅ Helper Function: Group Items By Name (បូកបញ្ចូលទំនិញឈ្មោះដូចគ្នា)
+// ✅ Helper វៃឆ្លាត: ឆែកមើលគ្រប់ជ្រុងជ្រោយថាតើទំនិញនេះពិតជា "ឈុត" ដែរឬទេ
+const isItemCombo = (item) => {
+    if (!item) return false;
+    if (item.isCombo === true || item.isCombo === "true") return true;
+    if (item.type && String(item.type).includes('ឈុត')) return true;
+    if (item.unit && (String(item.unit).toLowerCase() === 'set' || String(item.unit).includes('ឈុត'))) return true;
+    if (item.name && String(item.name).includes('ឈុត')) return true; // 🚨 បើឈ្មោះមានពាក្យ "ឈុត" គឺចាត់ទុកជាឈុតភ្លាមៗ
+    return false;
+};
+
+// ✅ Group Items By Name & Apply Smart Combo Logic
 const groupItemsByName = (items) => {
     if (!items || items.length === 0) return [];
     const grouped = {};
     
     items.forEach(item => {
-        const name = item.name;
+        const name = item.name || "មិនស្គាល់ឈ្មោះ";
+        const comboFlag = isItemCombo(item);
+
         if (!grouped[name]) {
             grouped[name] = {
                 name: name,
                 qty: 0,
                 total: 0,
-                unit: item.unit
+                unit: comboFlag ? 'set' : item.unit,
+                isCombo: comboFlag
             };
         }
-        // បូកបរិមាណ និង ទឹកប្រាក់សរុប
+        
         grouped[name].qty += Number(item.qty || 0);
-        // បើមាន item.total ស្រាប់យក item.total, បើអត់ទេ យក price * qty
         grouped[name].total += Number(item.total || (Number(item.price || 0) * Number(item.qty || 0)) || 0);
+        
+        // បើជួបទិន្នន័យចាស់ដែលវាអត់ស្គាល់ថាជាឈុត តែឆែកឃើញថាជាឈុត យើង Update ក្រុមនោះ
+        if (comboFlag) {
+            grouped[name].isCombo = true;
+            grouped[name].unit = 'set';
+        }
     });
     
     return Object.values(grouped);
@@ -48,9 +66,13 @@ const generateTablePageHTML = (pageData, pageNum, totalPages, data, isNativePrin
   const renderRow = (item) => {
       let salesHTML = item.hasSales ? `<ul style="margin:0; padding-left:12px; font-size:12px; color:#334155; line-height:1.5;">` + Object.entries(item.unitCounts || {}).filter(([u, c]) => c > 0).map(([u, c]) => `<li><strong style="color:#0f172a;">${c.toLocaleString()}</strong> ${translateUnit(u, data.availableUnits)}</li>`).join("") + `</ul>` : `<span style="color:#94a3b8;">-</span>`;
       
-      // ✅ ប្រើ groupItemsByName ក្នុងតារាងអ្នកលក់នីមួយៗផងដែរ
       const groupedProductsList = groupItemsByName(item.productsList || []);
-      let productsHTML = item.hasSales && groupedProductsList.length > 0 ? `<ul style="margin:0; padding-left:15px; font-size:11px; color:#4338ca; line-height:1.6;">` + groupedProductsList.map((p) => `<li><strong style="font-weight:900;">${p.name}</strong> <span style="color:#64748b;">(${p.qty} ${translateUnit(p.unit, data.availableUnits)})</span></li>`).join("") + `</ul>` : `<span style="color:#94a3b8;">-</span>`;
+      
+      // 💡 បង្ហាញឯកតាជា "ឈុត" ស្វ័យប្រវត្តិបើទំនិញនោះជាឈុត
+      let productsHTML = item.hasSales && groupedProductsList.length > 0 ? `<ul style="margin:0; padding-left:15px; font-size:11px; color:#4338ca; line-height:1.6;">` + groupedProductsList.map((p) => {
+          const unitLabel = p.isCombo ? 'ឈុត' : translateUnit(p.unit, data.availableUnits);
+          return `<li><strong style="font-weight:900;">${p.name}</strong> <span style="color:#64748b;">(${p.qty} ${unitLabel})</span></li>`;
+      }).join("") + `</ul>` : `<span style="color:#94a3b8;">-</span>`;
       
       let revenueHTML = item.hasSales ? `<div style="text-align:right;"><span style="color:#059669; font-size:14px; font-weight:900; display:block;">${item.revenueUSD.toLocaleString()} $</span><span style="color:#2563eb; font-size:12px; font-weight:bold; display:block; margin-top:2px;">${item.revenueKHR.toLocaleString()} ៛</span></div>` : `<div style="text-align:right; color:#94a3b8;">-</div>`;
       let catBadge = item.category === "បោះដុំ" ? `<span style="color:#7e22ce; font-weight:900; font-size:12px;">បោះដុំ</span>` : item.category === "លក់រាយ" ? `<span style="color:#475569; font-weight:bold; font-size:12px;">លក់រាយ</span>` : `<span style="color:#166534; font-weight:bold; font-size:12px;">សរុបរួម</span>`;
@@ -110,17 +132,23 @@ const chunkArray = (arr, size) => {
     return chunks;
 };
 
-// ✅ តារាងថ្មី លុបជួរ "តម្លៃឯកតា" ចេញ និងបង្ហាញតែចំនួន & សរុប
+// ✅ តារាងសរុប ដែលមានការបញ្ជាក់ខ្នាត "ឈុត" យ៉ាងច្បាស់លាស់
 const buildChunkTable = (items, data) => {
     if (!items || items.length === 0) return `<div style="font-size:11px; color:#94a3b8; padding: 10px 0; text-align:center;">- មិនមានទិន្នន័យ -</div>`;
     
-    let rows = items.map(i => `
+    let rows = items.map(i => {
+        // 💡 ការពារជាន់ទីពីរ: ឆែកមើលឈ្មោះម្តងទៀតទោះ Group រួចហើយក៏ដោយ
+        const isCombo = i.isCombo || (i.name && String(i.name).includes('ឈុត'));
+        const unitLabel = isCombo ? 'ឈុត' : translateUnit(i.unit, data.availableUnits);
+
+        return `
         <tr style="border-bottom: 1px dashed #e2e8f0;">
             <td style="padding: 6px 4px; font-weight: bold; color: #334155; width: 60%;">${i.name}</td>
-            <td style="padding: 6px 4px; text-align: center; color: #475569; width: 15%;">${i.qty} ${translateUnit(i.unit, data.availableUnits)}</td>
+            <td style="padding: 6px 4px; text-align: center; color: #475569; width: 15%;">${i.qty} ${unitLabel}</td>
             <td style="padding: 6px 4px; text-align: right; font-weight: bold; color: #0f172a; width: 25%;">${formatCurrency(i.total)}</td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 
     return `
         <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
@@ -209,7 +237,7 @@ const generateSummaryPagesHTML = (data, isNativePrint = false) => {
         const addStatusBlocks = (statusTitle, statusIcon, statusColor, sData) => {
             if (!sData || (sData.wholesaleUSD === 0 && sData.retailUSD === 0)) return;
 
-            // ✅ Group ទំនិញតាមឈ្មោះ មុននឹងកាត់ Chunk ចូលតារាង
+            // ✅ Group ទំនិញតាមឈ្មោះ
             const groupedWholesale = groupItemsByName(sData.wholesaleItems || []);
             const groupedRetail = groupItemsByName(sData.retailItems || []);
 

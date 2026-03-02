@@ -355,7 +355,7 @@ const handleLogin = async () => {
     } else if (error.code === 'auth/too-many-requests') {
       msg = "ព្យាយាមច្រើនដងពេក សូមរង់ចាំបន្តិច";
     } else if (error.code === 'auth/configuration-not-found') {
-      msg = "សូមបើក Email/Password Login នៅក្នុង Firebase Console ជាមុនសិន!";
+      msg = "សូមបើក Email/Password Login នៅក្នុង ...... ជាមុនសិន!";
     }
     notification.error(msg, title);
   } finally {

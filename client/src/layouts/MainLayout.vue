@@ -287,7 +287,7 @@ const menuItems = computed(() => {
       { label: 'ផ្ទាំងគ្រប់គ្រង', path: '/app/owner/dashboard', key: 'dashboard', icon: icons.dashboard, glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
       { label: 'គ្រប់គ្រង Admin', path: '/app/owner/admins', key: 'admins', icon: icons.shield, glowClass: 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.6)]' },
       { label: 'គ្រប់គ្រងស្តុក', path: '/app/owner/stock-management', key: 'stock', icon: icons.box, glowClass: 'bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.6)]' },
-      { label: 'គណនី និងហិរញ្ញវត្ថុ', path: '/app/owner/account', key: 'account', icon: icons.wallet, glowClass: 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]' },
+      //{ label: 'គណនី និងហិរញ្ញវត្ថុ', path: '/app/owner/account', key: 'account', icon: icons.wallet, glowClass: 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]' },
       { label: 'របាយការណ៍', path: '/app/owner/reports', key: 'reports', icon: icons.chart, glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
       // លាក់ Settings ចេញ
       { label: 'ការកំណត់', path: '/app/owner/settings', key: 'settings', icon: icons.cog, glowClass: 'bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.6)]' },
