@@ -347,7 +347,7 @@ const handleLogin = async () => {
 
   } catch (error) {
     console.error("Login Error:", error.code);
-    let msg = "មានបញ្ហាក្នុងការភ្ជាប់";
+    let msg = "កម្មវិធីត្រូវការ Upgrade! សូមទាក់ទងអ្នកអភិវឌ្ឃន៍កម្មវិធី!";
     let title = "បរាជ័យ";
 
     if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
