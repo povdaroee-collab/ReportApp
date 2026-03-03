@@ -290,7 +290,7 @@ const menuItems = computed(() => {
       //{ label: 'គណនី និងហិរញ្ញវត្ថុ', path: '/app/owner/account', key: 'account', icon: icons.wallet, glowClass: 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]' },
       { label: 'របាយការណ៍', path: '/app/owner/reports', key: 'reports', icon: icons.chart, glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
       // លាក់ Settings ចេញ
-      { label: 'ការកំណត់', path: '/app/owner/settings', key: 'settings', icon: icons.cog, glowClass: 'bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.6)]' },
+      //{ label: 'ការកំណត់', path: '/app/owner/settings', key: 'settings', icon: icons.cog, glowClass: 'bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.6)]' },
       { label: 'ធុងសម្រាម', path: '/app/owner/trash', key: 'trash', icon: icons.trash, glowClass: 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.6)]' },
     ];
   } 

@@ -95,36 +95,65 @@
                         </button>
                     </div>
 
-                    <div class="p-6 overflow-y-auto custom-scrollbar max-h-[70vh]">
-                        <p class="text-sm text-neutral-300 font-bold mb-4 line-clamp-1">ទំនិញ: <span class="text-amber-400">{{ selectedItem?.name }}</span></p>
+                    <div class="p-6 overflow-y-auto custom-scrollbar max-h-[75vh]">
+                        <p class="text-sm text-neutral-300 font-bold mb-4 line-clamp-2">ទំនិញ: <span class="text-amber-400">{{ selectedItem?.name }}</span></p>
                         
                         <div 
-                            class="relative h-48 w-full rounded-xl border-2 border-dashed border-neutral-600 hover:border-amber-400 transition-colors flex flex-col items-center justify-center cursor-pointer bg-neutral-800 group overflow-hidden mb-5"
+                            class="relative h-40 w-full rounded-xl border-2 border-dashed border-neutral-600 hover:border-amber-400 transition-colors flex flex-col items-center justify-center cursor-pointer bg-neutral-800 group overflow-hidden mb-5"
                             @click="$refs.fileInputModal.click()"
                         >
                             <img v-if="editForm.imagePreview" :src="editForm.imagePreview" class="absolute inset-0 w-full h-full object-cover">
                             <img v-else-if="selectedItem?.image" :src="selectedItem.image" class="absolute inset-0 w-full h-full object-cover opacity-50 grayscale group-hover:grayscale-0 transition-all">
                             
-                            <div class="text-center p-4 relative z-10 bg-black/40 rounded-lg backdrop-blur-sm group-hover:scale-105 transition-transform">
-                                <div class="text-3xl mb-1">📷</div>
-                                <span class="text-xs text-white font-bold drop-shadow-md">ចុចជ្រើសរើសរូបភាពថ្មី</span>
+                            <div class="text-center p-3 relative z-10 bg-black/40 rounded-lg backdrop-blur-sm group-hover:scale-105 transition-transform">
+                                <div class="text-2xl mb-1">📷</div>
+                                <span class="text-[10px] text-white font-bold drop-shadow-md">ប្តូររូបភាព</span>
                             </div>
                             <input type="file" ref="fileInputModal" class="hidden" accept="image/*" @change="handleModalImageUpload">
                         </div>
 
                         <div v-if="selectedItem?.unit === 'case'" class="bg-neutral-800 p-4 rounded-xl border border-neutral-700 mb-5">
-                            <label class="block text-xs font-bold text-amber-500 mb-2">📦 ចំនួនរាយក្នុង ១ កេះ</label>
+                            <label class="block text-[11px] font-bold text-neutral-400 mb-2">📦 ចំនួនរាយក្នុង ១ កេះ (Items per Case)</label>
                             <div class="flex gap-2">
-                                <input v-model.number="editForm.itemsPerCase" type="number" min="1" class="w-full bg-neutral-900 border border-neutral-600 rounded-lg px-4 py-3 text-white font-bold focus:border-amber-500 outline-none transition-all">
+                                <input v-model.number="editForm.itemsPerCase" type="number" min="1" class="w-full bg-neutral-900 border border-neutral-600 rounded-lg px-4 py-2.5 text-white font-bold focus:border-amber-500 outline-none transition-all">
                                 <div class="flex items-center px-4 bg-neutral-900 border border-neutral-600 rounded-lg text-sm text-neutral-400 shrink-0">
                                     ដប/កញ្ចប់
                                 </div>
                             </div>
                         </div>
 
+                        <div class="bg-neutral-800 p-4 rounded-xl border border-neutral-700 mb-5">
+                            <div class="flex justify-between items-center mb-3">
+                                <label class="block text-[11px] font-bold text-blue-400">📊 កែប្រែចំនួនស្តុក (Quantity)</label>
+                                <div v-if="selectedItem?.unit === 'case'" class="flex gap-1 bg-neutral-900 p-1 rounded-lg">
+                                    <button type="button" @click="editForm.qtyMode = 'bulk'" :class="editForm.qtyMode === 'bulk' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-neutral-500'" class="px-2 py-1 rounded text-[10px] font-bold transition-all border border-transparent">កេះ (Bulk)</button>
+                                    <button type="button" @click="editForm.qtyMode = 'retail'" :class="editForm.qtyMode === 'retail' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-neutral-500'" class="px-2 py-1 rounded text-[10px] font-bold transition-all border border-transparent">រាយ (Retail)</button>
+                                </div>
+                            </div>
+
+                            <div class="relative mb-3">
+                                <input v-model.number="editForm.inputQty" type="number" step="any" min="0" required class="w-full bg-neutral-900 border border-neutral-600 rounded-lg pl-4 pr-16 py-3 text-white font-bold focus:border-blue-500 outline-none transition-all">
+                                <div class="absolute right-4 top-3 text-neutral-400 font-bold text-sm">
+                                    {{ displayQtyUnit }}
+                                </div>
+                            </div>
+
+                            <div class="text-[11px] text-neutral-400 bg-neutral-900/50 p-3 rounded-lg border border-neutral-700/50 flex flex-col gap-2">
+                                <div class="flex justify-between items-center">
+                                    <span>ស្មើនឹងស្តុកធំ (Bulk):</span>
+                                    <span class="text-emerald-400 font-bold text-sm">{{ smartCalculatedBulk }} {{ translateUnit(selectedItem?.unit) }}</span>
+                                </div>
+                                <div v-if="selectedItem?.unit === 'case'" class="w-full h-px bg-neutral-700/50"></div>
+                                <div v-if="selectedItem?.unit === 'case'" class="flex justify-between items-center">
+                                    <span>ស្មើនឹងស្តុករាយ (Retail):</span>
+                                    <span class="text-blue-400 font-bold text-sm">{{ smartCalculatedRetail }} {{ translateRetailUnit(selectedItem) }}</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="bg-neutral-800 p-4 rounded-xl border border-neutral-700">
                             <div class="flex justify-between items-center mb-3">
-                                <label class="block text-xs font-bold text-emerald-400">💰 តម្លៃទិញចូល (Cost)</label>
+                                <label class="block text-[11px] font-bold text-emerald-400">💰 តម្លៃទិញចូល (Cost)</label>
                                 <div class="flex gap-1 bg-neutral-900 p-1 rounded-lg">
                                     <button type="button" @click="editForm.costMode = 'unit'" :class="editForm.costMode === 'unit' ? 'bg-neutral-700 text-white' : 'text-neutral-500'" class="px-2 py-1.5 rounded text-[10px] font-bold transition-all">១ ឯកតា</button>
                                     <button type="button" @click="editForm.costMode = 'total'" :class="editForm.costMode === 'total' ? 'bg-neutral-700 text-white' : 'text-neutral-500'" class="px-2 py-1.5 rounded text-[10px] font-bold transition-all">សរុប</button>
@@ -148,7 +177,6 @@
                                     <span>តម្លៃសរុប (Total Cost):</span>
                                     <span class="text-emerald-400 font-bold text-sm">{{ formatPrice(editCalculatedTotalCost, selectedItem?.currency) }}</span>
                                 </div>
-                                <p class="text-[9px] text-neutral-500 italic text-center mt-1">* ផ្អែកលើស្តុកបច្ចុប្បន្ន: {{ selectedItem?.quantity }} {{ translateUnit(selectedItem?.unit) }}</p>
                             </div>
                         </div>
 
@@ -156,7 +184,7 @@
 
                     <div class="p-4 border-t border-neutral-800 bg-neutral-800/30 flex gap-3 shrink-0">
                         <button @click="closeEditModal" class="flex-1 py-3 rounded-xl text-neutral-400 font-bold bg-neutral-800 hover:text-white transition-colors text-sm">បោះបង់</button>
-                        <button @click="saveQuickEdit" :disabled="isSaving || (selectedItem?.unit === 'case' && editForm.itemsPerCase < 1)" class="flex-1 py-3 rounded-xl bg-amber-500 text-black font-black hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 text-sm shadow-md shadow-amber-500/20">
+                        <button @click="saveQuickEdit" :disabled="isSaving || (selectedItem?.unit === 'case' && editForm.itemsPerCase < 1) || editForm.inputQty < 0" class="flex-1 py-3 rounded-xl bg-amber-500 text-black font-black hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 text-sm shadow-md shadow-amber-500/20">
                             <span v-if="isSaving" class="animate-spin h-4 w-4 border-2 border-black border-t-transparent rounded-full"></span>
                             រក្សាទុកការកែប្រែ
                         </button>
@@ -195,6 +223,8 @@ const fileInputModal = ref(null);
 const editForm = reactive({
     imagePreview: null,
     itemsPerCase: 1,
+    qtyMode: 'bulk', // 'bulk' (កេះ/ឯកតាធំ) or 'retail' (រាយ)
+    inputQty: 0,
     costMode: 'unit', // 'unit' or 'total'
     inputCost: 0
 });
@@ -205,8 +235,12 @@ const openEditModal = (item) => {
     // Reset Data
     editForm.imagePreview = null; 
     editForm.itemsPerCase = item.itemsPerCase || 1; 
-    editForm.costMode = 'unit'; // Default view
-    editForm.inputCost = item.unitCost || 0; // Load current unit cost
+    
+    editForm.qtyMode = 'bulk';
+    editForm.inputQty = item.quantity || 0; // ផ្ទុកចំនួន Bulk បច្ចុប្បន្ន
+
+    editForm.costMode = 'unit'; 
+    editForm.inputCost = item.unitCost || 0; 
     
     isEditModalOpen.value = true;
 };
@@ -217,11 +251,43 @@ const closeEditModal = () => {
     editForm.imagePreview = null;
 };
 
-// Calculations for Cost Preview
+// --- SMART QUANTITY CALCULATIONS ---
+const displayQtyUnit = computed(() => {
+    if (!selectedItem.value) return '';
+    if (editForm.qtyMode === 'bulk') return translateUnit(selectedItem.value.unit);
+    return translateRetailUnit(selectedItem.value);
+});
+
+// គណនាចំនួន Bulk ជាក់ស្តែងដែលត្រូវ Save ចូល Database
+const smartCalculatedBulk = computed(() => {
+    if (!selectedItem.value) return 0;
+    let val = Number(editForm.inputQty) || 0;
+    
+    if (selectedItem.value.unit === 'case' && editForm.qtyMode === 'retail') {
+        const perCase = Number(editForm.itemsPerCase) || 1;
+        val = val / perCase; // បម្លែងពីរាយ មកជាកេះវិញ
+    }
+    return Number(val.toFixed(2));
+});
+
+// គណនាចំនួនរាយសរុបដើម្បីបង្ហាញឱ្យមើលស្រួល
+const smartCalculatedRetail = computed(() => {
+    if (!selectedItem.value) return 0;
+    let val = Number(editForm.inputQty) || 0;
+    
+    if (selectedItem.value.unit === 'case' && editForm.qtyMode === 'bulk') {
+        const perCase = Number(editForm.itemsPerCase) || 1;
+        val = val * perCase; // បម្លែងពីកេះ ទៅជារាយ
+    }
+    return Math.round(val);
+});
+
+
+// --- COST CALCULATIONS ---
 const editCalculatedUnitCost = computed(() => {
-    if (!selectedItem.value || selectedItem.value.quantity <= 0) return 0;
+    if (!selectedItem.value || smartCalculatedBulk.value <= 0) return 0;
     if (editForm.costMode === 'total') {
-        return editForm.inputCost / selectedItem.value.quantity;
+        return editForm.inputCost / smartCalculatedBulk.value;
     }
     return editForm.inputCost;
 });
@@ -229,18 +295,16 @@ const editCalculatedUnitCost = computed(() => {
 const editCalculatedTotalCost = computed(() => {
     if (!selectedItem.value) return 0;
     if (editForm.costMode === 'unit') {
-        return editForm.inputCost * selectedItem.value.quantity;
+        return editForm.inputCost * smartCalculatedBulk.value;
     }
     return editForm.inputCost;
 });
 
-// Image Compression Logic
+// --- IMAGE UPLOAD ---
 const handleModalImageUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    if (!file.type.match('image.*')) {
-        return notification.error('សូមជ្រើសរើសប្រភេទជារូបភាព');
-    }
+    if (!file.type.match('image.*')) return notification.error('សូមជ្រើសរើសប្រភេទជារូបភាព');
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -250,17 +314,10 @@ const handleModalImageUpload = (event) => {
             let width = img.width;
             let height = img.height;
             const MAX_WIDTH = 600;
-
-            if (width > MAX_WIDTH) {
-                height = Math.round((height * MAX_WIDTH) / width);
-                width = MAX_WIDTH;
-            }
-
-            canvas.width = width;
-            canvas.height = height;
+            if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+            canvas.width = width; canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
-
             editForm.imagePreview = canvas.toDataURL('image/jpeg', 0.8); 
         };
         img.src = e.target.result;
@@ -269,29 +326,24 @@ const handleModalImageUpload = (event) => {
     event.target.value = ''; 
 };
 
-// 🔥 Save Update to Firebase
+// 🔥 SAVE TO FIREBASE
 const saveQuickEdit = async () => {
     if (!selectedItem.value) return;
     isSaving.value = true;
     
     try {
-        const updateData = { updatedAt: serverTimestamp() };
+        const finalBulkQty = Number(smartCalculatedBulk.value);
         
-        // ១. Update រូបភាពបើមានការដូរ
-        if (editForm.imagePreview) {
-            updateData.image = editForm.imagePreview;
-        }
+        const updateData = { 
+            updatedAt: serverTimestamp(),
+            quantity: finalBulkQty, // ✅ រក្សាទុកជា Bulk ចូល DB ដដែល
+            unitCost: Number(editCalculatedUnitCost.value),
+            totalCost: Number(editCalculatedTotalCost.value)
+        };
         
-        // ២. Update ចំនួនរាយក្នុងកេះ (បើខ្នាតជាកេះ)
-        if (selectedItem.value.unit === 'case') {
-            updateData.itemsPerCase = Number(editForm.itemsPerCase);
-        }
+        if (editForm.imagePreview) updateData.image = editForm.imagePreview;
+        if (selectedItem.value.unit === 'case') updateData.itemsPerCase = Number(editForm.itemsPerCase);
 
-        // ៣. Update តម្លៃទិញចូល (Cost)
-        updateData.unitCost = Number(editCalculatedUnitCost.value);
-        updateData.totalCost = Number(editCalculatedTotalCost.value);
-
-        // Save ចូល Database
         await updateDoc(doc(db, 'stocks', selectedItem.value.id), updateData);
         
         notification.success("ទិន្នន័យត្រូវបានកែប្រែដោយជោគជ័យ!");
@@ -305,33 +357,28 @@ const saveQuickEdit = async () => {
     }
 };
 
-// --- DISPLAY FORMATTERS ---
+// --- FORMATTERS ---
 const formatPrice = (val, currency) => {
     return Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (currency === 'USD' ? ' $' : ' ៛');
 };
-
 const translateUnit = (unit) => {
     const map = { bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ' };
     return map[unit] || unit;
 };
-
 const translateRetailUnit = (item) => {
     if (item.unit === 'case') return 'ដប/កញ្ចប់'; 
     return translateUnit(item.unit);
 };
-
 const getExactRetailStock = (item) => {
     const qty = Number(item.quantity) || 0;
     if (item.unit === 'case') return Math.round(qty * (Number(item.itemsPerCase) || 1));
     return Math.round(qty);
 };
-
 const getExactReservedRetailStock = (item) => {
     const reserved = Number(item.stock_reserved) || 0;
     if (item.unit === 'case') return Math.round(reserved * (Number(item.itemsPerCase) || 1));
     return Math.round(reserved);
 };
-
 const getFormattedBulkStock = (item) => {
     const qty = Number(item.quantity) || 0;
     if (item.unit !== 'case') return `${Math.round(qty)} ${translateUnit(item.unit)}`;
@@ -361,4 +408,14 @@ const getFormattedBulkStock = (item) => {
 .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
 .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* លាក់កូនសោរឡើងចុះលើ Input Number ឱ្យមើលទៅស្អាត */
+input[type="number"]::-webkit-inner-spin-button, 
+input[type="number"]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
+}
+input[type="number"] {
+    -moz-appearance: textfield;
+}
 </style>

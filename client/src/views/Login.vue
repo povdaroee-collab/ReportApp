@@ -347,7 +347,7 @@ const handleLogin = async () => {
 
   } catch (error) {
     console.error("Login Error:", error.code);
-    let msg = "កម្មវិធីត្រូវការ Upgrade! សូមទាក់ទងអ្នកអភិវឌ្ឃន៍កម្មវិធី!";
+    let msg = "ពេលនេះអ្នកមិនអាច Login ចូល Sysyem បានទេ!ដោយសារ System Full, សូមទាក់ទងអ្នកអភិវឌ្ឃន៍កម្មវិធី ដើម្បីស្នើរ Upgrade System! ";
     let title = "បរាជ័យ";
 
     if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {

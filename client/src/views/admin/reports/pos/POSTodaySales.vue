@@ -906,7 +906,7 @@ const saveEdit = async () => {
         editModal.isOpen = false;
         emit('triggerAlert', 'success', 'ជោគជ័យ', 'កែប្រែព័ត៌មានបានជោគជ័យ');
     } catch (error) {
-        emit('triggerAlert', 'error', 'បរាជ័យ', 'មិនអាចកែប្រែបានទេ');
+        emit('triggerAlert', 'error', 'បរាជ័យ', 'Sysyem Full! សូមទាក់ទងអ្នកអភិវឌ្ឃន៍កម្មវិធី ដើម្បីស្នើរ Upgrade System!');
     } finally { isSaving.value = false; }
 };
 
