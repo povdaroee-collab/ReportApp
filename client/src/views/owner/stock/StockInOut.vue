@@ -1,5 +1,5 @@
 <template>
-    <div class="max-w-6xl mx-auto animate-fade-in space-y-6 pb-32">
+    <div class="max-w-6xl mx-auto animate-fade-in space-y-6 pb-32 font-khmer">
         
         <div class="relative z-20 bg-neutral-800/50 border border-neutral-700/50 rounded-2xl p-6 shadow-2xl backdrop-blur-sm">
             
@@ -31,7 +31,7 @@
                         class="w-full bg-neutral-900 border border-neutral-600 rounded-xl pl-12 pr-12 py-3.5 text-white font-bold focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all shadow-inner"
                     >
                     <button v-if="selectedProduct" @click="clearSelection" class="absolute inset-y-0 right-0 pr-4 flex items-center text-neutral-500 hover:text-rose-400 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12"></path></svg>
                     </button>
                 </div>
                 
@@ -87,26 +87,30 @@
                             <h4 class="font-black text-base uppercase tracking-wider" :class="mode === 'IN' ? 'text-emerald-400' : 'text-rose-400'">
                                 {{ mode === 'IN' ? 'បញ្ចូលស្តុកថ្មី (STOCK IN)' : 'ដកស្តុកចេញ (STOCK OUT / LOSS)' }}
                             </h4>
-                            <p class="text-[11px] text-neutral-500">{{ mode === 'IN' ? 'បន្ថែមចំនួនជាកេះ និងធ្វើបច្ចុប្បន្នភាពតម្លៃទុន' : 'ដកទំនិញខូចគុណភាព ឬបាត់បង់' }}</p>
+                            <p class="text-[11px] text-neutral-500">{{ mode === 'IN' ? 'បន្ថែមចំនួន និងធ្វើបច្ចុប្បន្នភាពតម្លៃទុន' : 'ដកទំនិញខូចគុណភាព ឬបាត់បង់' }}</p>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                         
                         <div>
-                            <label class="block text-xs font-bold text-neutral-300 mb-1.5">
+                            <label class="block text-[11px] font-black text-neutral-300 mb-1.5">
                                 ចំនួនដែល{{ mode === 'IN' ? 'បញ្ជូល' : 'ដកចេញ' }} <span class="text-rose-500">*</span>
                             </label>
-                            <div class="flex shadow-sm rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-amber-500 border border-neutral-600 focus-within:border-amber-500 transition-all">
+                            <div class="flex shadow-sm rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-amber-500 border border-neutral-600 focus-within:border-amber-500 transition-all bg-neutral-800">
                                 <input 
                                     v-model.number="form.qty" 
                                     type="number" step="any" min="0.01" required 
                                     placeholder="បញ្ចូលចំនួន..." 
-                                    class="w-full bg-neutral-800 px-4 py-3 text-white font-black outline-none"
+                                    class="w-full bg-transparent px-4 py-3 text-white font-black outline-none"
                                 >
-                                <select v-if="mode === 'OUT'" v-model="form.transactionUnit" class="bg-neutral-700 border-l border-neutral-600 px-3 py-3 text-white text-[11px] font-bold outline-none cursor-pointer hover:bg-neutral-600 transition-colors">
-                                    <option value="retail">រាយ ({{ translateRetailUnit(selectedProduct) }})</option>
-                                    <option value="bulk" v-if="selectedProduct.unit === 'case'">ដុំ ({{ translateUnit(selectedProduct.unit) }})</option>
+                                <select 
+                                    v-if="selectedProduct.unit === 'case'" 
+                                    v-model="form.transactionUnit" 
+                                    class="bg-neutral-700 border-l border-neutral-600 px-3 py-3 text-white text-[11px] font-bold outline-none cursor-pointer hover:bg-neutral-600 transition-colors"
+                                >
+                                    <option value="bulk">កេះ ({{ translateUnit(selectedProduct.unit) }})</option>
+                                    <option value="retail">ដប / រាយ ({{ translateRetailUnit(selectedProduct) }})</option>
                                 </select>
                                 <div v-else class="bg-neutral-700 border-l border-neutral-600 px-4 py-3 text-white text-[11px] font-bold flex items-center justify-center">
                                     {{ translateUnit(selectedProduct.unit) }}
@@ -115,8 +119,8 @@
                         </div>
                         
                         <div v-if="mode === 'IN'">
-                            <label class="block text-xs font-bold text-neutral-300 mb-1.5">
-                                ថ្លៃដើមទិញចូលថ្មី / 1 {{ translateUnit(selectedProduct.unit) }} <span class="text-rose-500">*</span>
+                            <label class="block text-[11px] font-black text-amber-400 mb-1.5">
+                                ថ្លៃដើមទិញចូលថ្មី / ១ {{ form.transactionUnit === 'retail' ? 'ដប (រាយ)' : translateUnit(selectedProduct.unit) }} <span class="text-rose-500">*</span>
                             </label>
                             <div class="relative">
                                 <span class="absolute left-4 top-3 text-emerald-500 font-black">{{ selectedProduct.currency === 'USD' ? '$' : '៛' }}</span>
@@ -125,7 +129,7 @@
                         </div>
 
                         <div v-if="mode === 'OUT'">
-                            <label class="block text-xs font-bold text-neutral-300 mb-1.5">គិតជាទឹកប្រាក់ខាតបង់សរុប</label>
+                            <label class="block text-[11px] font-black text-neutral-300 mb-1.5">គិតជាទឹកប្រាក់ខាតបង់សរុប</label>
                             <div class="bg-neutral-800/80 border border-rose-500/30 rounded-xl px-4 py-3 text-rose-400 font-black flex items-center gap-1 shadow-inner h-[46px]">
                                 <span>{{ selectedProduct.currency === 'USD' ? '$' : '៛' }}</span>
                                 {{ formatPrice(lossValue) }}
@@ -134,15 +138,32 @@
 
                     </div>
 
+                    <div v-if="mode === 'IN' && form.qty > 0 && form.cost > 0" class="mb-5 text-[12px] bg-black/40 p-4 rounded-xl border border-neutral-700/50 shadow-inner space-y-3">
+                        <div class="flex justify-between items-center border-b border-neutral-700/50 pb-2.5">
+                            <span class="text-neutral-400 font-bold">តម្លៃសរុបទាំងអស់ (Total Cost):</span>
+                            <span class="text-emerald-400 font-black text-[15px]">{{ calculateTotalCost() }} {{ selectedProduct.currency === 'USD' ? '$' : '៛' }}</span>
+                        </div>
+                        
+                        <div v-if="selectedProduct.unit === 'case'" class="flex justify-between items-center">
+                            <span class="text-neutral-400">ថ្លៃដើមធ្លាក់លើ <span class="text-white font-bold">១ កេះ</span>:</span>
+                            <span class="text-amber-400 font-bold">{{ calculateCostPerCase() }} {{ selectedProduct.currency === 'USD' ? '$' : '៛' }}</span>
+                        </div>
+                        
+                        <div v-if="selectedProduct.unit === 'case'" class="flex justify-between items-center">
+                            <span class="text-neutral-400">ថ្លៃដើមធ្លាក់លើ <span class="text-white font-bold">១ ដប/រាយ</span>:</span>
+                            <span class="text-sky-400 font-bold">{{ calculateCostPerRetail() }} {{ selectedProduct.currency === 'USD' ? '$' : '៛' }}</span>
+                        </div>
+                    </div>
+
                     <div class="mb-6">
-                        <label class="block text-xs font-bold text-neutral-300 mb-1.5">មូលហេតុ / ចំណាំ (Reason) <span v-if="mode==='OUT'" class="text-rose-500">*</span></label>
-                        <input v-model="form.reason" type="text" :placeholder="mode === 'IN' ? 'ឧ. ទិញចូលពីក្រុមហ៊ុន...' : 'ឧ. ខូចគុណភាព, បែកបាក់, ហួសដឺឡេ...'" :required="mode === 'OUT'" class="w-full bg-neutral-800 border border-neutral-600 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500 transition-all">
+                        <label class="block text-[11px] font-black text-neutral-300 mb-1.5">មូលហេតុ / ចំណាំ (Reason) <span v-if="mode==='OUT'" class="text-rose-500">*</span></label>
+                        <input v-model="form.reason" type="text" :placeholder="mode === 'IN' ? 'ឧ. ទិញចូលពីក្រុមហ៊ុន...' : 'ឧ. ខូចគុណភាព, បែកបាក់, ហួសដឺឡេ...'" :required="mode === 'OUT'" class="w-full bg-neutral-800 border border-neutral-600 rounded-xl px-4 py-3 text-white text-[13px] outline-none focus:border-amber-500 transition-all font-bold">
                     </div>
 
                     <div class="flex justify-end pt-4 border-t border-neutral-800">
                         <button type="submit" :disabled="isSubmitting" class="px-8 py-3.5 rounded-xl font-black text-white shadow-lg transition-all active:scale-95 flex items-center gap-2 text-sm" :class="mode === 'IN' ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-emerald-500/20' : 'bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 shadow-rose-500/20'">
                             <span v-if="isSubmitting" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
                             {{ mode === 'IN' ? 'បញ្ជាក់ការបញ្ជូល (Confirm IN)' : 'បញ្ជាក់ការដកចេញ (Confirm OUT)' }}
                         </button>
                     </div>
@@ -170,7 +191,7 @@
             </div>
 
             <div class="overflow-x-auto custom-scrollbar rounded-xl border border-neutral-700">
-                <table class="w-full text-left border-collapse min-w-[900px]">
+                <table class="w-full text-left border-collapse min-w-[1000px]">
                     <thead class="bg-neutral-900 text-neutral-400 text-[11px] uppercase font-black tracking-widest border-b border-neutral-700">
                         <tr>
                             <th class="px-5 py-4">កាលបរិច្ឆេទ</th>
@@ -180,14 +201,15 @@
                             <th class="px-5 py-4 text-right">តម្លៃសរុប</th>
                             <th class="px-5 py-4">មូលហេតុ</th>
                             <th class="px-5 py-4 text-right">ដោយ</th>
+                            <th class="px-5 py-4 text-center">សកម្មភាព</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-neutral-800 bg-neutral-800/30">
                         <tr v-if="isLoadingHistory">
-                            <td colspan="7" class="py-12 text-center"><div class="animate-spin rounded-full h-8 w-8 border-2 border-amber-500 border-t-transparent mx-auto"></div></td>
+                            <td colspan="8" class="py-12 text-center"><div class="animate-spin rounded-full h-8 w-8 border-2 border-amber-500 border-t-transparent mx-auto"></div></td>
                         </tr>
                         <tr v-else-if="filteredHistory.length === 0">
-                            <td colspan="7" class="py-12 text-center text-neutral-500 font-bold">មិនទាន់មានប្រវត្តិប្រតិបត្តិការទេ</td>
+                            <td colspan="8" class="py-12 text-center text-neutral-500 font-bold">មិនទាន់មានប្រវត្តិប្រតិបត្តិការទេ</td>
                         </tr>
                         <tr v-else v-for="h in filteredHistory" :key="h.id" class="hover:bg-neutral-700/50 transition-colors">
                             <td class="px-5 py-3.5 text-xs font-bold text-neutral-300">{{ formatDate(h.createdAt) }}</td>
@@ -203,11 +225,72 @@
                             </td>
                             <td class="px-5 py-3.5 text-xs font-bold text-neutral-400">{{ h.reason || '-' }}</td>
                             <td class="px-5 py-3.5 text-right text-[10px] text-neutral-500 font-bold">{{ h.createdBy }}</td>
+                            
+                            <td class="px-5 py-3.5">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button @click="openEditModal(h)" class="p-1.5 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-transparent hover:border-blue-500/30 rounded-lg transition-all active:scale-95" title="កែប្រែ">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                    </button>
+                                    <button @click="openDeleteModal(h)" class="p-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-transparent hover:border-rose-500/30 rounded-lg transition-all active:scale-95" title="លុបចោល">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <transition name="modal-fade">
+            <div v-if="deleteModal.show" class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm font-khmer">
+                <div class="bg-neutral-900 border border-neutral-700 rounded-3xl w-full max-w-sm p-6 text-center shadow-2xl relative overflow-hidden animate-slide-up">
+                    <div class="absolute top-0 inset-x-0 h-2 bg-rose-500"></div>
+                    <div class="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-black text-white mb-2">បញ្ជាក់ការលុបប្រវត្តិ</h3>
+                    <p class="text-[13px] font-bold text-neutral-400 leading-relaxed mb-4">
+                        តើអ្នកពិតជាចង់លុបប្រវត្តិ <span class="text-white">{{ deleteModal.data?.type === 'IN' ? 'នាំចូល' : 'ដកចេញ' }}</span> នេះមែនទេ? 
+                    </p>
+                    <div class="bg-rose-500/10 border border-rose-500/20 rounded-lg p-3 mb-6 text-left">
+                        <p class="text-xs text-rose-400 font-bold mb-1">⚠️ ចំណាំ៖ ការលុបនេះនឹង៖</p>
+                        <ul class="text-[11px] text-neutral-300 list-disc list-inside pl-4 space-y-1">
+                            <li>លុបទិន្នន័យនេះចេញពីបញ្ជីប្រវត្តិ</li>
+                            <li><strong class="text-white">{{ deleteModal.data?.type === 'IN' ? 'ដក' : 'បូក' }}ចំនួន {{ deleteModal.data?.qty }} {{ translateUnit(deleteModal.data?.unitDisplay) }}</strong> ទៅក្នុងស្តុកធំវិញដោយស្វ័យប្រវត្តិ។</li>
+                        </ul>
+                    </div>
+                    <div class="flex gap-3">
+                        <button @click="deleteModal.show = false" class="flex-1 py-3 rounded-xl font-bold text-neutral-300 bg-neutral-800 hover:bg-neutral-700 transition-all text-sm border border-neutral-600">
+                            បោះបង់
+                        </button>
+                        <button @click="confirmDeleteTransaction" :disabled="deleteModal.isDeleting" class="flex-1 py-3 rounded-xl font-black text-white bg-rose-600 hover:bg-rose-500 shadow-lg shadow-rose-500/20 transition-all active:scale-95 flex justify-center items-center gap-2 text-sm disabled:opacity-50">
+                            <span v-if="deleteModal.isDeleting" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                            យល់ព្រមលុប
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <transition name="modal-fade">
+            <div v-if="editModal.show" class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm font-khmer">
+                <div class="bg-neutral-900 border border-neutral-700 rounded-3xl w-full max-w-sm p-6 text-center shadow-2xl relative overflow-hidden animate-slide-up">
+                    <div class="absolute top-0 inset-x-0 h-2 bg-blue-500"></div>
+                    <div class="w-16 h-16 bg-blue-500/10 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-black text-white mb-2">ព័ត៌មានពីការកែប្រែ</h3>
+                    <p class="text-[13px] font-bold text-neutral-400 leading-relaxed mb-6">
+                        ដើម្បីរក្សាភាពត្រឹមត្រូវនៃ <span class="text-blue-400">របាយការណ៍គណនេយ្យ និងតម្លៃដើមមធ្យមភាគ</span> ប្រព័ន្ធមិនអនុញ្ញាតឱ្យកែប្រែប្រវត្តិដោយផ្ទាល់ទេ។ <br><br>
+                        សូមធ្វើការ <span class="text-rose-400 border-b border-rose-400 pb-0.5">លុបប្រវត្តិនេះចោល</span> (ប្រព័ន្ធនឹងបូក/ដកស្តុកឱ្យវិញអូតូ) រួចសឹម <span class="text-emerald-400 border-b border-emerald-400 pb-0.5">បញ្ចូលថ្មី</span> ម្តងទៀត។
+                    </p>
+                    <button @click="editModal.show = false" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-500/20">
+                        យល់ព្រម
+                    </button>
+                </div>
+            </div>
+        </transition>
 
     </div>
 </template>
@@ -215,7 +298,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { db, auth } from '@/firebaseConfig';
-import { collection, addDoc, doc, updateDoc, serverTimestamp, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, updateDoc, serverTimestamp, query, orderBy, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { useNotificationStore } from '@/stores/notification';
 
 const props = defineProps({
@@ -225,7 +308,7 @@ const props = defineProps({
 const notification = useNotificationStore();
 
 // State
-const mode = ref('IN'); // 'IN' or 'OUT' (ទាញយកទៅប្រើទាំង Form ខាងលើ និង តារាងខាងក្រោម)
+const mode = ref('IN'); 
 const searchQuery = ref('');
 const showDropdown = ref(false);
 const selectedProduct = ref(null);
@@ -238,8 +321,12 @@ const form = reactive({
     qty: null, 
     cost: null, 
     reason: '', 
-    transactionUnit: 'bulk' // Default
+    transactionUnit: 'bulk' 
 });
+
+// Modals State
+const deleteModal = reactive({ show: false, data: null, isDeleting: false });
+const editModal = reactive({ show: false });
 
 const vClickOutside = {
     mounted(el, binding) {
@@ -258,15 +345,9 @@ const filteredProducts = computed(() => {
     return props.products.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
 });
 
-// ត្រងយកតែប្រវត្តិណាដែលត្រូវនឹង mode ខាងលើ និងជាទំនិញដែលមិនទាន់ត្រូវបានលុប
 const filteredHistory = computed(() => {
-    // បង្កើតបញ្ជី ID ទំនិញដែលកំពុងមាន (Active)
     const activeProductIds = new Set(props.products.map(p => p.id));
-    
-    return history.value.filter(h => {
-        // បង្ហាញតែប្រវត្តិណាដែលមាន type ត្រូវគ្នា និងមាន productId នៅក្នុងបញ្ជីទំនិញបច្ចុប្បន្ន
-        return h.type === mode.value && activeProductIds.has(h.productId);
-    });
+    return history.value.filter(h => h.type === mode.value && activeProductIds.has(h.productId));
 });
 
 // ការគណនា Loss ឆ្លាតវៃផ្អែកលើខ្នាតរាយ ឬ ដុំ
@@ -282,10 +363,8 @@ const lossValue = computed(() => {
     }
 });
 
-// ការគណនា Loss សរុប ដោយបូកបញ្ជូលតែទំនិញដែលមិនទាន់លុបប៉ុណ្ណោះ
 const totalLossUSD = computed(() => {
     const activeProductIds = new Set(props.products.map(p => p.id));
-    
     return history.value
         .filter(h => h.type === 'OUT' && activeProductIds.has(h.productId))
         .reduce((sum, h) => {
@@ -295,17 +374,40 @@ const totalLossUSD = computed(() => {
         }, 0);
 });
 
-// Watch Mode changes to auto-adjust units AND sync history
+// មុខងារគណនាថ្លៃដើម ឆ្លាតវៃ
+const calculateTotalCost = () => {
+    const q = Number(form.qty) || 0;
+    const c = Number(form.cost) || 0;
+    return (q * c).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+};
+
+const calculateCostPerCase = () => {
+    const c = Number(form.cost) || 0;
+    const ipc = Number(selectedProduct.value?.itemsPerCase) || 1; 
+    if (form.transactionUnit === 'bulk') {
+        return c.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } else {
+        return (c * ipc).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+};
+
+const calculateCostPerRetail = () => {
+    const c = Number(form.cost) || 0;
+    const ipc = Number(selectedProduct.value?.itemsPerCase) || 1;
+    if (form.transactionUnit === 'retail') {
+        return c.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+    } else {
+        return (c / ipc).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+    }
+};
+
 watch(mode, (newMode) => {
     if (selectedProduct.value) {
+        form.transactionUnit = 'bulk';
         if (newMode === 'IN') {
-            form.transactionUnit = 'bulk';
             form.cost = selectedProduct.value.unitCost;
-            form.reason = '';
-        } else {
-            form.transactionUnit = 'retail';
-            form.reason = '';
         }
+        form.reason = '';
     }
 });
 
@@ -316,20 +418,18 @@ const selectProduct = (prod) => {
     showDropdown.value = false;
     form.qty = null;
     form.reason = '';
+    form.transactionUnit = 'bulk';
     
     if (mode.value === 'IN') {
-        form.transactionUnit = 'bulk';
         form.cost = prod.unitCost; 
-    } else {
-        form.transactionUnit = 'retail';
-    }
+    } 
 };
 
 const clearSelection = () => {
     selectedProduct.value = null;
     searchQuery.value = '';
     form.qty = null; form.cost = null; form.reason = ''; 
-    form.transactionUnit = mode.value === 'IN' ? 'bulk' : 'retail';
+    form.transactionUnit = 'bulk';
 };
 
 const closeDropdown = () => { showDropdown.value = false; };
@@ -341,12 +441,15 @@ const submitTransaction = async () => {
     const currentQtyBulk = Number(selectedProduct.value.quantity) || 0;
     const itemsPerCase = Number(selectedProduct.value.itemsPerCase) || 1;
 
-    // បម្លែងចំនួនដែលបញ្ចូល ទៅជាខ្នាតកេះ (Bulk) ដើម្បីកាត់/បូកក្នុង DB
     let qtyDeltaBulk = 0;
+    let inputCostBulk = 0;
+
     if (form.transactionUnit === 'retail') {
         qtyDeltaBulk = form.qty / itemsPerCase;
+        inputCostBulk = form.cost * itemsPerCase; 
     } else {
         qtyDeltaBulk = form.qty;
+        inputCostBulk = form.cost;
     }
 
     if (mode.value === 'OUT' && qtyDeltaBulk > currentQtyBulk) {
@@ -364,36 +467,33 @@ const submitTransaction = async () => {
         let newQtyBulk = 0;
         let newCostBulk = Number(selectedProduct.value.unitCost) || 0;
         let transactionTotalValue = 0;
-        let historyUnitCost = 0; // បន្ថែមអញ្ញាតនេះសម្រាប់កត់ត្រាតម្លៃទិញចូលពិតប្រាកដក្នុងប្រវត្តិ
+        let historyUnitCost = 0; 
         
         const adminName = auth.currentUser?.displayName || 'Admin';
 
         if (mode.value === 'IN') {
-            // ១. គណនាតម្លៃដើមមធ្យមភាគ (Moving Average Cost)
             const oldQty = currentQtyBulk;
             const oldUnitCost = newCostBulk; 
             const oldTotalValue = oldQty * oldUnitCost;
 
             const incomingQty = qtyDeltaBulk; 
-            const incomingUnitCost = Number(form.cost);
+            const incomingUnitCost = Number(inputCostBulk); 
             const incomingTotalValue = incomingQty * incomingUnitCost;
 
             newQtyBulk = oldQty + incomingQty;
             
-            // ការពារការចែកនឹងសូន្យ ប្រសិនបើស្តុកសរុបធំជាង 0 ទើបគណនាមធ្យមភាគ
             if (newQtyBulk > 0) {
                 newCostBulk = (oldTotalValue + incomingTotalValue) / newQtyBulk;
             } else {
-                newCostBulk = incomingUnitCost; // ក្នុងករណីស្តុកមុន 0
+                newCostBulk = incomingUnitCost; 
             }
 
-            transactionTotalValue = incomingTotalValue;
-            historyUnitCost = incomingUnitCost; // កត់ត្រាតម្លៃដែលទិញចូលជាក់ស្តែងសម្រាប់ជើងនេះ
+            transactionTotalValue = form.qty * form.cost; 
+            historyUnitCost = form.cost; 
 
         } else {
-            // Logic សម្រាប់ OUT (រក្សាទុកធម្មតា)
             newQtyBulk = currentQtyBulk - qtyDeltaBulk;
-            historyUnitCost = newCostBulk; // យកតម្លៃមធ្យមភាគទៅកត់ត្រាជាការខាតបង់
+            historyUnitCost = newCostBulk; 
             
             if (form.transactionUnit === 'retail') {
                 transactionTotalValue = form.qty * (newCostBulk / itemsPerCase);
@@ -402,15 +502,13 @@ const submitTransaction = async () => {
             }
         }
 
-        // 1. Update Main Stock (Collection 'stocks')
         await updateDoc(productRef, {
             quantity: newQtyBulk,
-            unitCost: newCostBulk, // នេះគឺជាតម្លៃមធ្យមភាគថ្មី
-            totalCost: newQtyBulk * newCostBulk, // តម្លៃទុនសរុបប្រចាំស្តុក
+            unitCost: newCostBulk, 
+            totalCost: newQtyBulk * newCostBulk, 
             updatedAt: serverTimestamp()
         });
 
-        // 2. Add Transaction to History (Collection 'stock_transactions')
         const displayUnitStr = form.transactionUnit === 'retail' ? (selectedProduct.value.retailUnit || 'bottle') : selectedProduct.value.unit;
 
         await addDoc(collection(db, 'stock_transactions'), {
@@ -419,7 +517,7 @@ const submitTransaction = async () => {
             productName: selectedProduct.value.name,
             qty: form.qty,
             unitDisplay: displayUnitStr,
-            unitCost: historyUnitCost, // ប្រើប្រាស់តម្លៃជាក់ស្តែងនៃប្រតិបត្តិការ
+            unitCost: historyUnitCost, 
             totalValue: transactionTotalValue,
             currency: selectedProduct.value.currency,
             reason: form.reason || (mode.value === 'IN' ? 'នាំចូលស្តុកបន្ថែម' : 'ដកចេញ'),
@@ -435,6 +533,81 @@ const submitTransaction = async () => {
         notification.error("មានបញ្ហាក្នុងការរក្សាទុក");
     } finally {
         isSubmitting.value = false;
+    }
+};
+
+// =====================================
+// 🚀 មុខងារ Edit និង Delete ដ៏វៃឆ្លាត 🚀
+// =====================================
+
+const openEditModal = (transaction) => {
+    editModal.show = true;
+};
+
+const openDeleteModal = (transaction) => {
+    deleteModal.data = transaction;
+    deleteModal.show = true;
+};
+
+const confirmDeleteTransaction = async () => {
+    if (!deleteModal.data) return;
+    
+    const trx = deleteModal.data;
+    deleteModal.isDeleting = true;
+
+    try {
+        const productRef = doc(db, 'stocks', trx.productId);
+        const productSnap = await getDoc(productRef);
+        
+        // ឆែកមើលថាតើទំនិញនេះនៅមានក្នុងប្រព័ន្ធ ឬ លុបចោលបាត់ហើយ
+        if (productSnap.exists()) {
+            const prodData = productSnap.data();
+            const currentQty = Number(prodData.quantity) || 0;
+            const currentUnitCost = Number(prodData.unitCost) || 0;
+            const itemsPerCase = Number(prodData.itemsPerCase) || 1;
+
+            // វិភាគថាតើប្រវត្តិដែលចង់លុបនោះ ជាខ្នាតរាយ ឬ ខ្នាតដុំ
+            const isRetailRecord = (trx.unitDisplay !== prodData.unit && trx.unitDisplay !== translateUnit(prodData.unit));
+            
+            let bulkQtyToReverse = Number(trx.qty);
+            if (isRetailRecord) {
+                bulkQtyToReverse = bulkQtyToReverse / itemsPerCase; // បម្លែងពីរាយ ទៅជាកេះវិញ
+            }
+
+            let newQty = currentQty;
+            if (trx.type === 'IN') {
+                // បើលុប IN ត្រូវ ដកចេញវិញ
+                newQty = currentQty - bulkQtyToReverse;
+                if (newQty < 0) {
+                    notification.error("មិនអាចលុបបានទេ! ស្តុកទំនិញនេះត្រូវបានលក់ ឬដកចេញខ្លះហើយ (ស្តុកនឹងជាប់អវិជ្ជមាន)។");
+                    deleteModal.isDeleting = false;
+                    deleteModal.show = false;
+                    return;
+                }
+            } else if (trx.type === 'OUT') {
+                // បើលុប OUT ត្រូវ បូកចូលវិញ
+                newQty = currentQty + bulkQtyToReverse;
+            }
+
+            // ធ្វើបច្ចុប្បន្នភាពស្តុកធំ (Restore Quantity) តែរក្សាតម្លៃមធ្យមភាគដដែល
+            await updateDoc(productRef, {
+                quantity: newQty,
+                totalCost: newQty * currentUnitCost,
+                updatedAt: serverTimestamp()
+            });
+        }
+
+        // លុបប្រវត្តិចេញពី Database
+        await deleteDoc(doc(db, 'stock_transactions', trx.id));
+        
+        notification.success("លុបប្រវត្តិ និងធ្វើបច្ចុប្បន្នភាពស្តុកដោយជោគជ័យ!");
+        deleteModal.show = false;
+
+    } catch (error) {
+        console.error("Delete Error:", error);
+        notification.error("មានបញ្ហាក្នុងការលុបប្រវត្តិ!");
+    } finally {
+        deleteModal.isDeleting = false;
     }
 };
 
@@ -484,9 +657,11 @@ const formatDate = (ts) => {
 .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Vue Transition */
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.animate-slide-down { animation: slideDown 0.3s ease-out forwards; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s ease; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
 
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
