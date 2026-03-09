@@ -11,24 +11,27 @@
     ></div>
 
     <aside 
-      class="fixed inset-y-0 left-0 w-72 bg-[#0F172A] text-white z-50 transform transition-transform duration-300 ease-out shadow-[4px_0_24px_rgba(0,0,0,0.3)] flex flex-col border-r border-white/5"
-      :class="isSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+      class="fixed inset-y-0 left-0 w-72 bg-[#0F172A] text-white z-50 transform transition-transform duration-300 ease-out shadow-[4px_0_24px_rgba(0,0,0,0.3)] flex-col border-r border-white/5"
+      :class="[
+        isMobileBottomMenu ? 'hidden md:flex' : 'flex',
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      ]"
     >
-      <div class="absolute top-[-10%] left-[-10%] w-40 h-40 bg-purple-500/20 blur-[80px] rounded-full pointer-events-none"></div>
-      <div class="absolute bottom-0 right-0 w-60 h-60 bg-blue-600/10 blur-[60px] rounded-full pointer-events-none"></div>
+      <div class="absolute top-[-10%] left-[-10%] w-40 h-40 bg-purple-500/20 blur-[80px] rounded-full pointer-events-none hidden md:block"></div>
+      <div class="absolute bottom-0 right-0 w-60 h-60 bg-blue-600/10 blur-[60px] rounded-full pointer-events-none hidden md:block"></div>
 
       <div class="relative px-6 py-8 flex items-center gap-4 z-10 border-b border-white/5">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 relative overflow-hidden">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 relative overflow-hidden shrink-0">
           <div class="absolute inset-0 bg-white/20 blur-md rounded-full -top-2 -left-2 w-8 h-8"></div>
           <svg class="h-6 w-6 text-white relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 01-2-2z" />
           </svg>
         </div>
-        <div>
-          <h1 class="text-xl font-black tracking-wide text-white leading-tight">ប្រព័ន្ធគ្រប់គ្រង</h1>
-          <p class="text-[11px] font-bold text-indigo-400 tracking-wider">របាយការណ៍លក់</p>
+        <div class="flex-1 min-w-0">
+          <h1 class="text-xl font-black tracking-wide text-white leading-tight truncate">ប្រព័ន្ធគ្រប់គ្រង</h1>
+          <p class="text-[11px] font-bold text-indigo-400 tracking-wider truncate">របាយការណ៍លក់</p>
         </div>
-        <button @click="isSidebarOpen = false" class="ml-auto text-slate-400 hover:text-white bg-white/5 p-2 rounded-xl">
+        <button @click="isSidebarOpen = false" class="text-slate-400 hover:text-white bg-white/5 p-2 rounded-xl shrink-0 transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
@@ -75,7 +78,7 @@
              </div>
              <div class="flex-1 min-w-0">
                <p class="text-sm font-bold text-white truncate">{{ userName }}</p>
-               <p class="text-[10px] font-bold text-indigo-300 mt-0.5">{{ userRole }}</p>
+               <p class="text-[10px] font-bold text-indigo-300 mt-0.5 truncate">{{ userRole }}</p>
              </div>
           </div>
           <button @click.stop="handleLogout" class="p-2 shrink-0 rounded-xl text-slate-400 hover:bg-rose-500 hover:text-white transition-all shadow-sm" title="ចាកចេញ">
@@ -85,37 +88,45 @@
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col h-screen relative z-0 overflow-hidden w-full">
+    <main class="flex-1 flex flex-col h-screen relative z-0 w-full overflow-hidden">
       
-      <header class="h-[72px] px-4 md:px-8 flex items-center justify-between bg-white/70 backdrop-blur-2xl border-b border-slate-200/60 sticky top-0 z-30 transition-all shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)]">
+      <header class="h-[72px] px-4 md:px-8 flex items-center justify-between bg-white/70 backdrop-blur-2xl border-b border-slate-200/60 sticky top-0 z-30 transition-all shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] w-full">
         
         <div 
           @click="isSidebarOpen = true" 
-          class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity select-none group"
+          class="items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity select-none group"
+          :class="isMobileBottomMenu ? 'hidden md:flex' : 'flex'"
         >
            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-all">
              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
            </div>
            <div>
-              <h2 class="text-lg md:text-xl font-black text-slate-800 tracking-wide leading-none">ប្រព័ន្ធគ្រប់គ្រង</h2>
-              <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Click to Open Menu</p>
+              <h2 class="text-lg md:text-xl font-black text-slate-800 tracking-wide leading-none truncate">ប្រព័ន្ធគ្រប់គ្រង</h2>
+              <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5 hidden md:block">Click to Open Menu</p>
            </div>
         </div>
+
+        <div class="md:hidden" :class="{'hidden': !isMobileBottomMenu}"></div>
 
         <div class="flex items-center gap-3 md:gap-5 ml-auto">
            <div class="hidden sm:flex px-4 py-1.5 bg-white border border-slate-200 rounded-xl shadow-sm items-center gap-2">
               <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]"></span>
               <p class="text-xs font-bold text-slate-600 font-khmer mt-0.5">{{ currentDate }}</p>
            </div>
-           <button class="relative p-2.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-indigo-600 transition-colors border border-transparent hover:border-slate-200">
+           
+           <div v-if="isMobileBottomMenu" @click="openProfileModal" class="md:hidden w-10 h-10 rounded-full border-2 border-indigo-100 p-0.5 cursor-pointer shadow-sm">
+               <img :src="userPhoto || `https://ui-avatars.com/api/?name=${userName}&background=random`" class="rounded-full w-full h-full object-cover">
+           </div>
+
+           <button class="relative p-2.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-indigo-600 transition-colors border border-transparent hover:border-slate-200 hidden sm:block">
               <span class="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
            </button>
         </div>
       </header>
 
-      <div class="flex-1 overflow-y-auto relative scroll-smooth bg-slate-50/50 p-4 md:p-8">
-        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-64 bg-indigo-200/20 blur-[120px] -z-10 rounded-full pointer-events-none"></div>
+      <div class="flex-1 overflow-y-auto relative scroll-smooth bg-slate-50/50 p-4 md:p-8 w-full">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-64 bg-indigo-200/20 blur-[120px] -z-10 rounded-full pointer-events-none hidden md:block"></div>
 
         <router-view v-slot="{ Component }">
           <transition 
@@ -131,8 +142,70 @@
           </transition>
         </router-view>
       </div>
-
     </main>
+
+    <div v-if="isMobileBottomMenu" class="md:hidden">
+      
+      <div class="fixed bottom-6 right-5 z-[60]">
+         <button @click="showBottomMenu = true" class="bg-slate-900 text-white rounded-full p-4 shadow-[0_10px_30px_rgba(15,23,42,0.6)] border border-indigo-500/30 flex items-center justify-center active:scale-90 transition-transform backdrop-blur-md">
+            <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"/></svg>
+         </button>
+      </div>
+
+      <transition 
+        enter-active-class="transition-all duration-300 ease-out" 
+        enter-from="opacity-0 translate-y-full" 
+        enter-to="opacity-100 translate-y-0" 
+        leave-active-class="transition-all duration-200 ease-in" 
+        leave-from="opacity-100 translate-y-0" 
+        leave-to="opacity-0 translate-y-full"
+      >
+        <div v-if="showBottomMenu" class="fixed inset-0 z-[100] flex flex-col justify-end">
+           <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showBottomMenu = false"></div>
+           
+           <div class="relative bg-[#0F172A] w-full rounded-t-[2.5rem] border-t border-white/10 shadow-2xl flex flex-col max-h-[85vh]">
+              <div class="w-full flex justify-center pt-4 pb-2" @click="showBottomMenu = false">
+                 <div class="w-12 h-1.5 bg-slate-700 rounded-full"></div>
+              </div>
+              
+              <div class="px-6 py-4 flex items-center justify-between border-b border-slate-800">
+                 <div>
+                    <h3 class="text-white font-black text-lg">ប្រព័ន្ធគ្រប់គ្រង</h3>
+                    <p class="text-indigo-400 text-[10px] font-bold">{{ userRole }}</p>
+                 </div>
+                 <button @click="showBottomMenu = false" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded-full flex items-center justify-center text-slate-400 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                 </button>
+              </div>
+
+              <div class="overflow-y-auto custom-scrollbar p-6 space-y-2">
+                 <router-link 
+                    v-for="item in menuItems" 
+                    :key="item.path"
+                    :to="item.path"
+                    @click="showBottomMenu = false"
+                    class="flex items-center gap-4 p-4 rounded-2xl transition-colors border border-transparent"
+                    active-class="bg-indigo-600/20 border-indigo-500/30 text-white"
+                    :class="$route.path.includes(item.path) ? 'bg-indigo-600/20 border-indigo-500/30 text-white' : 'text-slate-400 hover:bg-slate-800/50'"
+                 >
+                    <div :class="{'text-indigo-400': $route.path.includes(item.path)}" v-html="item.icon"></div>
+                    <span class="font-bold text-sm">{{ item.label }}</span>
+                 </router-link>
+              </div>
+
+              <div class="p-6 border-t border-slate-800 flex gap-3">
+                 <button @click="handleLogoutMobile" class="flex-1 py-4 rounded-2xl bg-rose-500/10 text-rose-500 font-black text-sm flex items-center justify-center gap-2 border border-rose-500/20 active:scale-95 transition-transform">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    ចាកចេញ
+                 </button>
+                 <button @click="showBottomMenu = false" class="w-14 h-14 rounded-2xl bg-slate-800 text-slate-400 flex items-center justify-center border border-slate-700 active:scale-95 transition-transform shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                 </button>
+              </div>
+           </div>
+        </div>
+      </transition>
+    </div>
 
     <TransitionRoot appear :show="isProfileModalOpen" as="template">
       <Dialog as="div" @close="isProfileModalOpen = false" class="relative z-[100]">
@@ -211,32 +284,31 @@ import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import axios from 'axios';
 
-// ✅ នាំចូល Toast ថ្មី
 import Toast from '@/components/Toast.vue';
 import ConfirmDialog from '@/components/shared/ConfirmDialog.vue';
 import { useNotificationStore } from '@/stores/notification';
 
 const router = useRouter();
 const route = useRoute();
+
+// ដោយសារយើងចង់ឱ្យវា Auto-hide ពីដំបូង យើងកំណត់វាជា false
 const isSidebarOpen = ref(false); 
 const isAuthLoading = ref(true);
 
-// ✅ បង្កើត Refs សម្រាប់ប្រើប្រាស់
+const showBottomMenu = ref(false);
+
 const confirmDialogRef = ref(null);
 const notification = useNotificationStore();
 
-// Modals
 const isProfileModalOpen = ref(false);
 const isUpdatingProfile = ref(false);
 
-// Reactive User State
 const currentUserData = ref({}); 
 const userName = ref('កំពុងទាញយក...');
 const userRole = ref('');
 const rawRole = ref(''); 
 const userPhoto = ref(null);
 
-// Profile Form State
 const profileForm = reactive({
    fullName: '',
    username: '',
@@ -246,7 +318,6 @@ const profileForm = reactive({
 });
 const profilePreview = ref(null);
 
-// SVG ICONS
 const icons = {
   sales: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>`,
   users: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>`,
@@ -259,7 +330,10 @@ const icons = {
   wallet: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>`
 };
 
-// DYNAMIC MENU ITEMS (កែប្រែត្រង់នេះ ដើម្បីឲ្យ superadmin និង owner ឃើញ Menu រៀងខ្លួន)
+const isMobileBottomMenu = computed(() => {
+    return rawRole.value === 'superadmin' || rawRole.value === 'owner';
+});
+
 const menuItems = computed(() => {
   if (isAuthLoading.value) return [];
 
@@ -269,7 +343,6 @@ const menuItems = computed(() => {
     { label: 'របាយការណ៍លក់', path: '/app/admin/seller-reports', key: 'seller-reports', icon: icons.chart, glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
   ];
 
-  // បើជា superadmin បង្ហាញ Menu ទាំងអស់ រួមទាំងការកំណត់ (Settings)
   if (rawRole.value === 'superadmin') {
     return [
       { label: 'ផ្ទាំងគ្រប់គ្រង', path: '/app/owner/dashboard', key: 'dashboard', icon: icons.dashboard, glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
@@ -281,7 +354,6 @@ const menuItems = computed(() => {
       { label: 'ធុងសម្រាម', path: '/app/owner/trash', key: 'trash', icon: icons.trash, glowClass: 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.6)]' },
     ];
   } 
-  // បើជា owner ធម្មតា បង្ហាញ Menu ដូចគ្នា តែលាក់ "ការកំណត់" (Settings) ចេញ
   else if (rawRole.value === 'owner') {
     return [
       { label: 'ផ្ទាំងគ្រប់គ្រង', path: '/app/owner/dashboard', key: 'dashboard', icon: icons.dashboard, glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
@@ -294,7 +366,6 @@ const menuItems = computed(() => {
       { label: 'ធុងសម្រាម', path: '/app/owner/trash', key: 'trash', icon: icons.trash, glowClass: 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.6)]' },
     ];
   } 
-  // បើជា Admin
   else {
     return [
       { label: 'ផ្ទាំងគ្រប់គ្រង', path: '/app/admin/dashboard', key: 'dashboard', icon: icons.dashboard, glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
@@ -308,7 +379,6 @@ const currentDate = computed(() => {
   return date.toLocaleDateString('km-KH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 });
 
-// FETCH USER DATA (កែប្រែត្រង់នេះ ដើម្បីឲ្យស្គាល់ឈ្មោះតួនាទី superadmin)
 onMounted(() => {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -323,7 +393,6 @@ onMounted(() => {
           userName.value = data.fullName || 'មិនមានឈ្មោះ';
           rawRole.value = data.role || 'user'; 
           
-          // បន្ថែមឈ្មោះបង្ហាញសម្រាប់ superadmin
           if (data.role === 'superadmin') {
              userRole.value = 'អ្នកគ្រប់គ្រងកំពូល';
           } else if (data.role === 'owner') {
@@ -336,8 +405,6 @@ onMounted(() => {
 
           userPhoto.value = data.photoUrl || user.photoURL;
         } else {
-            // បើរកមិនឃើញទិន្នន័យក្នុង Firestore (ករណីកម្រ) ក៏មិនបាច់ទាត់គាត់ចេញនៅទីនេះដែរ
-            // ទុកឲ្យ Router Guard ទាត់ចេញវិញប្រសើរជាង ដើម្បីកុំឲ្យជាន់គ្នា
             userName.value = "មិនមានទិន្នន័យ";
         }
       } catch (error) {
@@ -353,7 +420,6 @@ onMounted(() => {
   });
 });
 
-// --- PROFILE LOGIC ---
 const openProfileModal = () => {
    profileForm.fullName = currentUserData.value.fullName || '';
    profileForm.username = currentUserData.value.username || '';
@@ -423,8 +489,10 @@ const submitProfileUpdate = async () => {
    }
 };
 
-// ✅ LOGOUT FUNCTION ថ្មី
 const handleLogout = async () => {
+    // បិទ Bottom Menu ជាមុនសិនទើបបង្ហាញ Confirm
+    showBottomMenu.value = false;
+
     const confirmed = await confirmDialogRef.value.open(
         "ចាកចេញពីប្រព័ន្ធ",
         "តើអ្នកពិតជាចង់ចាកចេញពីគណនីរបស់អ្នកមែនទេ?"
@@ -445,6 +513,9 @@ const handleLogout = async () => {
     }
 };
 
+const handleLogoutMobile = () => {
+    handleLogout();
+}
 </script>
 
 <style scoped>

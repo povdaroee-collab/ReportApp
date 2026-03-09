@@ -1,0 +1,400 @@
+<template>
+  <div>
+    <div v-if="show" class="fixed inset-0 z-[999998] bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="$emit('close')"></div>
+
+    <transition name="slide">
+      <div v-if="show" class="fixed inset-y-0 right-0 z-[999999] w-full md:w-[500px] bg-slate-50 shadow-2xl flex flex-col font-khmer border-l border-slate-200">
+        
+        <div class="px-6 py-5 bg-white flex items-center justify-between shrink-0 z-20">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-rose-500 to-rose-600 text-white rounded-xl flex items-center justify-center shadow-md shadow-rose-500/20">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            </div>
+            <div>
+              <h3 class="text-lg font-black text-slate-800 leading-tight">គណនីចំណាយ</h3>
+              <p class="text-[11px] font-bold text-slate-500">គ្រប់គ្រងការចំណាយប្រចាំថ្ងៃ</p>
+            </div>
+          </div>
+          <button @click="$emit('close')" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors active:scale-95">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        <div class="px-6 py-4 bg-white border-b border-slate-200 shrink-0 z-10 flex flex-col gap-3 shadow-sm">
+            <div class="flex bg-slate-100 p-1.5 rounded-xl w-full">
+                <button @click="$emit('update:dateFilterType', 'daily')" :class="dateFilterType === 'daily' ? 'bg-white shadow-sm text-indigo-600 font-black' : 'text-slate-500 font-bold hover:text-slate-700'" class="flex-1 py-1.5 text-xs rounded-lg transition-all">ប្រចាំថ្ងៃ</button>
+                <button @click="$emit('update:dateFilterType', 'monthly')" :class="dateFilterType === 'monthly' ? 'bg-white shadow-sm text-indigo-600 font-black' : 'text-slate-500 font-bold hover:text-slate-700'" class="flex-1 py-1.5 text-xs rounded-lg transition-all">ប្រចាំខែ</button>
+                <button @click="$emit('update:dateFilterType', 'yearly')" :class="dateFilterType === 'yearly' ? 'bg-white shadow-sm text-indigo-600 font-black' : 'text-slate-500 font-bold hover:text-slate-700'" class="flex-1 py-1.5 text-xs rounded-lg transition-all">ប្រចាំឆ្នាំ</button>
+                <button @click="$emit('update:dateFilterType', 'custom')" :class="dateFilterType === 'custom' ? 'bg-white shadow-sm text-indigo-600 font-black' : 'text-slate-500 font-bold hover:text-slate-700'" class="flex-1 py-1.5 text-xs rounded-lg transition-all">កំណត់ថ្ងៃ</button>
+            </div>
+
+            <div class="flex gap-2">
+                <input v-if="dateFilterType === 'daily'" type="date" :value="selectedDate" @input="$emit('update:selectedDate', $event.target.value)" class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-4 py-2.5 outline-none focus:border-indigo-400 focus:bg-white transition-colors cursor-pointer">
+
+                <template v-if="dateFilterType === 'monthly'">
+                    <select :value="selectedMonth" @change="$emit('update:selectedMonth', parseInt($event.target.value))" class="flex-1 bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-4 py-2.5 outline-none focus:border-indigo-400 focus:bg-white transition-colors cursor-pointer appearance-none">
+                        <option v-for="m in availableMonths" :key="m.index" :value="m.index">{{ m.name }}</option>
+                    </select>
+                    <select :value="selectedYear" @change="$emit('update:selectedYear', parseInt($event.target.value))" class="flex-1 bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-4 py-2.5 outline-none focus:border-indigo-400 focus:bg-white transition-colors cursor-pointer appearance-none">
+                        <option v-for="y in availableYears" :key="y" :value="y">ឆ្នាំ {{ y }}</option>
+                    </select>
+                </template>
+
+                <select v-if="dateFilterType === 'yearly'" :value="selectedYear" @change="$emit('update:selectedYear', parseInt($event.target.value))" class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-4 py-2.5 outline-none focus:border-indigo-400 focus:bg-white transition-colors cursor-pointer appearance-none">
+                    <option v-for="y in availableYears" :key="y" :value="y">ទិន្នន័យប្រចាំឆ្នាំ {{ y }}</option>
+                </select>
+
+                <template v-if="dateFilterType === 'custom'">
+                     <input type="date" :value="customStart" @input="$emit('update:customStart', $event.target.value)" class="flex-1 bg-slate-50 border border-slate-200 text-slate-700 text-[11px] font-bold rounded-xl px-2 py-2.5 outline-none focus:border-indigo-400 focus:bg-white cursor-pointer">
+                     <span class="flex items-center text-slate-400 font-bold">-</span>
+                     <input type="date" :value="customEnd" @input="$emit('update:customEnd', $event.target.value)" class="flex-1 bg-slate-50 border border-slate-200 text-slate-700 text-[11px] font-bold rounded-xl px-2 py-2.5 outline-none focus:border-indigo-400 focus:bg-white cursor-pointer">
+                </template>
+            </div>
+        </div>
+
+        <div class="flex px-6 pt-3 bg-white border-b border-slate-200 shrink-0 gap-6">
+            <button @click="activeTab = 'add'" class="pb-3 text-[13px] font-black border-b-[3px] transition-all" :class="activeTab === 'add' ? 'border-rose-500 text-rose-600' : 'border-transparent text-slate-400 hover:text-slate-600'">បញ្ជូលចំណាយថ្មី</button>
+            <button @click="activeTab = 'list'" class="pb-3 text-[13px] font-black border-b-[3px] transition-all flex items-center gap-1.5" :class="activeTab === 'list' ? 'border-rose-500 text-rose-600' : 'border-transparent text-slate-400 hover:text-slate-600'">
+                បញ្ជីចំណាយ 
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-black transition-colors" :class="activeTab === 'list' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-500'">{{ expensesList.length }}</span>
+            </button>
+        </div>
+
+        <div v-if="formError" class="mx-6 mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2 animate-fade-in-up">
+            <svg class="w-5 h-5 text-rose-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <p class="text-xs font-bold text-rose-700 leading-relaxed">{{ formError }}</p>
+        </div>
+
+        <div v-show="activeTab === 'add'" class="flex-1 overflow-y-auto p-6 bg-slate-50 custom-scrollbar space-y-5">
+            <div v-for="(exp, index) in expenses" :key="index" class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm relative animate-fade-in-up group hover:border-indigo-100 transition-colors">
+                
+                <button v-if="expenses.length > 1" @click="removeExpenseRow(index)" class="absolute -top-3 -right-3 w-8 h-8 bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-full shadow-md border border-slate-100 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/></svg>
+                </button>
+
+                <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                    <span class="w-6 h-6 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center text-[10px] font-black">{{ index + 1 }}</span>
+                    <h4 class="text-sm font-black text-slate-700">{{ editingId ? 'កែប្រែចំណាយ' : 'ការចំណាយ' }}</h4>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[11px] font-black text-slate-500 mb-1.5 uppercase">បរិយាយ / មូលហេតុ <span class="text-rose-500">*</span></label>
+                        <input v-model="exp.reason" @input="formError = ''" type="text" placeholder="ឧ. ចាក់សាំង, ទិញសម្ភារៈ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-black text-slate-500 mb-1.5 uppercase">ចំនួនទឹកប្រាក់ <span class="text-rose-500">*</span></label>
+                        <div class="flex rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-rose-500/10 focus-within:border-rose-400 transition-all border border-slate-200 bg-slate-50 focus-within:bg-white">
+                            <input v-model.number="exp.amount" @input="formError = ''" type="number" step="any" min="0" placeholder="0.00" class="flex-1 bg-transparent px-4 py-3 text-sm font-black text-slate-800 outline-none placeholder:font-normal">
+                            <select v-model="exp.currency" class="bg-slate-100 border-l border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 outline-none cursor-pointer hover:bg-slate-200 transition-colors appearance-none">
+                                <option value="USD">$ (USD)</option>
+                                <option value="KHR">៛ (KHR)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-black text-slate-500 mb-1.5 uppercase">ឈ្មោះអ្នកស្នើប្រាក់</label>
+                        <input v-model="exp.requester" type="text" placeholder="បញ្ជូលឈ្មោះអ្នកស្នើ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all">
+                    </div>
+
+                    <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/60">
+                        <label class="block text-[11px] font-black text-indigo-800 mb-3 uppercase tracking-wide">កាត់កងចំណាយទៅលើអ្នកគ្រប់គ្រងណាខ្លះ?</label>
+                        
+                        <div v-if="activeAdmins.length === 0" class="text-xs text-rose-600 font-bold bg-white p-3 rounded-lg border border-rose-100 shadow-sm flex items-center gap-2">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            មិនមានអ្នកគ្រប់គ្រងដែលមានចំណូលទេក្នុងកាលបរិច្ឆេទនេះ!
+                        </div>
+                        <div v-else class="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                            <label class="flex items-center gap-3 cursor-pointer group bg-white p-2.5 rounded-lg border border-transparent hover:border-indigo-200 transition-all shadow-sm">
+                                <input type="checkbox" value="ALL" v-model="exp.targetAdmins" @change="handleAllToggle(index)" class="w-4 h-4 rounded border-slate-300 text-rose-500 focus:ring-rose-500 cursor-pointer">
+                                <span class="text-xs font-black text-slate-800 group-hover:text-rose-600 transition-colors flex items-center gap-2">
+                                    👉 រួមទាំងអស់ (Global Expense)
+                                </span>
+                            </label>
+                            
+                            <label v-for="admin in activeAdmins" :key="admin.originalAdminId" class="flex items-center gap-3 cursor-pointer group bg-white p-2.5 rounded-lg border border-slate-100 hover:border-indigo-200 transition-all">
+                                <input type="checkbox" :value="admin.originalAdminId" v-model="exp.targetAdmins" @change="handleIndividualToggle(index)" class="w-4 h-4 rounded border-slate-300 text-indigo-500 focus:ring-indigo-500 cursor-pointer">
+                                <span class="text-[13px] font-bold text-slate-600 group-hover:text-slate-900">{{ admin.fullName }}</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button v-if="!editingId" type="button" @click="addExpenseRow" class="w-full py-4 border-2 border-dashed border-slate-300 rounded-2xl text-sm font-black text-slate-500 hover:bg-slate-100 hover:text-slate-700 hover:border-slate-400 transition-all flex items-center justify-center gap-2 mt-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                បន្ថែមចំណាយមួយទៀត
+            </button>
+        </div>
+
+        <div v-show="activeTab === 'list'" class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 custom-scrollbar space-y-4">
+            <div v-if="expensesList.length === 0" class="flex flex-col items-center justify-center py-20 text-slate-400 opacity-60">
+                <svg class="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span class="font-bold text-[15px]">មិនទាន់មានទិន្នន័យចំណាយទេ</span>
+            </div>
+            
+            <div v-else v-for="(item, index) in paginatedList" :key="item.id" class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative animate-fade-in-up">
+                <div class="absolute top-0 right-0 px-3 py-1 bg-slate-100 text-slate-500 text-[11px] font-black rounded-bl-xl border-l border-b border-slate-200">#{{ (currentPage - 1) * itemsPerPage + index + 1 }}</div>
+                
+                <div class="pr-14">
+                    <h4 class="font-black text-slate-800 text-[15px] mb-1">{{ item.reason }}</h4>
+                    <div class="text-xl font-black text-rose-600 mb-4">{{ item.amount?.toLocaleString() }} {{ item.currency === 'USD' ? '$' : '៛' }}</div>
+                </div>
+                
+                <div class="grid grid-cols-1 gap-2.5 text-[12px] font-bold text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg> 
+                        <span>ស្នើដោយ: <span class="text-slate-800">{{ item.requester }}</span></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> 
+                        <span>កាលបរិច្ឆេទ: <span class="text-slate-800">{{ formatDate(item.createdAt || item.date) }}</span></span>
+                    </div>
+                    <div class="flex items-start gap-2 pt-1 border-t border-slate-200/60 mt-1">
+                        <svg class="w-4 h-4 shrink-0 text-indigo-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg> 
+                        <span class="leading-relaxed">កាត់ទៅលើ: <span class="text-indigo-600">{{ formatTargets(item.targetAdmins) }}</span></span>
+                    </div>
+                </div>
+
+                <div class="absolute bottom-5 right-5 flex gap-2">
+                    <button @click="editExpense(item)" class="w-9 h-9 bg-slate-100 hover:bg-blue-500 hover:text-white text-slate-500 rounded-xl flex items-center justify-center transition-all shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                    </button>
+                    <button @click="confirmDelete(item.id)" class="w-9 h-9 bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-500 rounded-xl flex items-center justify-center transition-all shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="totalPages > 1" class="flex justify-between items-center bg-white p-3 rounded-2xl border border-slate-200 mt-6 shadow-sm">
+                <button @click="currentPage--" :disabled="currentPage === 1" class="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+                <span class="text-[13px] font-black text-slate-600 bg-slate-100 px-4 py-1.5 rounded-lg">ទំព័រ {{ currentPage }} នៃ {{ totalPages }}</span>
+                <button @click="currentPage++" :disabled="currentPage === totalPages" class="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+            </div>
+        </div>
+
+        <div v-if="activeTab === 'add'" class="p-6 border-t border-slate-200 bg-white shrink-0 z-10">
+            <button @click="submitExpenses" :disabled="isSubmitting" class="w-full bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-black py-4 rounded-xl shadow-lg shadow-rose-500/30 transition-transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50">
+                <span v-if="isSubmitting" class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                {{ editingId ? 'រក្សាទុកការកែប្រែ' : 'រក្សាទុកការចំណាយ' }}
+            </button>
+        </div>
+
+      </div>
+    </transition>
+
+    <transition enter-active-class="duration-200 ease-out" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100" leave-active-class="duration-150 ease-in" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
+        <div v-if="deleteAlert.show" class="fixed inset-0 z-[9999999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm font-khmer">
+            <div class="bg-white rounded-3xl w-full max-w-sm p-6 text-center shadow-2xl relative overflow-hidden animate-slide-up border border-rose-100">
+                <div class="absolute top-0 inset-x-0 h-2 bg-rose-500"></div>
+                <div class="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-100">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </div>
+                <h3 class="text-lg font-black text-slate-800 mb-2">បញ្ជាក់ការលុប!</h3>
+                <p class="text-[13px] font-bold text-slate-500 leading-relaxed mb-6">តើអ្នកពិតជាចង់លុបការចំណាយនេះមែនទេ? ទិន្នន័យនេះមិនអាចទាញមកវិញបានឡើយ។</p>
+                <div class="flex gap-3">
+                    <button @click="deleteAlert.show = false" class="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200 font-black py-3 rounded-xl transition-all active:scale-95">បោះបង់</button>
+                    <button @click="executeDelete" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-black py-3 rounded-xl transition-all shadow-md shadow-rose-500/30 active:scale-95">យល់ព្រមលុប</button>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch, reactive } from 'vue';
+import { db, auth } from '@/firebaseConfig';
+import { collection, addDoc, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+
+const props = defineProps({ 
+    show: Boolean, 
+    activeAdmins: Array,
+    expensesList: Array, // Realtime list from parent
+    
+    dateFilterType: String,
+    selectedDate: String,
+    selectedMonth: Number,
+    selectedYear: Number,
+    customStart: String,
+    customEnd: String,
+    availableYears: Array,
+    availableMonths: Array
+});
+
+const emit = defineEmits([
+    'close', 'expensesUpdated', 
+    'update:dateFilterType', 'update:selectedDate', 'update:selectedMonth', 
+    'update:selectedYear', 'update:customStart', 'update:customEnd'
+]);
+
+const activeTab = ref('add');
+const isSubmitting = ref(false);
+const defaultAdminName = ref('');
+const formError = ref(''); // State សម្រាប់បង្ហាញ Error Message ស្អាតៗ
+
+const expenses = ref([]);
+const editingId = ref(null);
+
+const currentPage = ref(1);
+const itemsPerPage = 30;
+
+// Custom Alert State
+const deleteAlert = reactive({ show: false, targetId: null });
+
+const initDefaultRow = () => {
+    expenses.value = [{ reason: '', amount: null, currency: 'USD', requester: defaultAdminName.value, targetAdmins: ['ALL'] }];
+    editingId.value = null;
+    formError.value = '';
+};
+
+onMounted(() => {
+    defaultAdminName.value = auth.currentUser?.displayName || '';
+    initDefaultRow();
+});
+
+watch(activeTab, (val) => {
+    if (val === 'add' && !editingId.value) initDefaultRow();
+    formError.value = '';
+});
+
+const totalPages = computed(() => Math.ceil(props.expensesList.length / itemsPerPage));
+const paginatedList = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage;
+    return props.expensesList.slice(start, start + itemsPerPage);
+});
+
+const addExpenseRow = () => {
+    expenses.value.push({ reason: '', amount: null, currency: 'USD', requester: defaultAdminName.value, targetAdmins: ['ALL'] });
+};
+
+const removeExpenseRow = (index) => { expenses.value.splice(index, 1); };
+
+const handleAllToggle = (index) => {
+    if (expenses.value[index].targetAdmins.includes('ALL')) {
+        expenses.value[index].targetAdmins = ['ALL']; 
+    }
+};
+
+const handleIndividualToggle = (index) => {
+    const list = expenses.value[index].targetAdmins;
+    if (list.includes('ALL') && list.length > 1) {
+        expenses.value[index].targetAdmins = list.filter(a => a !== 'ALL');
+    }
+    if (expenses.value[index].targetAdmins.length === 0) {
+        expenses.value[index].targetAdmins = ['ALL']; 
+    }
+};
+
+const submitExpenses = async () => {
+    formError.value = '';
+    
+    // Custom Validation
+    for (let i = 0; i < expenses.value.length; i++) {
+        const exp = expenses.value[i];
+        if (!exp.reason.trim()) {
+            formError.value = `សូមបញ្ជូល "បរិយាយ / មូលហេតុ" នៅចំណាយទី ${i + 1}`;
+            return;
+        }
+        if (!exp.amount || exp.amount <= 0) {
+            formError.value = `សូមបញ្ជូល "ចំនួនទឹកប្រាក់" ឱ្យបានត្រឹមត្រូវ នៅចំណាយទី ${i + 1}`;
+            return;
+        }
+    }
+
+    isSubmitting.value = true;
+    try {
+        if (editingId.value) {
+            const exp = expenses.value[0];
+            await updateDoc(doc(db, 'daily_expenses', editingId.value), {
+                reason: exp.reason, amount: exp.amount, currency: exp.currency,
+                requester: exp.requester || 'មិនបញ្ជាក់', targetAdmins: exp.targetAdmins
+            });
+        } else {
+            const promises = expenses.value.map(exp => {
+                return addDoc(collection(db, 'daily_expenses'), {
+                    reason: exp.reason, amount: exp.amount, currency: exp.currency,
+                    requester: exp.requester || defaultAdminName.value || 'មិនបញ្ជាក់',
+                    targetAdmins: exp.targetAdmins,
+                    createdBy: auth.currentUser?.uid, 
+                    createdAt: serverTimestamp()
+                });
+            });
+            await Promise.all(promises);
+        }
+        
+        emit('expensesUpdated'); 
+        initDefaultRow(); 
+        if(editingId.value) activeTab.value = 'list';
+        else emit('close');
+    } catch (e) {
+        console.error(e);
+        formError.value = "មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ សូមព្យាយាមម្ដងទៀត!";
+    } finally {
+        isSubmitting.value = false;
+    }
+};
+
+const editExpense = (item) => {
+    editingId.value = item.id;
+    expenses.value = [{
+        reason: item.reason, amount: item.amount, currency: item.currency || 'USD',
+        requester: item.requester, targetAdmins: item.targetAdmins || ['ALL']
+    }];
+    activeTab.value = 'add';
+};
+
+const confirmDelete = (id) => {
+    deleteAlert.targetId = id;
+    deleteAlert.show = true;
+};
+
+const executeDelete = async () => {
+    if (!deleteAlert.targetId) return;
+    try {
+        await deleteDoc(doc(db, 'daily_expenses', deleteAlert.targetId));
+        deleteAlert.show = false;
+        deleteAlert.targetId = null;
+        emit('expensesUpdated');
+    } catch(e) {
+        console.error(e);
+    }
+};
+
+const formatDate = (dateInput) => {
+   if(!dateInput) return '';
+   let date;
+   if (typeof dateInput.toDate === 'function') date = dateInput.toDate();
+   else date = new Date(dateInput);
+   if (isNaN(date.getTime())) return '';
+   
+   return new Intl.DateTimeFormat('km-KH', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+};
+
+const formatTargets = (targets) => {
+    if(!targets || targets.includes('ALL')) return 'រួមទាំងអស់';
+    const names = targets.map(id => {
+        const found = props.activeAdmins.find(a => a.originalAdminId === id);
+        return found ? found.fullName : 'មិនស្គាល់';
+    });
+    return names.join(', ');
+};
+</script>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700;900&display=swap');
+.font-khmer { font-family: 'Kantumruy Pro', sans-serif; }
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.animate-fade-in-up { animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(15px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.slide-enter-active, .slide-leave-active { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.slide-enter-from, .slide-leave-to { transform: translateX(100%); }
+</style>

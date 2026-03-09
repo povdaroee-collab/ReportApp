@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-[#0a0a0a] font-khmer relative overflow-hidden selection:bg-amber-500 selection:text-black" @click="closeDropdown">
+  <div class="min-h-[100dvh] flex items-center justify-center bg-[#0a0a0a] font-khmer relative overflow-hidden selection:bg-amber-500 selection:text-black px-4 sm:px-0" @click="closeDropdown">
     
     <Teleport to="body">
-      <div class="fixed top-4 right-4 z-[9999] w-full max-w-sm pointer-events-none flex flex-col gap-2">
+      <div class="fixed top-4 right-4 z-[9999] w-full max-w-[90vw] sm:max-w-sm pointer-events-none flex flex-col gap-2">
         <div class="pointer-events-auto">
            <Toast />
         </div>
@@ -15,27 +15,27 @@
       <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
     </div>
 
-    <div class="relative w-full max-w-md mx-4 perspective-1000">
+    <div class="relative w-full max-w-md perspective-1000">
       
-      <div class="relative bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2rem] p-8 md:p-10 shadow-[0_0_60px_-15px_rgba(245,158,11,0.15)] overflow-hidden group">
+      <div class="relative bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2rem] p-6 sm:p-8 md:p-10 shadow-[0_0_60px_-15px_rgba(245,158,11,0.15)] overflow-hidden group">
         
         <div class="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
 
-        <div class="text-center mb-10 relative z-10">
-          <div class="inline-flex p-3 rounded-2xl bg-gradient-to-br from-amber-500/10 to-yellow-500/5 border border-amber-500/20 mb-5 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="text-center mb-8 sm:mb-10 relative z-10">
+          <div class="inline-flex p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-amber-500/10 to-yellow-500/5 border border-amber-500/20 mb-4 sm:mb-5 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
-          <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-100 to-white tracking-wide">ចូលប្រព័ន្ធ</h1>
-          <p class="text-amber-500/70 text-[11px] uppercase tracking-[0.2em] font-black mt-2">Report Management System</p>
+          <h1 class="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-100 to-white tracking-wide">ចូលប្រព័ន្ធ</h1>
+          <p class="text-amber-500/70 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] font-black mt-2">Report Management System</p>
         </div>
 
-        <form @submit.prevent="handleLogin" class="space-y-5 relative z-10">
+        <form @submit.prevent="handleLogin" class="space-y-4 sm:space-y-5 relative z-10">
           
           <div class="group relative user-dropdown-container z-[60]">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300 group-focus-within:text-amber-400 text-neutral-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
             </div>
             <input 
               ref="usernameInputRef"
@@ -47,7 +47,7 @@
               @keydown.esc="closeDropdown"
               type="text" 
               autocomplete="off"
-              class="w-full bg-[#171717] border border-neutral-800 rounded-xl py-3.5 pl-11 pr-4 text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300 hover:border-neutral-700 font-medium" 
+              class="w-full bg-[#171717] border border-neutral-800 rounded-xl py-3 sm:py-3.5 pl-10 sm:pl-11 pr-4 text-sm sm:text-base text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300 hover:border-neutral-700 font-medium" 
               placeholder="ឈ្មោះគណនី (Username)" 
               required 
             />
@@ -57,15 +57,15 @@
                     v-for="(acc, index) in filteredAccounts" :key="acc.username" 
                     @click.stop="selectSavedAccount(acc)" 
                     @mouseenter="highlightedIndex = index"
-                    class="px-4 py-2.5 rounded-lg cursor-pointer flex items-center justify-between transition-colors"
+                    class="px-3 sm:px-4 py-2.5 rounded-lg cursor-pointer flex items-center justify-between transition-colors"
                     :class="highlightedIndex === index ? 'bg-[#262626]' : 'hover:bg-[#262626]'"
                 >
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 sm:gap-3">
                         <div class="w-6 h-6 rounded-full bg-neutral-800 flex items-center justify-center text-[10px] font-black text-amber-500 border transition-colors"
                              :class="highlightedIndex === index ? 'border-amber-500/50' : 'border-neutral-700'">
                             {{ acc.username.charAt(0).toUpperCase() }}
                         </div>
-                        <span class="text-sm font-bold transition-colors"
+                        <span class="text-xs sm:text-sm font-bold transition-colors"
                               :class="highlightedIndex === index ? 'text-amber-400' : 'text-neutral-300'">
                             {{ acc.username }}
                         </span>
@@ -79,14 +79,14 @@
 
           <div class="group relative z-10">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300 group-focus-within:text-amber-400 text-neutral-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
             </div>
             
             <input 
               ref="passwordInputRef"
               v-model="password" 
               :type="showPassword ? 'text' : 'password'" 
-              class="w-full bg-[#171717] border border-neutral-800 rounded-xl py-3.5 pl-11 pr-12 text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300 hover:border-neutral-700 font-medium font-mono tracking-wider" 
+              class="w-full bg-[#171717] border border-neutral-800 rounded-xl py-3 sm:py-3.5 pl-10 sm:pl-11 pr-12 text-sm sm:text-base text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300 hover:border-neutral-700 font-medium font-mono tracking-wider" 
               placeholder="ពាក្យសម្ងាត់ (Password)" 
               required 
             />
@@ -97,34 +97,34 @@
               class="absolute inset-y-0 right-0 pr-4 flex items-center text-neutral-500 hover:text-amber-400 transition-colors focus:outline-none"
               tabindex="-1"
             >
-              <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+              <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
             </button>
           </div>
 
-          <div class="flex items-center justify-between mt-2 z-10 relative">
+          <div class="flex items-center justify-between mt-2 z-10 relative flex-wrap gap-y-2">
              <label class="flex items-center gap-2 cursor-pointer group select-none">
                 <div class="relative flex items-center justify-center w-4 h-4 rounded border border-neutral-600 bg-[#171717] group-hover:border-amber-500/50 transition-colors">
                    <input type="checkbox" v-model="rememberMe" class="opacity-0 absolute inset-0 cursor-pointer z-10" />
                    <svg v-if="rememberMe" class="w-3 h-3 text-amber-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                 </div>
-                <span class="text-[11px] font-bold text-neutral-400 group-hover:text-neutral-300 transition-colors">ចងចាំគណនីខ្ញុំ</span>
+                <span class="text-[10px] sm:text-[11px] font-bold text-neutral-400 group-hover:text-neutral-300 transition-colors">ចងចាំគណនីខ្ញុំ</span>
              </label>
 
-             <a href="https://t.me/MMKDaro" target="_blank" class="text-[11px] font-bold text-neutral-500 hover:text-amber-400 transition-colors flex items-center gap-1">
+             <a href="https://t.me/MMKDaro" target="_blank" class="text-[10px] sm:text-[11px] font-bold text-neutral-500 hover:text-amber-400 transition-colors flex items-center gap-1">
                 ភ្លេចពាក្យសម្ងាត់?
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
              </a>
           </div>
 
-          <button type="submit" ref="loginButtonRef" class="w-full relative overflow-hidden group bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black font-black py-3.5 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.3)] transform transition-all duration-200 hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 mt-4 z-10" :disabled="isLoading">
+          <button type="submit" ref="loginButtonRef" class="w-full relative overflow-hidden group bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black font-black py-3 sm:py-3.5 text-sm sm:text-base rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.3)] transform transition-all duration-200 hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 mt-4 sm:mt-5 z-10" :disabled="isLoading">
             <div class="absolute inset-0 bg-white/30 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out skew-x-12"></div>
             <span v-if="!isLoading" class="relative z-10 flex items-center justify-center gap-2">
               ចូលប្រព័ន្ធ (LOGIN)
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
             </span>
             <span v-else class="flex items-center justify-center gap-2 relative z-10">
-              <svg class="animate-spin h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <svg class="animate-spin h-4 w-4 sm:h-5 sm:w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
               កំពុងដំណើរការ...
             </span>
           </button>
@@ -132,7 +132,7 @@
         </form>
       </div>
 
-      <p class="text-center text-neutral-600 text-[10px] mt-8 font-black uppercase tracking-widest">
+      <p class="text-center text-neutral-600 text-[9px] sm:text-[10px] mt-6 sm:mt-8 font-black uppercase tracking-widest">
         &copy; 2026 Report System. All rights reserved.
       </p>
 
@@ -188,17 +188,14 @@ const closeDropdown = () => {
 
 // Handle Input Change
 const handleUsernameInput = () => {
-    // Show dropdown only if input is at least 2 characters OR if it perfectly matches an existing saved account (to show options early if they type fast)
     if (username.value.length >= 2 || savedAccounts.value.some(acc => acc.username.toLowerCase().startsWith(username.value.toLowerCase()))) {
         showSavedUsers.value = true;
     } else {
         showSavedUsers.value = false;
     }
     
-    // Reset highlighted index when typing
     highlightedIndex.value = -1;
     
-    // If they change the username, uncheck remember me and clear password
     rememberMe.value = false;
     password.value = '';
 };
@@ -225,14 +222,11 @@ const navigateDropdown = (direction) => {
 };
 
 const selectHighlightedAccount = () => {
-    // If dropdown is open and an item is highlighted, select it
     if (showSavedUsers.value && highlightedIndex.value >= 0 && highlightedIndex.value < filteredAccounts.value.length) {
         selectSavedAccount(filteredAccounts.value[highlightedIndex.value]);
     } else if (!showSavedUsers.value && username.value && password.value) {
-        // If dropdown is closed and inputs are filled, submit the form
         handleLogin();
     } else if (!showSavedUsers.value && username.value && !password.value) {
-        // Move focus to password if username is filled but password is empty
         passwordInputRef.value?.focus();
     }
 };
@@ -248,7 +242,6 @@ const selectSavedAccount = (account) => {
     rememberMe.value = true; 
     closeDropdown();
     
-    // Auto focus login button for quick entry
     setTimeout(() => {
         loginButtonRef.value?.focus();
     }, 100);
@@ -256,11 +249,10 @@ const selectSavedAccount = (account) => {
 
 // Delete account from local storage
 const removeSavedAccount = (usernameToRemove, event) => {
-    event.stopPropagation(); // Prevent triggering the row click
+    event.stopPropagation(); 
     savedAccounts.value = savedAccounts.value.filter(acc => acc.username !== usernameToRemove);
     localStorage.setItem(LS_ACCOUNTS_KEY, JSON.stringify(savedAccounts.value));
     
-    // Clear input if they delete the currently typed one
     if (username.value === usernameToRemove) {
         username.value = '';
         password.value = '';
@@ -318,7 +310,6 @@ const handleLogin = async () => {
               currentAccounts.push(newAcc); 
           }
       } else {
-          // If they successfully log in but uncheck "Remember me", remove them from saved list
           if (existingIndex !== -1) {
               currentAccounts.splice(existingIndex, 1);
           }

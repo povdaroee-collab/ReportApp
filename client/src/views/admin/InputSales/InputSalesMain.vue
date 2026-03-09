@@ -624,18 +624,36 @@ const submitSale = async (formData) => {
             combinedLocation = `${formData.district}, ${formData.province}`;
         }
 
-        // ✅ បន្ថែម Data ថ្មីពេល Save ចូល DB
+        // 🌟 ជួសជុលបញ្ហាខ្នាត (Unit) និងបន្ថែម itemsPerCase ត្រង់នេះ 🌟
         const itemsToSave = cart.value.map((item, index) => {
             const finalType = item.manualType !== 'auto' ? item.manualType : getAutoCalculatedType(item);
 
+            // ឆែកលក្ខខណ្ឌខ្នាតឱ្យបានច្បាស់លាស់
+            let correctUnit = '';
+            if (item.product.isCombo) {
+                correctUnit = 'set'; // បើជាឈុត (Combo) គឺត្រូវតែរក្សាទុកជា set (ឈុត) ជានិច្ច
+            } else if (item.selectedUnit === 'case') {
+                correctUnit = item.product.unit || 'case'; // បើជាដុំ រក្សាទុកជា case (កេះ) ឬតាមស្តុក
+            } else {
+                correctUnit = item.product.retailUnit || 'bottle'; // បើរាយ រក្សាទុកជា bottle (ដប/កញ្ចប់)
+            }
+
             return {
-                id: item.product.id, cartItemId: `${item.product.id}_${Date.now()}_${index}`,
-                name: item.product.name, image: item.product.image || '',
-                price: calculateItemUnitPrice(item), qty: item.qty,
-                type: finalType, // យកតម្លៃដែលវិភាគហើយ
-                isManualPriceApplied: Boolean(item.isManualPrice), // ផ្ញើចូល DB
-                isManualTypeApplied: item.manualType !== 'auto',   // ផ្ញើចូល DB
-                unit: item.selectedUnit === 'case' ? (item.product.unit || 'case') : (item.product.retailUnit || 'bottle'),
+                id: item.product.id, 
+                cartItemId: `${item.product.id}_${Date.now()}_${index}`,
+                name: item.product.name, 
+                image: item.product.image || '',
+                price: calculateItemUnitPrice(item), 
+                qty: item.qty,
+                type: finalType, 
+                isManualPriceApplied: Boolean(item.isManualPrice), 
+                isManualTypeApplied: item.manualType !== 'auto',  
+                
+                // ✅ ប្រើខ្នាតដែលបានឆែកត្រឹមត្រូវ
+                unit: correctUnit, 
+                // ✅ ចាប់យកទិន្នន័យ ក្នុង១កេះមានប៉ុន្មានដប ចូលទៅ DB តាមការស្នើសុំ
+                itemsPerCase: Number(item.product.itemsPerCase) || 1, 
+                
                 isCombo: Boolean(item.product.isCombo),
                 cost: item.product.isCombo ? item.product.totalBaseCost : (item.selectedUnit === 'case' ? Number(item.product.unitCost) : (Number(item.product.unitCost)/Number(item.product.itemsPerCase || 1)))
             };
@@ -656,6 +674,7 @@ const submitSale = async (formData) => {
         const docRef = await addDoc(collection(db, 'sales_reports'), payload);
         lastSavedSale.value = { id: docRef.id, ...payload };
 
+        // កាត់ស្តុកពេលលក់
         for (const item of cart.value) {
             if (item.product.isCombo) {
                 for (const subItem of item.product.items) {
@@ -689,6 +708,7 @@ const submitSale = async (formData) => {
 
     } catch (error) { 
         notification.error("មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ"); 
+        console.error(error);
     } 
     finally { 
         isSubmitting.value = false; 
