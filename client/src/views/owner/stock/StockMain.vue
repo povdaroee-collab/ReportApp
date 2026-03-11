@@ -19,7 +19,7 @@
 
       <div class="flex flex-wrap justify-center bg-neutral-800 p-1.5 rounded-xl border border-neutral-700 gap-1 shadow-inner">
         <button @click="activeTab = 'add'" :class="activeTab === 'add' ? 'bg-gradient-to-r from-amber-400 to-yellow-600 text-black shadow-lg' : 'text-neutral-400 hover:text-white hover:bg-neutral-700'" class="px-4 md:px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all duration-300">
-          ➕ បញ្ចូលស្តុក
+          ➕ បញ្ចូលស្តុកថ្មី
         </button>
         
         <button @click="activeTab = 'list'" :class="activeTab === 'list' ? 'bg-gradient-to-r from-amber-400 to-yellow-600 text-black shadow-lg' : 'text-neutral-400 hover:text-white hover:bg-neutral-700'" class="px-4 md:px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 flex items-center gap-2">
@@ -51,6 +51,7 @@
             @save="saveProduct" 
             @reset="resetForm" 
             @image-upload="handleImageUpload" 
+            @go-to-stock-in="activeTab = 'inout'"
         />
         
         <StockList 
@@ -94,14 +95,14 @@ import { useNotificationStore } from '@/stores/notification';
 import StockAdd from './StockAdd.vue';
 import StockList from './StockList.vue';
 import StockInOut from './StockInOut.vue';
-import StockTrash from './StockTrash.vue'; // នាំចូល File ថ្មី
+import StockTrash from './StockTrash.vue'; 
 
 const notification = useNotificationStore();
 const confirmDialogRef = ref(null);
 
 const activeTab = ref('list'); 
 const stockList = ref([]);
-const deletedStocks = ref([]); // State ថ្មីសម្រាប់ផ្ទុកទំនិញដែលបានលុប
+const deletedStocks = ref([]); 
 const isEditing = ref(false);
 const duplicateDetected = ref(false); 
 const currentPage = ref(1);
@@ -111,10 +112,12 @@ const isSaving = ref(false);
 const searchQuery = ref(''); 
 let unsubscribeStocks = null; 
 
+// 🌟 បន្ថែម mfgDate និង expDate ចូលក្នុងទម្រង់ (Form) 🌟
 const form = reactive({
   id: null, name: '', barcode: '', imagePreview: null,
   quantity: 0, unit: 'bottle', itemsPerCase: 12, currency: 'USD',
-  costMode: 'total', inputCost: 0
+  costMode: 'total', inputCost: 0,
+  mfgDate: '', expDate: ''
 });
 
 const generateBarcode = () => `STK-${Date.now().toString().slice(-6)}${Math.floor(1000 + Math.random() * 9000)}`;
@@ -138,17 +141,23 @@ const fetchStocks = () => {
 onMounted(() => { fetchStocks(); if (!isEditing.value) form.barcode = generateBarcode(); });
 onUnmounted(() => { if (unsubscribeStocks) unsubscribeStocks(); });
 
-// Smart Duplicate Detection (ត្រួតពិនិត្យតែក្នងស្តុកដែលកំពុង Active ប៉ុណ្ណោះ)
+// Smart Duplicate Detection
 watch(() => form.name, (newName) => {
     if (activeTab.value !== 'add' || !newName) return;
     const existing = stockList.value.find(item => item.name.toLowerCase() === newName.trim().toLowerCase());
     if (existing) {
         if (form.id !== existing.id) {
             isEditing.value = true; duplicateDetected.value = true;
-            Object.assign(form, { id: existing.id, barcode: existing.barcode, imagePreview: existing.image, quantity: existing.quantity, unit: existing.unit, itemsPerCase: existing.itemsPerCase || 12, currency: existing.currency, costMode: 'unit', inputCost: existing.unitCost });
+            Object.assign(form, { 
+                id: existing.id, barcode: existing.barcode, imagePreview: existing.image, 
+                quantity: existing.quantity, unit: existing.unit, itemsPerCase: existing.itemsPerCase || 12, 
+                currency: existing.currency, costMode: 'unit', inputCost: existing.unitCost,
+                mfgDate: existing.mfgDate || '', expDate: existing.expDate || '' // ទាញថ្ងៃផុតកំណត់ចាស់មកបង្ហាញ
+            });
         }
     } else if (duplicateDetected.value) {
         isEditing.value = false; duplicateDetected.value = false; form.id = null; form.barcode = generateBarcode(); 
+        form.mfgDate = ''; form.expDate = '';
     }
 });
 
@@ -160,6 +169,8 @@ const saveProduct = async () => {
     name: form.name, barcode: form.barcode, image: form.imagePreview, quantity: form.quantity,
     unit: form.unit, itemsPerCase: form.unit === 'case' ? form.itemsPerCase : null,
     currency: form.currency, unitCost: finalUnitCost, totalCost: finalUnitCost * form.quantity, 
+    mfgDate: form.mfgDate || null, // រក្សាទុកថ្ងៃផលិត
+    expDate: form.expDate || null, // រក្សាទុកថ្ងៃផុតកំណត់
     updatedAt: serverTimestamp(),
     isDeleted: false 
   };
@@ -206,7 +217,6 @@ const restoreFromTrash = async (item) => {
     try {
         await updateDoc(doc(db, "stocks", item.id), { 
             isDeleted: false 
-            // អាចលុប field deletedAt ចោលក៏បាន តែទុក false ក៏គ្រប់គ្រាន់ដែរ
         });
         notification.success(`បានស្តារទំនិញ "${item.name}" មកវិញដោយជោគជ័យ!`);
     } catch (error) {
@@ -236,13 +246,13 @@ const handleImageUpload = (e) => {
 };
 
 const resetForm = () => {
-  Object.assign(form, { id: null, name: '', barcode: generateBarcode(), imagePreview: null, quantity: 0, unit: 'bottle', itemsPerCase: 12, currency: 'USD', costMode: 'total', inputCost: 0 });
+  Object.assign(form, { id: null, name: '', barcode: generateBarcode(), imagePreview: null, quantity: 0, unit: 'bottle', itemsPerCase: 12, currency: 'USD', costMode: 'total', inputCost: 0, mfgDate: '', expDate: '' });
   isEditing.value = false; duplicateDetected.value = false;
 };
 
 const editItem = (item) => {
   isEditing.value = true; duplicateDetected.value = false; activeTab.value = 'add';
-  Object.assign(form, { id: item.id, name: item.name, barcode: item.barcode, imagePreview: item.image, quantity: item.quantity, unit: item.unit, itemsPerCase: item.itemsPerCase || 12, currency: item.currency, costMode: 'unit', inputCost: item.unitCost });
+  Object.assign(form, { id: item.id, name: item.name, barcode: item.barcode, imagePreview: item.image, quantity: item.quantity, unit: item.unit, itemsPerCase: item.itemsPerCase || 12, currency: item.currency, costMode: 'unit', inputCost: item.unitCost, mfgDate: item.mfgDate || '', expDate: item.expDate || '' });
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 

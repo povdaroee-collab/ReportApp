@@ -24,7 +24,7 @@
         <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 relative overflow-hidden shrink-0">
           <div class="absolute inset-0 bg-white/20 blur-md rounded-full -top-2 -left-2 w-8 h-8"></div>
           <svg class="h-6 w-6 text-white relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 01-2-2z" />
+             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
         </div>
         <div class="flex-1 min-w-0">
@@ -128,7 +128,7 @@
       <div class="flex-1 overflow-y-auto relative scroll-smooth bg-slate-50/50 p-4 md:p-8 w-full">
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-64 bg-indigo-200/20 blur-[120px] -z-10 rounded-full pointer-events-none hidden md:block"></div>
 
-        <router-view v-slot="{ Component }">
+        <router-view v-slot="{ Component, route }">
           <transition 
             enter-active-class="transition-all duration-300 ease-out" 
             enter-from="opacity-0 translate-y-4 scale-[0.98]" 
@@ -138,7 +138,9 @@
             leave-to="opacity-0 -translate-y-2 scale-[0.98]"
             mode="out-in"
           >
-            <component :is="Component" />
+            <div :key="route.fullPath" class="w-full h-full">
+                <component :is="Component" />
+            </div>
           </transition>
         </router-view>
       </div>
@@ -291,7 +293,6 @@ import { useNotificationStore } from '@/stores/notification';
 const router = useRouter();
 const route = useRoute();
 
-// ដោយសារយើងចង់ឱ្យវា Auto-hide ពីដំបូង យើងកំណត់វាជា false
 const isSidebarOpen = ref(false); 
 const isAuthLoading = ref(true);
 
@@ -359,10 +360,7 @@ const menuItems = computed(() => {
       { label: 'ផ្ទាំងគ្រប់គ្រង', path: '/app/owner/dashboard', key: 'dashboard', icon: icons.dashboard, glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
       { label: 'គ្រប់គ្រង Admin', path: '/app/owner/admins', key: 'admins', icon: icons.shield, glowClass: 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.6)]' },
       { label: 'គ្រប់គ្រងស្តុក', path: '/app/owner/stock-management', key: 'stock', icon: icons.box, glowClass: 'bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.6)]' },
-      //{ label: 'គណនី និងហិរញ្ញវត្ថុ', path: '/app/owner/account', key: 'account', icon: icons.wallet, glowClass: 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]' },
       { label: 'របាយការណ៍', path: '/app/owner/reports', key: 'reports', icon: icons.chart, glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
-      // លាក់ Settings ចេញ
-      //{ label: 'ការកំណត់', path: '/app/owner/settings', key: 'settings', icon: icons.cog, glowClass: 'bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.6)]' },
       { label: 'ធុងសម្រាម', path: '/app/owner/trash', key: 'trash', icon: icons.trash, glowClass: 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.6)]' },
     ];
   } 
@@ -490,7 +488,6 @@ const submitProfileUpdate = async () => {
 };
 
 const handleLogout = async () => {
-    // បិទ Bottom Menu ជាមុនសិនទើបបង្ហាញ Confirm
     showBottomMenu.value = false;
 
     const confirmed = await confirmDialogRef.value.open(

@@ -55,36 +55,53 @@
       </div>
 
       <div class="px-4 md:px-8 max-w-[90rem] mx-auto w-full">
-        <div v-show="showSummaryCards" :class="{'hidden md:block': !showMobileFilters, 'block animate-fade-in-up my-4': showMobileFilters, 'animate-fade-in-up my-6': showSummaryCards}">
-            <OwnerReportSummaryCards 
-                :grandTotals="grandTotals"
-                :activeCategory="activeCategory"
-                :activeAdminsCount="activeAdminsCount"
-                :inactiveAdminsCount="inactiveAdminsCount"
-            />
+        <div v-if="isLoading && allSales.length === 0" class="flex flex-col items-center justify-center py-20 opacity-60">
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-indigo-600 mb-4"></div>
+            <p class="font-bold text-slate-500">កំពុងរៀបចំទិន្នន័យដំបូង...</p>
         </div>
 
-        <div class="mt-4 relative z-10">
-            <OwnerReportAdminList 
-                :displayedData="displayedData"
-                :isLoading="isLoading"
-                :unitSettings="unitSettings"
-                v-model:activeCategory="activeCategory"
-                v-model:activityFilter="activityFilter"
-                :showMobileFilters="showMobileFilters"
-                @toggleMobileFilters="showMobileFilters = !showMobileFilters"
-                @print="openPrintModal('print')"
-                @pdf="openPrintModal('pdf')"
-            />
-        </div>
+        <template v-else>
+            <div v-show="showSummaryCards" :class="{'hidden md:block': !showMobileFilters, 'block animate-fade-in-up my-4': showMobileFilters, 'animate-fade-in-up my-6': showSummaryCards}">
+                <OwnerReportSummaryCards 
+                    :grandTotals="grandTotals"
+                    :activeCategory="activeCategory"
+                    :activeAdminsCount="activeAdminsCount"
+                    :inactiveAdminsCount="inactiveAdminsCount"
+                />
+            </div>
+
+            <div class="mt-4 relative z-10">
+                <OwnerReportAdminList 
+                    :displayedData="displayedData"
+                    :isLoading="isLoading"
+                    :unitSettings="unitSettings"
+                    v-model:activeCategory="activeCategory"
+                    v-model:activityFilter="activityFilter"
+                    :showMobileFilters="showMobileFilters"
+                    @toggleMobileFilters="showMobileFilters = !showMobileFilters"
+                    @print="openPrintModal('print')"
+                    @pdf="openPrintModal('pdf')"
+                />
+            </div>
+        </template>
       </div>
 
       <OwnerReportBottomSummary 
-         v-if="displayedData.length > 0 && activityFilter !== 'inactive'"
+         v-if="!isLoading && displayedData.length > 0 && activityFilter !== 'inactive'"
          :grandTotals="grandTotals"
          :unitSettings="unitSettings"
          class="px-4 md:px-8 max-w-[90rem] mx-auto w-full mt-6"
       />
+
+      <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0 translate-y-10" enter-to-class="opacity-100 translate-y-0" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-10">
+          <div v-if="fetchTimer.show" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/90 backdrop-blur-md border border-slate-700 text-white px-5 py-3.5 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center gap-3 pointer-events-none">
+              <div class="animate-spin h-5 w-5 border-2 border-indigo-400 border-t-transparent rounded-full"></div>
+              <span class="text-sm font-bold tracking-wide">កំពុងទាញទិន្នន័យ...</span>
+              <span class="text-[13px] text-indigo-300 font-mono font-black bg-slate-800 px-2 py-0.5 rounded border border-indigo-500/30 w-[45px] text-center">
+                  {{ fetchTimer.seconds.toFixed(1) }}s
+              </span>
+          </div>
+      </transition>
 
     </div>
 
@@ -134,7 +151,7 @@
         v-if="showExpenseSlide" 
         :show="showExpenseSlide" 
         :activeAdmins="adminsWithSales"
-        :expensesList="expensesInScope"
+        :expensesList="allExpenses"
         v-model:dateFilterType="dateFilterType"
         v-model:selectedDate="selectedDate"
         v-model:selectedMonth="selectedMonth"
@@ -196,6 +213,7 @@ const allSales = ref([]);
 const allSellers = ref([]); 
 const unitSettings = ref([]); 
 const allExpenses = ref([]); 
+const allStocks = ref([]);
 
 // Listeners for Realtime updates
 let unsubscribeAdmins = null;
@@ -203,6 +221,7 @@ let unsubscribeSales = null;
 let unsubscribeSellers = null;
 let unsubscribeSettings = null;
 let unsubscribeExpenses = null;
+let unsubscribeStocks = null;
 
 const showMobileFilters = ref(false);
 const showSummaryCards = ref(false); 
@@ -216,17 +235,42 @@ const printModal = reactive({
 });
 
 const activeCategory = ref('all'); 
-const dateFilterType = ref('monthly'); 
+const dateFilterType = ref('daily'); 
 const activityFilter = ref('all'); 
-const selectedDate = ref(new Date().toISOString().split('T')[0]);
-const selectedYear = ref(new Date().getFullYear());
-const selectedMonth = ref(new Date().getMonth());
-const customStart = ref(new Date().toISOString().split('T')[0]);
-const customEnd = ref(new Date().toISOString().split('T')[0]);
+
+const today = new Date();
+const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+const selectedDate = ref(todayStr);
+const selectedYear = ref(today.getFullYear());
+const selectedMonth = ref(today.getMonth());
+const customStart = ref(todayStr);
+const customEnd = ref(todayStr);
 
 const printStaging = ref(null);
 const processing = ref({ active: false, message: '', progress: 0 });
+
+// 🌟 មុខងាររាប់វិនាទីអណ្តែតពីលើ (Smart Floating Timer) 🌟
+const fetchTimer = reactive({ show: false, seconds: 0, interval: null });
+
+const startFetchTimer = () => {
+    fetchTimer.show = true;
+    fetchTimer.seconds = 0;
+    if (fetchTimer.interval) clearInterval(fetchTimer.interval);
+    fetchTimer.interval = setInterval(() => { fetchTimer.seconds += 0.1; }, 100);
+};
+
+const stopFetchTimer = () => {
+    fetchTimer.show = false;
+    if (fetchTimer.interval) clearInterval(fetchTimer.interval);
+};
+
 const monthNames = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
+const availableMonths = computed(() => monthNames.map((name, index) => ({ index, name })));
+const availableYears = computed(() => {
+    const currentYear = new Date().getFullYear();
+    return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
+});
 
 const alert = reactive({ show: false, title: '', message: '', type: 'success' });
 const triggerAlert = (type, title, message) => {
@@ -234,7 +278,126 @@ const triggerAlert = (type, title, message) => {
   setTimeout(() => alert.show = false, 3000);
 };
 
-// 🌟 Realtime Data Fetching 🌟
+const getDateRangeISO = () => {
+    try {
+        let start, end;
+        const createDateBounds = (dateString) => {
+            const base = new Date(dateString);
+            if (isNaN(base.getTime())) throw new Error("Invalid Date");
+            const startDay = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, 0, 0);
+            const endDay = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 23, 59, 59, 999);
+            return { startDay, endDay };
+        };
+
+        if (dateFilterType.value === 'daily') {
+            const { startDay, endDay } = createDateBounds(selectedDate.value);
+            start = startDay; end = endDay;
+        } else if (dateFilterType.value === 'monthly') {
+            start = new Date(parseInt(selectedYear.value), parseInt(selectedMonth.value), 1, 0, 0, 0);
+            end = new Date(parseInt(selectedYear.value), parseInt(selectedMonth.value) + 1, 0, 23, 59, 59, 999);
+        } else if (dateFilterType.value === 'yearly') {
+            start = new Date(parseInt(selectedYear.value), 0, 1, 0, 0, 0);
+            end = new Date(parseInt(selectedYear.value), 11, 31, 23, 59, 59, 999);
+        } else { 
+            const boundsStart = createDateBounds(customStart.value);
+            const boundsEnd = createDateBounds(customEnd.value);
+            start = boundsStart.startDay; end = boundsEnd.endDay;
+        }
+        
+        return { startStr: start.toISOString(), endStr: end.toISOString() };
+    } catch (error) {
+        console.warn("Date Parsing Warning, using today's fallback:", error);
+        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+        const todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
+        return { startStr: todayStart.toISOString(), endStr: todayEnd.toISOString() };
+    }
+};
+
+// 🌟 Tracking ID សម្រាប់ការពារកុំឱ្យការទាញទិន្នន័យចាស់ មកបិទនាឡិកាថ្មី
+let currentFetchId = 0; 
+let safetyTimer = null;
+
+const fetchDynamicData = () => {
+    if (allSales.value.length === 0) isLoading.value = true;
+
+    const { startStr, endStr } = getDateRangeISO();
+
+    if (unsubscribeSales) unsubscribeSales();
+    if (unsubscribeExpenses) unsubscribeExpenses();
+
+    const salesQ = query(
+        collection(db, 'sales_reports'),
+        where('createdAt', '>=', startStr),
+        where('createdAt', '<=', endStr)
+    );
+
+    const expensesQ = query(
+        collection(db, 'daily_expenses'),
+        where('createdAt', '>=', startStr),
+        where('createdAt', '<=', endStr)
+    );
+
+    currentFetchId++;
+    const thisFetchId = currentFetchId;
+
+    let isSalesSynced = false;
+    let isExpensesSynced = false;
+
+    // មុខងារឆែកមើលថា តើទិន្នន័យទាំងពីរ (Sales + Expenses) បានមកដល់ពី Server ពិតប្រាកដឬនៅ?
+    const checkCompletion = () => {
+        if (thisFetchId === currentFetchId && isSalesSynced && isExpensesSynced) {
+            stopFetchTimer();
+            if (safetyTimer) clearTimeout(safetyTimer);
+        }
+    };
+
+    unsubscribeSales = onSnapshot(salesQ, { includeMetadataChanges: true }, (snapshot) => {
+        if (thisFetchId !== currentFetchId) return; // មិនខ្វល់ពីទិន្នន័យចាស់ បើមានការដូរ ID ថ្មី
+        
+        allSales.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        isLoading.value = false; 
+        
+        if (!snapshot.metadata.fromCache) {
+            isSalesSynced = true;
+            checkCompletion();
+        }
+    }, (error) => {
+        console.error("Sales Subscription Error:", error);
+        if (thisFetchId === currentFetchId) {
+            isLoading.value = false;
+            isSalesSynced = true;
+            checkCompletion();
+        }
+    });
+
+    unsubscribeExpenses = onSnapshot(expensesQ, { includeMetadataChanges: true }, (snapshot) => {
+        if (thisFetchId !== currentFetchId) return;
+
+        allExpenses.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        if (!snapshot.metadata.fromCache) {
+            isExpensesSynced = true;
+            checkCompletion();
+        }
+    }, (error) => {
+        console.error("Expenses Subscription Error:", error);
+        if (thisFetchId === currentFetchId) {
+            isExpensesSynced = true;
+            checkCompletion();
+        }
+    });
+
+    // Safety Fallback: បើអ៊ីនធឺណិតយឺតខ្លាំង ឬមិនមានការផ្លាស់ប្តូរពី Server ឱ្យវាឈប់រាប់នៅ 30 វិនាទី ដើម្បីកុំឱ្យវិលរហូត
+    if (safetyTimer) clearTimeout(safetyTimer);
+    safetyTimer = setTimeout(() => {
+        if (thisFetchId === currentFetchId) {
+            isSalesSynced = true;
+            isExpensesSynced = true;
+            checkCompletion();
+        }
+    }, 30000); 
+};
+
 onMounted(() => {
   onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -245,21 +408,6 @@ onMounted(() => {
               adminsList.value = snapshot.docs
                   .map(doc => ({ id: doc.id, ...doc.data() }))
                   .filter(a => a.isDeleted === false || a.isDeleted === "false" || !a.isDeleted);
-          });
-
-          unsubscribeSales = onSnapshot(collection(db, 'sales_reports'), (snapshot) => {
-              allSales.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              
-              if (allSales.value.length > 0 && isLoading.value) {
-                 const validSales = allSales.value.filter(s => s.createdAt || s.date);
-                 if (validSales.length > 0) {
-                     const latestDate = validSales.map(s => new Date(s.createdAt || s.date)).sort((a,b) => b - a)[0];
-                     selectedYear.value = latestDate.getFullYear();
-                     selectedMonth.value = latestDate.getMonth();
-                     selectedDate.value = latestDate.toISOString().split('T')[0];
-                 }
-              }
-              isLoading.value = false;
           });
 
           const sellerQ = query(collection(db, 'users'), where('role', '==', 'seller'));
@@ -273,9 +421,12 @@ onMounted(() => {
               unitSettings.value = snapshot.docs.map(doc => doc.data());
           });
 
-          unsubscribeExpenses = onSnapshot(collection(db, 'daily_expenses'), (snapshot) => {
-              allExpenses.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const stockQ = collection(db, 'stocks');
+          unsubscribeStocks = onSnapshot(stockQ, (snapshot) => {
+              allStocks.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           });
+
+          fetchDynamicData();
 
        } catch (error) {
           console.error("Error", error);
@@ -291,54 +442,29 @@ onUnmounted(() => {
     if (unsubscribeSellers) unsubscribeSellers();
     if (unsubscribeSettings) unsubscribeSettings();
     if (unsubscribeExpenses) unsubscribeExpenses();
+    if (unsubscribeStocks) unsubscribeStocks();
+    stopFetchTimer();
+    if (safetyTimer) clearTimeout(safetyTimer);
 });
 
-const isDateInScope = (dateInput) => {
-   if(!dateInput) return false;
-   let date;
-   if (typeof dateInput.toDate === 'function') date = dateInput.toDate();
-   else date = new Date(dateInput);
-   if (isNaN(date.getTime())) return false;
+// 🌟 ដំណោះស្រាយការពន្យារពេល (Debounce) 🌟
+let debounceTimeout = null;
 
-   const dYear = date.getFullYear();
-   const dMonth = date.getMonth();
-   const year = date.getFullYear();
-   const month = String(date.getMonth() + 1).padStart(2, '0');
-   const day = String(date.getDate()).padStart(2, '0');
-   const dDateStr = `${year}-${month}-${day}`; 
-   
-   if (dateFilterType.value === 'daily') return dDateStr === selectedDate.value;
-   if (dateFilterType.value === 'monthly') return dMonth === parseInt(selectedMonth.value) && dYear === parseInt(selectedYear.value);
-   if (dateFilterType.value === 'yearly') return dYear === parseInt(selectedYear.value);
-   if (dateFilterType.value === 'custom') return dDateStr >= customStart.value && dDateStr <= customEnd.value;
-   return false;
-};
+watch([dateFilterType, selectedDate, selectedMonth, selectedYear, customStart, customEnd], () => {
+    
+    // ១. បង្ហាញនាឡិកាភ្លាមៗ ពេលចុចដូរ Filter 
+    startFetchTimer();
+    
+    // ២. បើកំពុងតែរង់ចាំ ហើយ Admin ចុចទៀត លុបការរង់ចាំចាស់ចោល
+    if (debounceTimeout) clearTimeout(debounceTimeout);
+    
+    // ៣. រង់ចាំ 0.6 វិនាទី បន្ទាប់ពីឈប់ចុច ទើបចាប់ផ្តើមបញ្ជាឱ្យ Firebase ទាញទិន្នន័យ (សន្សំ Read)
+    debounceTimeout = setTimeout(() => {
+        fetchDynamicData();
+    }, 600); 
 
-const expensesInScope = computed(() => {
-    return allExpenses.value.filter(exp => isDateInScope(exp.createdAt || exp.date));
-});
+}, { deep: true });
 
-const availableYears = computed(() => {
-    if (allSales.value.length === 0) return [new Date().getFullYear()];
-    const years = new Set(allSales.value.map(s => new Date(s.createdAt || s.date).getFullYear()));
-    return Array.from(years).sort((a, b) => b - a);
-});
-
-const availableMonths = computed(() => {
-    if (allSales.value.length === 0) return [{ index: new Date().getMonth(), name: monthNames[new Date().getMonth()] }];
-    const yearSales = allSales.value.filter(s => new Date(s.createdAt || s.date).getFullYear() === parseInt(selectedYear.value));
-    const months = new Set(yearSales.map(s => new Date(s.createdAt || s.date).getMonth()));
-    return Array.from(months).sort((a, b) => a - b).map(mIndex => ({ index: mIndex, name: monthNames[mIndex] }));
-});
-
-watch(selectedYear, () => {
-    const months = availableMonths.value;
-    if (!months.find(m => m.index === selectedMonth.value)) {
-        if(months.length > 0) selectedMonth.value = months[months.length - 1].index;
-    }
-});
-
-// 🌟 ធ្វើបច្ចុប្បន្នភាព baseCalculatedData ឱ្យរួមបញ្ចូលទិន្នន័យជាជួរតែមួយ មិនឱ្យស្ទួនឈ្មោះ Admin 🌟
 const baseCalculatedData = computed(() => {
    if (adminsList.value.length === 0) return [];
    let rows = [];
@@ -349,10 +475,9 @@ const baseCalculatedData = computed(() => {
       const relevantSales = allSales.value.filter(s => {
           const isMatch = s.createdBy === admin.id || adminSellersIds.includes(s.createdBy) || adminSellersIds.includes(s.uid);
           const isValid = s.paymentStatus !== 'CANCELED';
-          return isMatch && isValid && isDateInScope(s.createdAt || s.date);
+          return isMatch && isValid;
       });
 
-      // Filter តាម Active Category (ដុំ ឬ រាយ ឬ ទាំងអស់)
       let filteredSales = relevantSales;
       if (activeCategory.value === 'លក់រាយ') {
           filteredSales = relevantSales.filter(s => !s.items || !s.items.some(i => String(i.type || '').trim().includes('បោះដុំ')));
@@ -390,7 +515,6 @@ const baseCalculatedData = computed(() => {
 
       const hasSales = filteredSales.length > 0;
       
-      // បង្កើត Object តែមួយសម្រាប់ Admin ម្នាក់!
       rows.push({ 
           ...admin, 
           uniqueId: admin.id, 
@@ -425,7 +549,6 @@ const adminsWithSales = computed(() => {
     return displayedData.value.filter(a => a.hasSales);
 });
 
-// 🌟 ធ្វើបច្ចុប្បន្នភាព grandTotals ដោយចាប់យកពី allSales ផ្ទាល់ដើម្បីឱ្យត្រូវ ១០០% 🌟
 const grandTotals = computed(() => {
     let stats = {
         all: { usd: 0, khr: 0, clients: 0, totalUnitsCount: 0, units: {} },
@@ -433,7 +556,7 @@ const grandTotals = computed(() => {
         wholesale: { usd: 0, khr: 0, clients: 0, totalUnitsCount: 0, units: {} }
     };
 
-    const validSales = allSales.value.filter(s => s.paymentStatus !== 'CANCELED' && isDateInScope(s.createdAt || s.date));
+    const validSales = allSales.value.filter(s => s.paymentStatus !== 'CANCELED');
 
     validSales.forEach(sale => {
         const hasWholesale = sale.items && sale.items.some(item => String(item.type || '').trim().includes('បោះដុំ'));
@@ -468,9 +591,36 @@ const grandTotals = computed(() => {
 });
 
 
-// =========================================================================
-// 🚀 DYNAMIC PRINT/PDF LOGIC
-// =========================================================================
+const calculateItemCostUSD = (saleItem, saleCurrency) => {
+    let itemCostPerUnit = Number(saleItem.cost || 0);
+
+    if (saleCurrency === 'KHR' || saleCurrency === '៛') {
+        itemCostPerUnit = itemCostPerUnit / 4000;
+    }
+
+    const saleQty = Number(saleItem.qty || 0);
+    let totalItemCost = itemCostPerUnit * saleQty;
+
+    if (totalItemCost === 0 && allStocks.value.length > 0) {
+        let stockItem = allStocks.value.find(s => s.id === saleItem.id) || allStocks.value.find(s => s.name === saleItem.name);
+        if (stockItem) {
+            let baseUnitCost = Number(stockItem.unitCost || 0);
+            if (stockItem.currency === 'KHR' || stockItem.currency === '៛') {
+                baseUnitCost = baseUnitCost / 4000;
+            }
+            const itemsPerCase = Number(stockItem.itemsPerCase || 1);
+            const saleUnit = String(saleItem.unit || '').toLowerCase().trim();
+            const stockUnit = String(stockItem.unit || '').toLowerCase().trim();
+
+            if (stockUnit === 'case' && saleUnit !== 'case' && saleUnit !== 'កេះ') {
+                baseUnitCost = baseUnitCost / itemsPerCase; 
+            }
+            totalItemCost = baseUnitCost * saleQty;
+        }
+    }
+
+    return totalItemCost;
+};
 
 const openPrintModal = (type) => {
     printModal.type = type;
@@ -504,7 +654,7 @@ const rowsToPrint = computed(() => {
 });
 
 const filteredExpensesToPrint = computed(() => {
-    return expensesInScope.value.filter(exp => {
+    return allExpenses.value.filter(exp => {
         if (printModal.selectAll) return true;
         const targets = exp.targetAdmins || [];
         if (targets.includes('ALL')) return true;
@@ -518,12 +668,14 @@ const advancedPrintStats = computed(() => {
         paid: {
             wholesale: { products: {}, itemPriceTotalUSD: 0, clients: new Set() },
             retail: { products: {}, itemPriceTotalUSD: 0, clients: new Set() },
-            deliveryFeeUSD: 0
+            deliveryFeeUSD: 0,
+            itemCostTotalUSD: 0 
         },
         unpaid: {
             wholesale: { products: {}, itemPriceTotalUSD: 0, clients: new Set() },
             retail: { products: {}, itemPriceTotalUSD: 0, clients: new Set() },
-            deliveryFeeUSD: 0
+            deliveryFeeUSD: 0,
+            itemCostTotalUSD: 0 
         },
         totalExpensesUSD: 0 
     });
@@ -534,7 +686,7 @@ const advancedPrintStats = computed(() => {
         prov: createEmptyStat()
     };
 
-    let filteredValidSales = allSales.value.filter(s => s.paymentStatus !== 'CANCELED' && isDateInScope(s.createdAt || s.date));
+    let filteredValidSales = allSales.value.filter(s => s.paymentStatus !== 'CANCELED');
 
     if (!printModal.selectAll) {
         const targetAdminSellersIds = allSellers.value.filter(s => printModal.selectedAdmins.includes(s.createdBy)).map(s => s.id);
@@ -575,7 +727,9 @@ const advancedPrintStats = computed(() => {
                     const itemQty = Number(item.qty || 0);
                     const itemTotalUSD = price * itemQty;
 
-                    // 🌟 ប្រើប្រាស់ type ពី Database ផ្ទាល់ដើម្បីញែកតាម Item Level 🌟
+                    const itemCostTotalUSD = calculateItemCostUSD(item, sale.currency);
+                    target[payType].itemCostTotalUSD += itemCostTotalUSD;
+
                     const safeType = String(item.type || '').trim();
                     const isItemWholesale = safeType.includes('បោះដុំ');
 
@@ -585,11 +739,12 @@ const advancedPrintStats = computed(() => {
                     else hasRetail = true;
 
                     if (!target[payType][cat].products[productKey]) {
-                        target[payType][cat].products[productKey] = { name: pName, unit: unit, qty: 0, usd: 0, clients: new Set() };
+                        target[payType][cat].products[productKey] = { name: pName, unit: unit, qty: 0, usd: 0, costUsd: 0, clients: new Set() };
                     }
                     
                     target[payType][cat].products[productKey].qty += itemQty;
                     target[payType][cat].products[productKey].usd += itemTotalUSD;
+                    target[payType][cat].products[productKey].costUsd += itemCostTotalUSD;
                     target[payType][cat].products[productKey].clients.add(clientId);
                     
                     target[payType][cat].itemPriceTotalUSD += itemTotalUSD;
@@ -623,13 +778,15 @@ const advancedPrintStats = computed(() => {
         const paidItemsTotal = target.paid.wholesale.itemPriceTotalUSD + target.paid.retail.itemPriceTotalUSD;
         const paidDeliveryTotal = target.paid.deliveryFeeUSD;
         const paidTotal = paidItemsTotal + paidDeliveryTotal;
+        const totalPaidCostUSD = target.paid.itemCostTotalUSD; 
 
         const unpaidItemsTotal = target.unpaid.wholesale.itemPriceTotalUSD + target.unpaid.retail.itemPriceTotalUSD;
         const unpaidDeliveryTotal = target.unpaid.deliveryFeeUSD;
         const unpaidTotal = unpaidItemsTotal + unpaidDeliveryTotal;
 
         const totalExpensesUSD = target.totalExpensesUSD || 0;
-        const netProfit = paidTotal - totalExpensesUSD;
+        
+        const netProfit = paidTotal - totalExpensesUSD - totalPaidCostUSD;
 
         return {
             totalClients: target.allClients.size,
@@ -649,6 +806,7 @@ const advancedPrintStats = computed(() => {
                 paidTotal,
                 unpaidTotal,
                 totalExpensesUSD,
+                totalPaidCostUSD, 
                 netProfit
             }
         };
@@ -665,10 +823,15 @@ const advancedPrintStats = computed(() => {
 const reportDateLabel = computed(() => {
    const categoryName = activeCategory.value === 'all' ? 'សរុប (All)' : activeCategory.value;
    let dateStr = '';
-   if (dateFilterType.value === 'daily') dateStr = new Intl.DateTimeFormat('km-KH', { dateStyle: 'long' }).format(new Date(selectedDate.value));
-   if (dateFilterType.value === 'monthly') dateStr = `ខែ ${monthNames[selectedMonth.value]} ឆ្នាំ ${selectedYear.value}`;
-   if (dateFilterType.value === 'yearly') dateStr = `ឆ្នាំ ${selectedYear.value}`;
-   if (dateFilterType.value === 'custom') dateStr = `${selectedDateFormatter(customStart.value)} ដល់ ${selectedDateFormatter(customEnd.value)}`;
+   if (dateFilterType.value === 'daily') {
+       dateStr = new Intl.DateTimeFormat('km-KH', { dateStyle: 'long' }).format(new Date(selectedDate.value));
+   } else if (dateFilterType.value === 'monthly') {
+       dateStr = `ខែ ${monthNames[selectedMonth.value]} ឆ្នាំ ${selectedYear.value}`;
+   } else if (dateFilterType.value === 'yearly') {
+       dateStr = `ឆ្នាំ ${selectedYear.value}`;
+   } else if (dateFilterType.value === 'custom') {
+       dateStr = `${customStart.value} ដល់ ${customEnd.value}`;
+   }
    return `${dateStr} - ${categoryName}`;
 });
 
@@ -680,11 +843,6 @@ const reportAdminLabel = computed(() => {
     }
     return `អ្នកគ្រប់គ្រង ${printModal.selectedAdmins.length} នាក់`;
 });
-
-const selectedDateFormatter = (dateStr) => {
-    if(!dateStr) return '';
-    return new Intl.DateTimeFormat('km-KH', { dateStyle: 'medium' }).format(new Date(dateStr));
-};
 
 const translateUnit = (unitVal) => {
     if (!unitVal) return '';
@@ -701,10 +859,6 @@ const translateUnit = (unitVal) => {
 
 const fC = (val) => Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fQ = (val) => Number(val).toLocaleString('en-US');
-
-// =========================================================================
-// 🖨️ PDF & NATIVE PRINT GENERATOR
-// =========================================================================
 
 const generateMainTableHTML = (rows) => {
     if (rows.length === 0) return '';
@@ -850,7 +1004,7 @@ const generateAccountingSectionHTML = (title, data, isGrandTotal = false, expens
         
         footerSummaryHTML = `
             <div style="background: #f8fafc; padding: 25px 30px; display: flex; flex-direction: column; align-items: flex-end; page-break-inside: avoid;">
-                <div style="width: 450px; font-size: 14px;">
+                <div style="width: 480px; font-size: 14px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #334155;">
                         <span>ចំណូលសរុប (ទំនិញ PAID):</span>
                         <span style="font-weight: 700;">${fC(data.summary.paidItemsTotal)} $</span>
@@ -868,13 +1022,17 @@ const generateAccountingSectionHTML = (title, data, isGrandTotal = false, expens
                         <span>មិនទាន់ទូទាត់សរុប (ទំនិញ+ថ្លៃដឹក PENDING):</span>
                         <span style="font-size: 15px; font-weight: 900;">- ${fC(data.summary.unpaidTotal)} $</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; color: #be123c; font-weight: bold; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #be123c; font-weight: bold;">
                         <span>ចំណាយសរុប (Expenses):</span>
                         <span style="font-size: 15px; font-weight: 900;">- ${fC(data.summary.totalExpensesUSD)} $</span>
                     </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; color: #64748b; font-weight: bold; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">
+                        <span>សរុបតម្លៃដើម (Total Cost of Goods Sold):</span>
+                        <span style="font-size: 15px; font-weight: 900; color: #475569;">- ${fC(data.summary.totalPaidCostUSD)} $</span>
+                    </div>
                     
                     <div style="display: flex; justify-content: space-between; align-items: center; color: #0f172a;">
-                        <span style="font-weight: 900; text-transform: uppercase;">ប្រាក់ចំណេញសុទ្ធ (Net Profit):</span>
+                        <span style="font-weight: 900; text-transform: uppercase;">ប្រាក់ចំណេញសុទ្ធ (NET PROFIT):</span>
                         <span style="font-size: 24px; font-weight: 900; background: #e2e8f0; padding: 4px 12px; border-radius: 8px; color: ${profitColor};">${fC(data.summary.netProfit)} $</span>
                     </div>
                 </div>
@@ -895,6 +1053,10 @@ const generateAccountingSectionHTML = (title, data, isGrandTotal = false, expens
                     <div style="display: flex; justify-content: space-between; margin-top: 6px; color: #059669; font-weight: bold; border-top: 1px dashed #cbd5e1; padding-top: 6px;">
                         <span>ចំណូលសរុប (ទូទាត់រួច):</span>
                         <span style="font-size: 16px; font-weight: 900;">${fC(data.summary.paidTotal)} $</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 6px; color: #64748b; font-weight: bold; border-top: 1px dashed #cbd5e1; padding-top: 6px;">
+                        <span>តម្លៃដើមសរុប (Cost of Goods Sold):</span>
+                        <span style="font-size: 15px; font-weight: 900;">${fC(data.summary.totalPaidCostUSD)} $</span>
                     </div>
                 </div>
             </div>

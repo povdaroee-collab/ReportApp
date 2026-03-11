@@ -95,7 +95,7 @@
                           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                           <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
                         </span>
-                        <span class="text-[11px] font-black text-indigo-600">Credit ថ្ងៃនេះ: {{ Math.max(0, 44 - currentDailyUsage) }}/44</span>
+                        <span class="text-[11px] font-black text-indigo-600">Credit ថ្ងៃនេះ: {{ Math.max(0, 140 - currentDailyUsage) }}/140</span>
                     </div>
                 </div>
 
@@ -529,10 +529,10 @@ const handleBackdropClick = () => {
 };
 
 // ==========================================
-// 💡 SMART OCR LIMIT LOGIC
+// 💡 SMART OCR LIMIT LOGIC ចំនួន Cridet Ai 
 // ==========================================
 const showUpgradeModal = ref(false);
-const MAX_DAILY_LIMIT = 44; // ✅ Limit 44 
+const MAX_DAILY_LIMIT = 140; // ✅ Limit 140
 const currentDailyUsage = ref(0);
 
 const checkAndIncrementUsage = () => {

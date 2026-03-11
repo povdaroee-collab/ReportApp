@@ -15,7 +15,7 @@
         </button>
     </div>
 
-    <div v-show="mainTab === 'pos'" class="flex-1 overflow-hidden flex relative">
+្វ    <div v-show="mainTab === 'pos'" class="flex-1 overflow-hidden flex relative">
         <div class="flex-1 flex flex-col h-full bg-[#F4F7FE] relative overflow-hidden">
             <div class="bg-white/90 backdrop-blur-xl border-b border-slate-200/60 p-3 md:p-4 shadow-sm z-20 shrink-0">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 md:gap-4">
@@ -49,7 +49,7 @@
                             <img v-if="product.image && (product.image.startsWith('http') || product.image.startsWith('data:image'))" :src="product.image" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                             <div v-else class="text-slate-300 text-3xl font-black">{{ product.name.charAt(0) }}</div>
                             <div class="absolute top-1.5 right-1.5 md:top-2 md:right-2 px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-black bg-white/95 backdrop-blur-sm border shadow-sm" :class="getTotalRetailStock(product) > 0 ? 'text-emerald-600 border-emerald-100' : 'text-rose-600 border-rose-100'">ស្តុក: {{ getTotalRetailStock(product).toLocaleString() }}</div>
-                            <div v-if="getTotalRetailStock(product) <= 0" class="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center"><span class="bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">អស់ស្តុក</span></div>
+                            <div v-if="getTotalRetailStock(product) <= 0" class="absolute inset-0 bg-white/60 backdroស-blur-[2px] flex items-center justify-center"><span class="bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">អស់ស្តុក</span></div>
                         </div>
                         <div class="flex-1 flex flex-col">
                             <h3 class="font-black text-xs md:text-sm text-slate-800 leading-tight mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors">{{ product.name }}</h3>

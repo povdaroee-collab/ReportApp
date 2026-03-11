@@ -56,19 +56,19 @@
           </span>
       </div>
 
-      <div v-show="mainTab === 'today'" class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
+      <div v-if="mainTab === 'today'" class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
         <div class="max-w-[95rem] mx-auto w-full">
             <TodaySalesList @triggerAlert="triggerAlert" />
         </div>
       </div>
 
-      <div v-show="mainTab === 'finance'" class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 bg-[#F8FAFC]">
+      <div v-if="mainTab === 'finance'" class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 bg-[#F8FAFC]">
         <div class="max-w-[95rem] mx-auto w-full h-full">
             <FinanceCalculator />
         </div>
       </div>
 
-      <div v-show="mainTab === 'analytics'" class="flex-1 flex flex-col overflow-hidden relative">
+      <div v-if="mainTab === 'analytics'" class="flex-1 flex flex-col overflow-hidden relative">
           
           <div class="flex-none bg-white border-b border-slate-200 z-40 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)]">
             <div class="px-4 md:px-6 py-4 max-w-[95rem] mx-auto w-full flex flex-col lg:flex-row justify-between lg:items-center gap-4">
@@ -123,7 +123,7 @@
              <div class="px-4 md:px-6 py-6 max-w-[95rem] mx-auto w-full">
                
                <transition enter-active-class="transition duration-300 ease-out origin-top" enter-from-class="transform scale-y-95 opacity-0" enter-to-class="transform scale-y-100 opacity-100" leave-active-class="transition duration-200 ease-in origin-top" leave-from-class="transform scale-y-100 opacity-100" leave-to-class="transform scale-y-95 opacity-0">
-                   <div v-show="showSummaryCards" class="mb-6">
+                   <div v-if="showSummaryCards" class="mb-6">
                        <ReportStatsCards 
                           :grand-totals="grandTotals" 
                           :active-category="activeCategory" 
@@ -166,7 +166,7 @@
 
                <div v-if="isLoading" class="flex flex-col items-center justify-center py-24 opacity-60">
                   <div class="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-indigo-600 mb-4"></div>
-                  <p class="text-slate-500 font-bold tracking-wide text-sm">កំពុងទាញយកទិន្នន័យ...</p>
+                  <p class="text-slate-500 font-bold tracking-wide text-sm">កំពុងទាញយកទិន្នន័យវៃឆ្លាត...</p>
                </div>
 
                <div v-else-if="paginatedData.length === 0" class="flex flex-col items-center justify-center py-20 bg-white/60 backdrop-blur-sm rounded-3xl border-2 border-dashed border-slate-200">
@@ -252,7 +252,7 @@ import SellerDataView from './reports/SellerDataView.vue';
 import ReportStatsCards from './reports/ReportStatsCards.vue'; 
 import ReportBottomSummary from './reports/ReportBottomSummary.vue';
 import TodaySalesList from './reports/pos/POSTodaySales.vue'; 
-import FinanceCalculator from './reports/pos/FinanceCalculator.vue'; // ✅ Import File ថ្មី
+import FinanceCalculator from './reports/pos/FinanceCalculator.vue';
 import { executeNativePrint, generatePDF } from './printPdfLogic.js';
 
 const router = useRouter(); 
@@ -315,6 +315,85 @@ watch([searchQuery, activeCategory, activityFilter, dateFilterType, specificDate
 let unsubscribeSales = null;
 let unsubscribeSellers = null;
 
+// 🌟 DYNAMIC QUERY LOGIC (Server-Side Filtering) 🌟
+const getDateRangeISO = () => {
+    let start, end;
+    
+    const createDateBounds = (dateString) => {
+        const base = new Date(dateString);
+        const startDay = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, 0, 0);
+        const endDay = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 23, 59, 59, 999);
+        return { startDay, endDay };
+    };
+
+    if (dateFilterType.value === 'today') {
+        const { startDay, endDay } = createDateBounds(getTodayString());
+        start = startDay; end = endDay;
+    } else if (dateFilterType.value === 'month') {
+        const today = new Date();
+        start = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0);
+        end = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+    } else if (dateFilterType.value === 'specific') {
+        const { startDay, endDay } = createDateBounds(specificDate.value);
+        start = startDay; end = endDay;
+    } else if (dateFilterType.value === 'range') {
+        const boundsStart = createDateBounds(startDate.value);
+        const boundsEnd = createDateBounds(endDate.value);
+        start = boundsStart.startDay; end = boundsEnd.endDay;
+    }
+    
+    return { startStr: start.toISOString(), endStr: end.toISOString() };
+};
+
+// 🌟 Fetch Data function 🌟
+const fetchDynamicSalesData = (userId) => {
+    isLoading.value = true;
+    const { startStr, endStr } = getDateRangeISO();
+
+    if (unsubscribeSales) unsubscribeSales();
+
+    const salesQ = query(
+        collection(db, 'sales_reports'), 
+        where('createdBy', '==', userId),
+        where('createdAt', '>=', startStr),
+        where('createdAt', '<=', endStr)
+    );
+    
+    unsubscribeSales = onSnapshot(salesQ, (salesSnap) => {
+        let flatSales = [];
+        salesSnap.docs.forEach(doc => {
+            const data = doc.data();
+            
+            if (data.items && Array.isArray(data.items)) {
+                data.items.forEach((item, index) => {
+                    let typeStr = String(item.type || '').toLowerCase();
+                    let isWholesale = typeStr.includes('បោះដុំ') || typeStr.includes('wholesale');
+
+                    flatSales.push({
+                        ...data,                     
+                        id: `${doc.id}_${index}`, 
+                        originalReceiptId: data.receiptId || doc.id, 
+                        sellerId: data.sellerId || data.uid || 'admin_direct',
+                        uid: data.uid || data.sellerId || 'admin_direct',
+                        category: isWholesale ? 'បោះដុំ' : 'លក់រាយ',
+                        totalSold: Number(item.qty),
+                        unit: item.unit,
+                        totalPrice: Number(item.price) * Number(item.qty),
+                        productName: item.name, 
+                        isFirstItemOfReceipt: index === 0 
+                    });
+                });
+            }
+        });
+
+        allSales.value = flatSales.sort((a,b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+        isLoading.value = false;
+    }, (error) => {
+        console.error("Error in realtime sales stream:", error);
+        isLoading.value = false;
+    });
+};
+
 onMounted(() => {
  onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -337,40 +416,12 @@ onMounted(() => {
          sellersList.value = fetchedSellers;
      });
 
-     const salesQ = query(collection(db, 'sales_reports'), where('createdBy', '==', user.uid));
-     
-     unsubscribeSales = onSnapshot(salesQ, (salesSnap) => {
-         let flatSales = [];
-         salesSnap.docs.forEach(doc => {
-             const data = doc.data();
-             
-             if (data.items && Array.isArray(data.items)) {
-                 data.items.forEach((item, index) => {
-                     let typeStr = String(item.type || '').toLowerCase();
-                     let isWholesale = typeStr.includes('បោះដុំ') || typeStr.includes('wholesale');
+     // ហៅទាញយកទិន្នន័យពេល Mount
+     fetchDynamicSalesData(user.uid);
 
-                     flatSales.push({
-                         ...data,                     
-                         id: `${doc.id}_${index}`, 
-                         originalReceiptId: data.receiptId || doc.id, 
-                         sellerId: data.sellerId || data.uid || 'admin_direct',
-                         uid: data.uid || data.sellerId || 'admin_direct',
-                         category: isWholesale ? 'បោះដុំ' : 'លក់រាយ',
-                         totalSold: Number(item.qty),
-                         unit: item.unit,
-                         totalPrice: Number(item.price) * Number(item.qty),
-                         productName: item.name, 
-                         isFirstItemOfReceipt: index === 0 
-                     });
-                 });
-             }
-         });
-
-         allSales.value = flatSales.sort((a,b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
-         isLoading.value = false;
-     }, (error) => {
-         console.error("Error in realtime sales stream:", error);
-         isLoading.value = false;
+     // បង្កើត Watcher ដើម្បីទាញទិន្នន័យឡើងវិញនៅពេលប្តូរ Filter ថ្ងៃខែ
+     watch([dateFilterType, specificDate, startDate, endDate], () => {
+         fetchDynamicSalesData(user.uid);
      });
 
    } catch (error) {
@@ -386,28 +437,13 @@ onUnmounted(() => {
     if (unsubscribeSellers) unsubscribeSellers();
 });
 
-const getValidDateStr = (sale) => sale.createdAt || sale.date;
-
+// Since we are filtering at the database level, we don't strictly need isDateInScope anymore, 
+// but we keep it returning true to not break downstream logic, as the data in allSales is already scoped!
 const isDateInScope = (dateStr) => {
- if (!dateStr) return false;
- const date = new Date(dateStr);
- const today = new Date();
-
- if (dateFilterType.value === 'today') {
-    return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
- } else if (dateFilterType.value === 'month') {
-    return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
- } else if (dateFilterType.value === 'specific') {
-    const sDate = new Date(specificDate.value);
-    return date.getDate() === sDate.getDate() && date.getMonth() === sDate.getMonth() && date.getFullYear() === sDate.getFullYear();
- } else if (dateFilterType.value === 'range') {
-    const sDate = new Date(startDate.value);
-    const eDate = new Date(endDate.value);
-    eDate.setHours(23, 59, 59, 999); 
-    return date >= sDate && date <= eDate;
- }
- return false;
+    return true; 
 };
+
+const getValidDateStr = (sale) => sale.createdAt || sale.date;
 
 const baseCalculatedData = computed(() => {
     let rows = [];

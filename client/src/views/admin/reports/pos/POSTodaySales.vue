@@ -1,17 +1,17 @@
 <template>
   <div class="w-full flex flex-col gap-6 animate-fade-in-up pb-24">
         
-        <div class="bg-white p-3 rounded-[20px] shadow-sm border border-slate-200/80 flex flex-col xl:flex-row justify-between xl:items-center gap-4 print:hidden">
+        <div class="bg-white p-3 md:p-4 rounded-[20px] shadow-sm border border-slate-200/80 flex flex-col xl:flex-row xl:items-center justify-between gap-4 print:hidden relative z-40">
             
-            <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full xl:w-auto">
-                <div class="flex flex-1 sm:flex-none overflow-x-auto no-scrollbar bg-slate-50 p-1.5 rounded-[14px] border border-slate-100">
-                    <button @click="setFilterType('today')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'today' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ថ្ងៃនេះ</button>
-                    <button @click="setFilterType('month')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'month' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ខែនេះ</button>
-                    <button @click="setFilterType('specific')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'specific' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ជ្រើសរើសថ្ងៃ</button>
-                    <button @click="setFilterType('range')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'range' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ចាប់ពីថ្ងៃ - ដល់ថ្ងៃ</button>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full xl:w-auto overflow-x-auto no-scrollbar">
+                <div class="flex bg-slate-50 p-1.5 rounded-[14px] border border-slate-100 shrink-0">
+                    <button @click="setFilterType('today')" class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'today' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ថ្ងៃនេះ</button>
+                    <button @click="setFilterType('month')" class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'month' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ខែនេះ</button>
+                    <button @click="setFilterType('specific')" class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'specific' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ជ្រើសថ្ងៃ</button>
+                    <button @click="setFilterType('range')" class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap" :class="filterType === 'range' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'">ចន្លោះថ្ងៃ</button>
                 </div>
 
-                <div class="flex items-center gap-3 animate-fade-in px-2" v-if="filterType !== 'today' && filterType !== 'month'">
+                <div class="flex items-center gap-2 animate-fade-in shrink-0" v-if="filterType !== 'today' && filterType !== 'month'">
                     <div v-if="filterType === 'specific'" class="w-full sm:w-auto relative">
                         <input type="date" v-model="specificDate" class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 outline-none">
                     </div>
@@ -21,35 +21,41 @@
                         <input type="date" v-model="endDate" class="flex-1 bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500/20 outline-none">
                     </div>
                 </div>
+
+                <div class="w-px h-8 bg-slate-200 hidden sm:block mx-1"></div>
+
+                <div class="flex bg-slate-50 p-1.5 rounded-[14px] border border-slate-100 shrink-0">
+                    <button @click="setPaymentFilter('ALL')" :class="paymentFilter === 'ALL' ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'" class="px-4 py-2.5 rounded-xl text-[11px] font-black transition-all">ទាំងអស់</button>
+                    <button @click="setPaymentFilter('PAID')" :class="paymentFilter === 'PAID' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-500 hover:text-emerald-600'" class="px-3 py-2.5 rounded-xl text-[11px] font-black transition-all">PAID</button>
+                    <button @click="setPaymentFilter('PENDING')" :class="paymentFilter === 'PENDING' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-500 hover:text-amber-600'" class="px-3 py-2.5 rounded-xl text-[11px] font-black transition-all">PENDING</button>
+                    <button @click="setPaymentFilter('CANCELED')" :class="paymentFilter === 'CANCELED' ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-500 hover:text-rose-600'" class="px-3 py-2.5 rounded-xl text-[11px] font-black transition-all">CANCELED</button>
+                </div>
             </div>
 
-            <div class="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
-                <div class="relative w-full sm:w-64">
+            <div class="flex items-center gap-2 w-full xl:w-auto">
+                <div class="relative flex-1 min-w-[200px]">
                     <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <input v-model="searchQuery" type="text" placeholder="ស្វែងរកវិក្កយបត្រ, អតិថិជន..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
+                    <input v-model="searchQuery" type="text" placeholder="ស្វែងរកវិក្កយបត្រ, អតិថិជន..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
                 </div>
+                
+                <button @click="showSummaryCards = !showSummaryCards" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 px-4 py-2.5 rounded-xl font-bold text-[11px] shadow-sm transition-colors flex items-center gap-2 shrink-0">
+                    <svg v-if="!showSummaryCards" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                    <span class="hidden sm:inline">{{ showSummaryCards ? 'លាក់កាតសរុប' : 'បង្ហាញកាតសរុប' }}</span>
+                </button>
 
-                <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-                    <button @click="showSummaryCards = !showSummaryCards" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border shadow-sm" :class="showSummaryCards ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'">
-                        <svg v-if="showSummaryCards" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                        <span class="hidden sm:block">{{ showSummaryCards ? 'លាក់ទិន្នន័យសរុប' : 'បង្ហាញទិន្នន័យសរុប' }}</span>
-                        <span class="sm:hidden">Stats</span>
-                    </button>
-
-                    <button @click="handlePrint" :disabled="filteredSales.length === 0" class="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm hover:bg-slate-700 transition-colors disabled:opacity-50">Print</button>
-                    <button @click="handlePDF" :disabled="filteredSales.length === 0" class="bg-rose-50 text-rose-600 border border-rose-200 px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm hover:bg-rose-100 transition-colors disabled:opacity-50">PDF</button>
-                </div>
+                <button @click="handlePrint" :disabled="filteredSales.length === 0" class="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm hover:bg-slate-900 transition-colors disabled:opacity-50 shrink-0">Print</button>
+                <button @click="handlePDF" :disabled="filteredSales.length === 0" class="bg-rose-50 text-rose-600 border border-rose-200 px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm hover:bg-rose-100 transition-colors disabled:opacity-50 shrink-0">PDF</button>
             </div>
         </div>
 
         <transition enter-active-class="transition duration-300 ease-out origin-top" enter-from-class="transform scale-y-95 opacity-0" enter-to-class="transform scale-y-100 opacity-100" leave-active-class="transition duration-200 ease-in origin-top" leave-from-class="transform scale-y-100 opacity-100" leave-to-class="transform scale-y-95 opacity-0">
-            <div v-show="showSummaryCards" class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-2 print:hidden">
+            <div v-show="showSummaryCards" class="grid grid-cols-1 md:grid-cols-3 gap-5 print:hidden">
                 <div class="bg-gradient-to-br from-indigo-500 to-blue-600 rounded-[20px] p-6 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
                     <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
                     <div class="relative z-10 flex flex-col h-full justify-between">
                         <p class="text-blue-100 text-[11px] font-black uppercase tracking-widest mb-1 flex items-center gap-2">ចំណូលទំនិញសុទ្ធ (Products)</p>
-                        <h3 class="text-3xl font-black">{{ totalStats.productsUSD.toLocaleString() }} <span class="text-lg opacity-80">$</span></h3>
+                        <h3 class="text-3xl font-black">{{ formatCurrency(totalStats.productsUSD) }}</h3>
                         <p class="text-sm font-bold opacity-90 mt-1">{{ totalStats.productsKHR.toLocaleString() }} ៛</p>
                     </div>
                 </div>
@@ -58,7 +64,7 @@
                     <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
                     <div class="relative z-10 flex flex-col h-full justify-between">
                         <p class="text-orange-100 text-[11px] font-black uppercase tracking-widest mb-1 flex items-center gap-2">ថ្លៃដឹកជញ្ជូនសរុប (Delivery)</p>
-                        <h3 class="text-3xl font-black">{{ totalStats.deliveryUSD.toLocaleString() }} <span class="text-lg opacity-80">$</span></h3>
+                        <h3 class="text-3xl font-black">{{ formatCurrency(totalStats.deliveryUSD) }}</h3>
                         <p class="text-sm font-bold opacity-90 mt-1">{{ totalStats.deliveryKHR.toLocaleString() }} ៛</p>
                     </div>
                 </div>
@@ -75,10 +81,10 @@
                         
                         <div class="flex gap-2 mt-3 pt-3 border-t border-slate-100">
                             <span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
-                                ភ្នំពេញ: <span class="text-indigo-600">{{ totalStats.ppClients }} នាក់</span>
+                                រាជធានីភ្នំពេញ: <span class="text-indigo-600">{{ totalStats.ppClients }} នាក់</span>
                             </span>
                             <span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
-                                ខេត្ត: <span class="text-amber-600">{{ totalStats.provClients }} នាក់</span>
+                                តាមបណ្តាខេត្ត: <span class="text-amber-600">{{ totalStats.provClients }} នាក់</span>
                             </span>
                         </div>
                     </div>
@@ -86,9 +92,9 @@
             </div>
         </transition>
 
-        <div v-if="isLoading" class="flex flex-col items-center justify-center py-24 opacity-60 print:hidden">
+        <div v-if="isLoading && allSales.length === 0" class="flex flex-col items-center justify-center py-24 opacity-60 print:hidden">
             <div class="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-indigo-600 mb-4"></div>
-            <p class="text-slate-500 font-bold tracking-wide">កំពុងទាញយកទិន្នន័យ...</p>
+            <p class="text-slate-500 font-bold tracking-wide text-sm">កំពុងទាញយកទិន្នន័យ...</p>
         </div>
 
         <div v-else-if="paginatedSales.length === 0" class="py-24 bg-white/50 backdrop-blur-sm rounded-[24px] border-2 border-dashed border-slate-200 text-center animate-fade-in print:hidden">
@@ -96,10 +102,18 @@
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
             </div>
             <p class="text-lg font-black text-slate-600">មិនមានទិន្នន័យទេ</p>
-            <p class="text-sm text-slate-400 mt-1">សូមសាកល្បងប្តូរការស្វែងរក ឬកាលបរិច្ឆេទ</p>
+            <p class="text-sm text-slate-400 mt-1">សូមសាកល្បងប្តូរការស្វែងរក ស្ថានភាព ឬកាលបរិច្ឆេទ</p>
         </div>
 
-        <div v-else class="flex flex-col gap-3 animate-fade-in print:hidden">
+        <div v-else class="flex flex-col gap-3 animate-fade-in print:hidden relative z-10">
+            <div class="mb-1 flex items-end justify-between px-2">
+                <h2 class="text-slate-600 font-black text-sm uppercase tracking-widest">បញ្ជីមុខទំនិញដែលបានលក់សរុប</h2>
+                <div class="text-right">
+                    <p class="text-xs font-bold text-slate-400 mb-0.5">សរុបទឹកប្រាក់ (Total)</p>
+                    <p class="text-xl font-black text-emerald-600 leading-none">{{ formatCurrency(totalAmountUSD) }}</p>
+                </div>
+            </div>
+
             <div v-for="(sale, index) in paginatedSales" :key="sale.id" class="bg-white rounded-[20px] border shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden group transition-all" :class="sale.paymentStatus === 'CANCELED' ? 'border-rose-200 bg-rose-50/30' : (isSaleIncomplete(sale) ? 'border-amber-300 bg-amber-50/10' : 'border-slate-200/80 hover:border-indigo-300')">
                 
                 <div class="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/50 transition-colors" @click="toggleExpand(sale.id)">
@@ -110,7 +124,7 @@
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-1">
-                                <h3 class="font-black text-sm sm:text-base line-clamp-1" :class="sale.paymentStatus === 'CANCELED' ? 'text-slate-500 line-through' : 'text-slate-800'">{{ sale.customerName || 'អតិថិជនទិញផ្ទាល់' }}</h3>
+                                <h3 class="font-black text-sm sm:text-base line-clamp-1" :class="sale.paymentStatus === 'CANCELED' ? 'text-slate-500 line-through' : 'text-slate-800'">{{ sale.customerName || 'ទូទៅ / មិនមានឈ្មោះ' }}</h3>
                                 
                                 <span v-if="sale.paymentStatus === 'PAID'" class="bg-emerald-50 text-emerald-600 text-[9px] px-1.5 py-0.5 rounded border border-emerald-200 font-black shrink-0">PAID</span>
                                 <span v-else-if="sale.paymentStatus === 'CANCELED'" class="bg-rose-100 text-rose-600 text-[9px] px-1.5 py-0.5 rounded border border-rose-200 font-black shrink-0">CANCELED</span>
@@ -142,30 +156,39 @@
                         </div>
                         
                         <div class="flex items-center gap-1.5">
+                            
                             <button @click.stop="openIdModal(sale.id)" class="p-2 bg-slate-50 hover:bg-fuchsia-50 text-slate-400 hover:text-fuchsia-600 border border-slate-100 hover:border-fuchsia-200 rounded-xl transition-all" title="មើល Database ID">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
                             </button>
+
                             <button v-if="sale.paymentStatus === 'PENDING'" @click.stop="markAsPaid(sale)" class="p-2 bg-amber-50 hover:bg-emerald-100 text-amber-600 hover:text-emerald-700 border border-amber-200 hover:border-emerald-300 rounded-xl transition-all" title="គូសចំណាំថាបានទូទាត់ (Mark as Paid)">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
                             </button>
+
                             <button v-if="sale.paymentStatus !== 'CANCELED'" @click.stop="openCancelModal(sale)" class="p-2 bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-100 hover:border-rose-200 rounded-xl transition-all" title="បោះបង់វិក្កយបត្រ (Cancel)">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             </button>
+
                             <button @click.stop="copyInvoiceText(sale)" class="p-2 bg-slate-50 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 border border-slate-100 hover:border-indigo-200 rounded-xl transition-all" title="ចម្លងអត្ថបទវិក្កយបត្រ">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                             </button>
+
                             <button @click.stop="shareToTelegram(sale)" class="p-2 bg-sky-50 hover:bg-sky-100 text-sky-500 hover:text-sky-700 border border-sky-100 hover:border-sky-300 rounded-xl transition-all" title="Share ទៅ Telegram">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.48-.94-2.4-1.54-1.06-.7-.37-1.09.23-1.72.16-.16 2.87-2.63 2.92-2.85.01-.03.01-.14-.06-.2-.06-.06-.17-.04-.25-.02-.11.02-1.91 1.2-5.39 3.55-.5.34-.95.51-1.35.5-.44-.01-1.29-.25-1.92-.42-.77-.21-1.37-.32-1.31-.68.03-.18.28-.37.76-.56 3.03-1.32 5.06-2.19 6.09-2.62 2.93-1.21 3.53-1.43 3.93-1.43.09 0 .28.01.4.04.1.03.24.1.33.25.08.16.07.32.07.33z"/></svg>
                             </button>
+
                             <button @click.stop="saveInvoiceAsImage(sale)" class="p-2 bg-slate-50 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 border border-slate-100 hover:border-emerald-200 rounded-xl transition-all" title="ទាញយករូបភាពវិក្កយបត្រ">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                             </button>
+
                             <button v-if="sale.paymentStatus !== 'CANCELED'" @click.stop="openEditModal(sale)" class="p-2 bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 border border-slate-100 hover:border-blue-200 rounded-xl transition-all" title="កែប្រែ">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                             </button>
+
                             <button @click.stop="openDeleteModal(sale)" class="p-2 bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-100 hover:border-rose-200 rounded-xl transition-all" title="លុបចោល">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
+                            
                             <div class="w-px h-6 bg-slate-200 mx-1"></div>
                             <svg class="w-5 h-5 text-slate-400 transition-transform duration-300" :class="expandedRows.has(sale.id) ? 'rotate-180 text-indigo-500' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
@@ -197,11 +220,7 @@
                                         <span class="text-indigo-500">{{ item.price || 0 }} $</span> 
                                         <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg> 
                                         <span>{{ item.qty || 0 }} {{ translateUnit(item.unit) }}</span>
-                                        
-                                        <span class="px-1.5 py-0.5 rounded text-[8px] ml-1" 
-                                              :class="checkIsWholesale(item.type) ? 'bg-purple-50 text-purple-600 border border-purple-200' : 'bg-slate-100 text-slate-500 border border-slate-200'">
-                                            {{ checkIsWholesale(item.type) ? 'បោះដុំ' : 'លក់រាយ' }}
-                                        </span>
+                                        <span class="bg-slate-100 px-1.5 py-0.5 rounded text-[8px] text-slate-500 ml-1">{{ checkIsWholesale(item.type) ? 'បោះដុំ' : 'លក់រាយ' }}</span>
                                     </p>
                                 </div>
                             </div>
@@ -225,11 +244,13 @@
             </div>
         </div>
 
-        <div v-if="totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between mt-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 print:hidden">
-            <span class="text-xs font-bold text-slate-500">ទំព័រ {{ currentPage }} នៃ {{ totalPages }} (សរុប {{ filteredSales.length }})</span>
-            <div class="flex gap-2">
-                <button @click="currentPage--" :disabled="currentPage === 1" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed font-bold text-xs transition-colors">មុន</button>
-                <button @click="currentPage++" :disabled="currentPage === totalPages" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed font-bold text-xs transition-colors">បន្ទាប់</button>
+        <div v-if="totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between mt-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 print:hidden relative z-20">
+            <span class="text-xs font-bold text-slate-500">
+                បង្ហាញ <span class="text-slate-800">{{ ((currentPage - 1) * itemsPerPage) + 1 }}</span> ទៅ <span class="text-slate-800">{{ Math.min(currentPage * itemsPerPage, filteredSales.length) }}</span> (ទំព័រ {{ currentPage }} នៃ {{ totalPages }})
+            </span>
+            <div class="flex gap-2 mt-3 sm:mt-0">
+                <button @click="prevPage" :disabled="currentPage === 1" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed font-bold text-xs transition-colors">មុន</button>
+                <button @click="nextPage" :disabled="currentPage === totalPages" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed font-bold text-xs transition-colors">បន្ទាប់</button>
             </div>
         </div>
     </div>
@@ -374,12 +395,9 @@
 
                         <div class="flex-1 min-w-0">
                             <p class="font-black text-sm text-slate-800 leading-tight mb-1">{{ item.name }}</p>
-                            <p class="text-[10px] font-bold flex gap-2 items-center">
-                                <span class="px-1.5 py-0.5 rounded border" 
-                                      :class="checkIsWholesale(item.type) ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-slate-100 text-slate-500 border-slate-200'">
-                                    {{ checkIsWholesale(item.type) ? 'បោះដុំ' : 'លក់រាយ' }}
-                                </span>
-                                <span class="uppercase text-slate-400">{{ translateUnit(item.unit) }}</span>
+                            <p class="text-[10px] font-bold text-slate-400 flex gap-2">
+                                <span class="bg-slate-100 px-1.5 py-0.5 rounded">{{ checkIsWholesale(item.type) ? 'បោះដុំ' : 'លក់រាយ' }}</span>
+                                <span class="uppercase">{{ translateUnit(item.unit) }}</span>
                             </p>
                         </div>
                         
@@ -389,7 +407,6 @@
                                 <input v-model.number="item.price" type="number" step="any" min="0" class="w-full h-full bg-transparent border-none text-sm font-black text-slate-800 text-center focus:ring-0 px-1 outline-none">
                             </div>
                             <span class="text-slate-300 font-bold text-xs hidden sm:block">x</span>
-                            
                             <div class="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden h-9 shadow-sm w-28">
                                 <button @click="decreaseEditQty(item)" type="button" class="w-8 h-full bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition-colors flex items-center justify-center font-bold border-r border-slate-200">−</button>
                                 <input v-model.number="item.qty" @input="recalculateEditItem(item)" type="number" min="1" class="w-full h-full text-center bg-transparent border-none font-black text-sm text-slate-800 focus:ring-0 p-0 outline-none">
@@ -478,15 +495,23 @@
         </div>
     </div>
 
+    <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0 translate-y-10" enter-to-class="opacity-100 translate-y-0" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-10">
+        <div v-if="fetchTimer.show" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/90 backdrop-blur-md border border-slate-700 text-white px-5 py-3.5 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center gap-3 pointer-events-none print:hidden">
+            <div class="animate-spin h-5 w-5 border-2 border-indigo-400 border-t-transparent rounded-full"></div>
+            <span class="text-sm font-bold tracking-wide">កំពុងទាញទិន្នន័យ...</span>
+            <span class="text-[13px] text-indigo-300 font-mono font-black bg-slate-800 px-2 py-0.5 rounded border border-indigo-500/30 w-[45px] text-center">
+                {{ fetchTimer.seconds.toFixed(1) }}s
+            </span>
+        </div>
+    </transition>
+
     <div ref="invoiceStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1] opacity-0 print:opacity-100 bg-white"></div>
     <div ref="printStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1] opacity-0 print:opacity-100 bg-white w-[1000px]"></div>
-
   
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, reactive } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
 import { db, auth } from '@/firebaseConfig';
 import { doc, getDoc, collection, query, where, onSnapshot, getDocs, updateDoc, increment, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -494,29 +519,33 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
 const emit = defineEmits(['triggerAlert']);
-const route = useRoute();
-const router = useRouter();
 
 const isLoading = ref(true);
 const allSales = ref([]);
 const availableUnits = ref([]);
-const printStaging = ref(null);
 const invoiceStaging = ref(null);
+const printStaging = ref(null);
 const processing = ref({ active: false, message: '', progress: 0 });
 
-// ✅ State សម្រាប់បង្ហាញ/លាក់កាតសរុប (Auto-Hide)
+// ✅ Show/Hide Summary State
 const showSummaryCards = ref(false);
 
 // Filters
 const filterType = ref('today');
+const paymentFilter = ref('ALL'); 
 const searchQuery = ref('');
 const specificDate = ref(new Date().toISOString().split('T')[0]);
 const startDate = ref(new Date().toISOString().split('T')[0]);
 const endDate = ref(new Date().toISOString().split('T')[0]);
 
-// Pagination
+const availableMonths = computed(() => ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'].map((name, index) => ({ index, name })));
+const availableYears = computed(() => { const currentYear = new Date().getFullYear(); return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1]; });
+const selectedMonth = ref(new Date().getMonth());
+const selectedYear = ref(new Date().getFullYear());
+
+// 🌟 Dynamic Pagination Limit
 const currentPage = ref(1);
-const itemsPerPage = ref(50);
+const itemsPerPage = computed(() => filterType.value === 'today' ? 5 : 20); 
 
 // Product data for Edit Modal
 const sellers = ref([]); 
@@ -524,9 +553,21 @@ const availableProducts = ref([]);
 const miniPosSearchQuery = ref('');
 
 let unsubscribeSales = null;
+let currentUserId = null;
+
+// 🌟 មុខងារ Format Currency 🌟
+const formatCurrency = (val) => {
+    return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " $";
+};
 
 const setFilterType = (type) => {
     filterType.value = type;
+    currentPage.value = 1;
+};
+
+// 🌟 Set Payment Status Filter
+const setPaymentFilter = (type) => {
+    paymentFilter.value = type;
     currentPage.value = 1;
 };
 
@@ -542,10 +583,123 @@ const checkIsWholesale = (typeStr) => {
     return str.includes('បោះដុំ') || str.includes('wholesale');
 };
 
+// 🌟 Floating Timer 🌟
+const fetchTimer = reactive({ show: false, seconds: 0, interval: null });
+
+const startFetchTimer = () => {
+    fetchTimer.show = true;
+    fetchTimer.seconds = 0;
+    if (fetchTimer.interval) clearInterval(fetchTimer.interval);
+    fetchTimer.interval = setInterval(() => { fetchTimer.seconds += 0.1; }, 100);
+};
+
+const stopFetchTimer = () => {
+    fetchTimer.show = false;
+    if (fetchTimer.interval) clearInterval(fetchTimer.interval);
+};
+
+// 🌟 SERVER-SIDE DATE FILTERING 🌟
+const getDateRangeISO = () => {
+    let start, end;
+    
+    const createDateBounds = (dateString) => {
+        const base = new Date(dateString);
+        const startDay = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, 0, 0);
+        const endDay = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 23, 59, 59, 999);
+        return { startDay, endDay };
+    };
+
+    if (filterType.value === 'today') {
+        const { startDay, endDay } = createDateBounds(getTodayString());
+        start = startDay; end = endDay;
+    } else if (filterType.value === 'month') {
+        start = new Date(selectedYear.value, selectedMonth.value, 1, 0, 0, 0);
+        end = new Date(selectedYear.value, selectedMonth.value + 1, 0, 23, 59, 59, 999);
+    } else if (filterType.value === 'specific') {
+        const { startDay, endDay } = createDateBounds(specificDate.value);
+        start = startDay; end = endDay;
+    } else if (filterType.value === 'range') {
+        const boundsStart = createDateBounds(startDate.value);
+        const boundsEnd = createDateBounds(endDate.value);
+        start = boundsStart.startDay; end = boundsEnd.endDay;
+    } else {
+        start = new Date(2000, 0, 1); end = new Date(2100, 0, 1);
+    }
+    
+    return { startStr: start.toISOString(), endStr: end.toISOString() };
+};
+
+// 🌟 Smart Variables 🌟
+let currentFetchId = 0;
+let safetyTimer = null;
+let debounceTimeout = null;
+
+// 🌟 FETCH REALTIME DATA BASED ON FILTER 🌟
+const fetchDynamicSalesData = (userId) => {
+    if (allSales.value.length === 0) isLoading.value = true;
+    
+    const { startStr, endStr } = getDateRangeISO();
+
+    // ផ្តាច់ listener ចាស់ចោលដើម្បីកុំឱ្យជាន់គ្នា និងស៊ី reads
+    if (unsubscribeSales) unsubscribeSales();
+
+    const salesQ = query(
+        collection(db, 'sales_reports'), 
+        where('createdBy', '==', userId),
+        where('createdAt', '>=', startStr),
+        where('createdAt', '<=', endStr)
+    );
+
+    currentFetchId++;
+    const thisFetchId = currentFetchId;
+
+    unsubscribeSales = onSnapshot(salesQ, { includeMetadataChanges: true }, (snapshot) => {
+        if (thisFetchId !== currentFetchId) return;
+
+        let fetched = [];
+        snapshot.docs.forEach(docSnap => {
+            fetched.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        allSales.value = fetched.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+        isLoading.value = false;
+
+        if (!snapshot.metadata.fromCache) {
+            stopFetchTimer();
+            if (safetyTimer) clearTimeout(safetyTimer);
+        }
+
+    }, (error) => {
+        console.error("Error fetching realtime sales:", error);
+        if (thisFetchId === currentFetchId) {
+            isLoading.value = false;
+            stopFetchTimer();
+        }
+    });
+
+    if (safetyTimer) clearTimeout(safetyTimer);
+    safetyTimer = setTimeout(() => {
+        if (thisFetchId === currentFetchId) stopFetchTimer();
+    }, 20000);
+};
+
+// 🌟 Watcher with Debouncing for Dates 🌟
+watch([filterType, specificDate, startDate, endDate, selectedMonth, selectedYear], () => {
+    if (currentUserId) {
+        startFetchTimer();
+        if (debounceTimeout) clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(() => {
+            currentPage.value = 1;
+            fetchDynamicSalesData(currentUserId);
+        }, 600);
+    }
+}, { deep: true });
+
 onMounted(() => {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
+            currentUserId = user.uid;
             try {
+                // Fetch static reference data once
                 const unitSnap = await getDocs(collection(db, 'settings_units'));
                 availableUnits.value = unitSnap.docs.map(d => d.data());
 
@@ -558,16 +712,8 @@ onMounted(() => {
                 const arrCombos = snapCombos.docs.map(d => ({ id: d.id, ...d.data(), isCombo: true }));
                 availableProducts.value = [...arrStocks, ...arrCombos];
 
-                const salesQ = query(collection(db, 'sales_reports'), where('createdBy', '==', user.uid));
-
-                unsubscribeSales = onSnapshot(salesQ, (snapshot) => {
-                    let fetched = [];
-                    snapshot.docs.forEach(docSnap => {
-                        fetched.push({ id: docSnap.id, ...docSnap.data() });
-                    });
-                    allSales.value = fetched.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-                    isLoading.value = false;
-                });
+                // ហៅទាញទិន្នន័យពេលចូលដំបូង
+                fetchDynamicSalesData(user.uid);
 
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -579,6 +725,9 @@ onMounted(() => {
 
 onUnmounted(() => {
     if (unsubscribeSales) unsubscribeSales();
+    stopFetchTimer();
+    if (safetyTimer) clearTimeout(safetyTimer);
+    if (debounceTimeout) clearTimeout(debounceTimeout);
 });
 
 const translateUnit = (unitVal) => {
@@ -610,29 +759,13 @@ const formatKhmerDateTime = (dateStr) => {
     return `${formatKhmerDate(dateStr)} - ${formatTime(dateStr)}`;
 };
 
-const isDateInFilterScope = (dateStr) => {
-    if (!dateStr) return false;
-    const date = new Date(dateStr);
-    const today = new Date();
-    
-    if (filterType.value === 'today') {
-        return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
-    } else if (filterType.value === 'month') {
-        return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
-    } else if (filterType.value === 'specific') {
-        const sDate = new Date(specificDate.value);
-        return date.getDate() === sDate.getDate() && date.getMonth() === sDate.getMonth() && date.getFullYear() === sDate.getFullYear();
-    } else if (filterType.value === 'range') {
-        const sDate = new Date(startDate.value);
-        const eDate = new Date(endDate.value);
-        eDate.setHours(23, 59, 59, 999); 
-        return date >= sDate && date <= eDate;
-    }
-    return true;
-};
-
+// 🌟 Local filtering: Search & Payment Status 🌟
 const filteredSales = computed(() => {
-    let result = allSales.value.filter(s => isDateInFilterScope(s.createdAt || s.date));
+    let result = allSales.value;
+
+    if (paymentFilter.value !== 'ALL') {
+        result = result.filter(s => s.paymentStatus === paymentFilter.value);
+    }
 
     if (searchQuery.value.trim()) {
         const q = searchQuery.value.toLowerCase().trim();
@@ -647,15 +780,26 @@ const filteredSales = computed(() => {
 });
 
 const totalPages = computed(() => Math.ceil(filteredSales.value.length / itemsPerPage.value) || 1);
+
 const paginatedSales = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage.value;
     return filteredSales.value.slice(start, start + itemsPerPage.value);
 });
 
-watch([searchQuery, filterType, specificDate, startDate, endDate], () => {
+// Pagination Methods
+const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
+const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
+
+watch([searchQuery, paymentFilter], () => {
     currentPage.value = 1;
 });
 
+// 🌟 បង្កើតអថេរ totalAmountUSD ដែលខ្វះត្រឡប់មកវិញ 🌟
+const totalAmountUSD = computed(() => {
+    return filteredSales.value.reduce((sum, item) => sum + (Number(item.totalAmount) || 0), 0);
+});
+
+// Summary Stats
 const validSales = computed(() => filteredSales.value.filter(s => s.paymentStatus !== 'CANCELED'));
 
 const totalStats = computed(() => {
@@ -675,10 +819,12 @@ const totalStats = computed(() => {
                 items += Number(item.qty);
             });
         }
+        
         const dFee = Number(sale.deliveryFee) || 0;
         if (sale.deliveryCurrency === 'USD' || !sale.deliveryCurrency) deliveryUSD += dFee;
         else deliveryKHR += dFee;
 
+        // Count PP and Prov clients
         if (sale.receiptId) {
             if (sale.province === 'រាជធានីភ្នំពេញ' || (sale.location && sale.location.includes('ភ្នំពេញ'))) {
                 ppClients.add(sale.receiptId);
@@ -712,6 +858,7 @@ const toggleExpand = (id) => {
     expandedRows.value = newSet;
 };
 
+// Actions
 const showIdModal = ref(false);
 const selectedDatabaseId = ref('');
 const openIdModal = (dbId) => { selectedDatabaseId.value = dbId; showIdModal.value = true; };
@@ -791,6 +938,53 @@ const copyInvoiceText = (sale) => {
     });
 };
 
+const shareToTelegram = (sale) => {
+    try {
+        if (!sale) { emit('triggerAlert', 'error', 'បរាជ័យ', 'មិនមានទិន្នន័យវិក្កយបត្រទេ'); return; }
+        const receiptId = sale.receiptId || 'N/A';
+        const dateStr = formatKhmerDate(sale.createdAt) || 'N/A';
+        const customerName = sale.customerName || 'ទូទៅ';
+        const customerPhone = sale.customerPhone || 'N/A';
+        const location = sale.location || 'N/A';
+        const sellerName = sale.sellerName || 'N/A';
+
+        let text = `🛒 វិក្កយបត្រ (INVOICE)\nលេខ: ${receiptId}\nកាលបរិច្ឆេទ: ${dateStr}\n--------------------------------\n👤 អតិថិជន: ${customerName}\n📞 ទូរស័ព្ទ: ${customerPhone}\n📍 ទីតាំង: ${location}\n👨‍💼 អ្នកលក់: ${sellerName}\n--------------------------------\n`;
+
+        const items = sale.items || [];
+        items.forEach((item, i) => {
+            const name = item.name || 'មិនស្គាល់ទំនិញ';
+            const typeLabel = checkIsWholesale(item.type) ? 'ដុំ' : 'រាយ';
+            const qty = item.qty || 0;
+            const unit = translateUnit(item.unit) || '';
+            const price = Number(item.price || 0);
+            const total = price * qty;
+            
+            text += `${i+1}. ${name} (${typeLabel})\n   ➔ ${qty} ${unit} x $${price} = $${total}\n`;
+        });
+
+        const totalAmount = Number(sale.totalAmount || 0);
+        let productsTotal = totalAmount;
+        const deliveryFee = Number(sale.deliveryFee || 0);
+        const deliveryCurrency = sale.deliveryCurrency === 'USD' ? '$' : '៛';
+
+        if ((sale.deliveryCurrency === 'USD' || sale.deliveryCurrency === '$') && deliveryFee > 0) { productsTotal -= deliveryFee; }
+
+        text += `--------------------------------\n💰 សរុបទំនិញ: $${productsTotal}\n`;
+        if (deliveryFee > 0) text += `🛵 ថ្លៃដឹកជញ្ជូន: ${deliveryFee} ${deliveryCurrency}\n`;
+        text += `💳 សរុបរួម: $${totalAmount}\n`;
+        if (sale.paymentNote) text += `📝 ចំណាំ: ${sale.paymentNote}\n`;
+        if (sale.paymentStatus === 'CANCELED') text += `\n❌ វិក្កយបត្រនេះត្រូវបានបោះបង់ (CANCELED) ❌\nមូលហេតុ: ${sale.cancelReason || 'មិនមានបញ្ជាក់'}`;
+
+        const encodedText = encodeURIComponent(text);
+        window.open(`https://t.me/share/url?url=&text=${encodedText}`, '_blank', 'noopener,noreferrer');
+
+    } catch (error) {
+        console.error("Error generating Telegram share link:", error);
+        emit('triggerAlert', 'error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការបង្កើតទម្រង់ចែករំលែក');
+    }
+};
+
+// EDIT MODAL LOGIC
 const editModal = reactive({ isOpen: false, activeTab: 'info', saleId: null, receiptId: '' });
 const isSaving = ref(false);
 const editForm = reactive({ 
@@ -813,6 +1007,7 @@ const openEditModal = (sale) => {
     editForm.paymentMethod = sale.paymentMethod || 'CASH';
     editForm.paymentStatus = sale.paymentStatus || 'PAID';
     editForm.paymentNote = sale.paymentNote || '';
+    
     editForm.deliveryFee = sale.deliveryFee || 0;
     editForm.deliveryCurrency = sale.deliveryCurrency || 'USD';
     editForm.items = JSON.parse(JSON.stringify(sale.items || []));
@@ -860,7 +1055,6 @@ const recalculateEditItem = (item) => {
     if (product && !item.isCombo) {
         const wQty = Number(product.wholesaleQty) || 0;
         const currentQty = Number(item.qty) || 0;
-
         if (wQty > 0 && currentQty >= wQty) {
             item.price = Number(product.wholesalePrice) || Number(item.price);
             item.type = 'តម្លៃបោះដុំ'; 
@@ -871,21 +1065,10 @@ const recalculateEditItem = (item) => {
     }
 };
 
-const increaseEditQty = (item) => {
-    item.qty = Number(item.qty) + 1;
-    recalculateEditItem(item);
-};
+const increaseEditQty = (item) => { item.qty = Number(item.qty) + 1; recalculateEditItem(item); };
+const decreaseEditQty = (item) => { if (Number(item.qty) > 1) { item.qty = Number(item.qty) - 1; recalculateEditItem(item); } };
 
-const decreaseEditQty = (item) => {
-    if (Number(item.qty) > 1) {
-        item.qty = Number(item.qty) - 1;
-        recalculateEditItem(item);
-    }
-};
-
-const editFormProductsTotal = computed(() => {
-    return editForm.items.reduce((sum, item) => sum + (Number(item.price||0) * Number(item.qty||0)), 0);
-});
+const editFormProductsTotal = computed(() => { return editForm.items.reduce((sum, item) => sum + (Number(item.price||0) * Number(item.qty||0)), 0); });
 
 const saveEdit = async () => {
     isSaving.value = true;
@@ -896,17 +1079,14 @@ const saveEdit = async () => {
         
         const productsSum = editFormProductsTotal.value;
         const dFee = Number(editForm.deliveryFee) || 0;
-        if (editForm.deliveryCurrency === 'USD') {
-            payloadToUpdate.totalAmount = productsSum + dFee;
-        } else {
-            payloadToUpdate.totalAmount = productsSum; 
-        }
+        if (editForm.deliveryCurrency === 'USD') payloadToUpdate.totalAmount = productsSum + dFee;
+        else payloadToUpdate.totalAmount = productsSum; 
 
         await updateDoc(doc(db, 'sales_reports', editModal.saleId), payloadToUpdate);
         editModal.isOpen = false;
         emit('triggerAlert', 'success', 'ជោគជ័យ', 'កែប្រែព័ត៌មានបានជោគជ័យ');
     } catch (error) {
-        emit('triggerAlert', 'error', 'បរាជ័យ', 'Sysyem Full! សូមទាក់ទងអ្នកអភិវឌ្ឃន៍កម្មវិធី ដើម្បីស្នើរ Upgrade System!');
+        emit('triggerAlert', 'error', 'បរាជ័យ', 'System Full! សូមទាក់ទងអ្នកអភិវឌ្ឍន៍កម្មវិធី ដើម្បីស្នើ Upgrade System!');
     } finally { isSaving.value = false; }
 };
 
@@ -982,6 +1162,11 @@ const generateSingleInvoiceHTML = (sale) => {
                     </td>
                 </tr>
             </table>
+
+            <div style="text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px dashed #e2e8f0; padding-top: 15px; margin-top: 50px; font-family: 'Battambong', sans-serif;">
+                <p style="margin: 0; font-weight: bold;">សូមអរគុណសម្រាប់ការគាំទ្រ!</p>
+                <p style="margin: 4px 0 0 0;">ទំនិញដែលទិញរួចមិនអាចដូរវិញបានទេ</p>
+            </div>
         </div>
     `;
 };
@@ -1005,9 +1190,10 @@ const saveInvoiceAsImage = async (sale) => {
     }
 };
 
+// --- PRINT / PDF LOGIC ---
 const getReportDateTitle = () => {
     if (filterType.value === 'today') return 'ប្រចាំថ្ងៃនេះ';
-    if (filterType.value === 'month') return 'ប្រចាំខែនេះ';
+    if (filterType.value === 'month') return `ប្រចាំខែ ${availableMonths.value[selectedMonth.value].name} ${selectedYear.value}`;
     if (filterType.value === 'specific') return `ប្រចាំថ្ងៃទី ${new Date(specificDate.value).toLocaleDateString('km-KH')}`;
     return `ចាប់ពី ${new Date(startDate.value).toLocaleDateString('km-KH')} ដល់ ${new Date(endDate.value).toLocaleDateString('km-KH')}`;
 };
@@ -1046,7 +1232,7 @@ const generateReportHTML = () => {
     });
 
     return `
-        <div class="print-layout" style="width: 1000px; padding: 40px; background: white; font-family: 'Battambang', sans-serif; color: #1e293b;">
+        <div class="print-layout" style="width: 1000px; padding: 40px; background: white; font-family: 'Battambong', sans-serif; color: #1e293b;">
             <div style="text-align: center; border-bottom: 2px solid #4f46e5; padding-bottom: 15px; margin-bottom: 20px;">
                 <h1 style="margin: 0; font-size: 24px; font-weight: 900;">បញ្ជីវិក្កយបត្រ</h1>
                 <p style="margin: 5px 0 0 0; color: #64748b; font-size: 13px;">កាលបរិច្ឆេទ: <strong>${dateTitle}</strong></p>
@@ -1093,8 +1279,8 @@ const handlePrint = () => {
     doc.open();
     doc.write(`
         <html><head><title>Invoices List</title>
-        <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700;900&display=swap" rel="stylesheet">
-        <style>@page { size: A4 portrait; margin: 10mm; } body { font-family: 'Battambang', sans-serif; -webkit-print-color-adjust: exact !important; margin: 0; }</style>
+        <link href="https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&display=swap" rel="stylesheet">
+        <style>@page { size: A4 portrait; margin: 10mm; } body { font-family: 'Battambong', sans-serif; -webkit-print-color-adjust: exact !important; margin: 0; }</style>
         </head><body>${html}</body></html>
     `);
     doc.close();
@@ -1138,8 +1324,8 @@ const handlePDF = async () => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700;900&display=swap');
-.font-khmer { font-family: 'Battambang', sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&display=swap');
+.font-khmer { font-family: 'Battambong', sans-serif; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -1157,5 +1343,6 @@ const handlePDF = async () => {
 
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
+
 @media print { .print\:hidden { display: none !important; } }
 </style>

@@ -209,7 +209,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, reactive } from 'vue';
 import { db, auth } from '@/firebaseConfig';
-import { collection, addDoc, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 const props = defineProps({ 
     show: Boolean, 
@@ -290,6 +290,7 @@ const handleIndividualToggle = (index) => {
     }
 };
 
+// 🌟 FIX: កំណត់កាលបរិច្ឆេទ (Date) ឱ្យត្រូវតាម Filter ដែលកំពុងរើស 🌟
 const submitExpenses = async () => {
     formError.value = '';
     
@@ -308,6 +309,15 @@ const submitExpenses = async () => {
 
     isSubmitting.value = true;
     try {
+        // 🌟 មុខងារចាប់យកថ្ងៃខែតាម Filter 🌟
+        const saveDate = new Date();
+        if (props.dateFilterType === 'daily' && props.selectedDate) {
+            const [y, m, d] = props.selectedDate.split('-');
+            saveDate.setFullYear(y, m - 1, d);
+        }
+        const createdAtStr = saveDate.toISOString();
+        const justDateStr = createdAtStr.split('T')[0]; // Save YYYY-MM-DD
+
         if (editingId.value) {
             const exp = expenses.value[0];
             await updateDoc(doc(db, 'daily_expenses', editingId.value), {
@@ -321,7 +331,8 @@ const submitExpenses = async () => {
                     requester: exp.requester || defaultAdminName.value || 'មិនបញ្ជាក់',
                     targetAdmins: exp.targetAdmins,
                     createdBy: auth.currentUser?.uid, 
-                    createdAt: serverTimestamp()
+                    createdAt: createdAtStr,   // ✅ Save ត្រូវថ្ងៃដែលបានជ្រើសរើស
+                    date: justDateStr          // ✅ Save String ទុកសម្រាប់ងាយស្រួល Query
                 });
             });
             await Promise.all(promises);

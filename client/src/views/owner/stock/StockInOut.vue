@@ -138,6 +138,31 @@
 
                     </div>
 
+                    <div v-if="mode === 'IN'" class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5 animate-slide-down">
+                        <div class="bg-neutral-800/80 p-3 rounded-xl border border-neutral-700 shadow-inner">
+                            <label class="block text-[10px] font-black text-emerald-400 mb-1.5 flex items-center gap-1.5 uppercase tracking-wider">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                ថ្ងៃផលិត (MFG Date) <span class="text-neutral-500 lowercase ml-1">- អាចរំលង</span>
+                            </label>
+                            <input 
+                                v-model="form.mfgDate" 
+                                type="date" 
+                                class="w-full bg-neutral-900 border border-neutral-600 rounded-lg px-3 py-2.5 text-xs font-bold text-neutral-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 outline-none transition-colors cursor-pointer"
+                            >
+                        </div>
+                        <div class="bg-neutral-800/80 p-3 rounded-xl border border-neutral-700 shadow-inner">
+                            <label class="block text-[10px] font-black text-rose-400 mb-1.5 flex items-center gap-1.5 uppercase tracking-wider">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                ថ្ងៃផុតកំណត់ (EXP Date) <span class="text-neutral-500 lowercase ml-1">- អាចរំលង</span>
+                            </label>
+                            <input 
+                                v-model="form.expDate" 
+                                type="date" 
+                                class="w-full bg-neutral-900 border border-neutral-600 rounded-lg px-3 py-2.5 text-xs font-bold text-neutral-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 outline-none transition-colors cursor-pointer"
+                            >
+                        </div>
+                    </div>
+
                     <div v-if="mode === 'IN' && form.qty > 0 && form.cost > 0" class="mb-5 text-[12px] bg-black/40 p-4 rounded-xl border border-neutral-700/50 shadow-inner space-y-3">
                         <div class="flex justify-between items-center border-b border-neutral-700/50 pb-2.5">
                             <span class="text-neutral-400 font-bold">តម្លៃសរុបទាំងអស់ (Total Cost):</span>
@@ -228,9 +253,6 @@
                             
                             <td class="px-5 py-3.5">
                                 <div class="flex items-center justify-center gap-2">
-                                    <button @click="openEditModal(h)" class="p-1.5 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-transparent hover:border-blue-500/30 rounded-lg transition-all active:scale-95" title="កែប្រែ">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                    </button>
                                     <button @click="openDeleteModal(h)" class="p-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-transparent hover:border-rose-500/30 rounded-lg transition-all active:scale-95" title="លុបចោល">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
@@ -257,7 +279,7 @@
                         <p class="text-xs text-rose-400 font-bold mb-1">⚠️ ចំណាំ៖ ការលុបនេះនឹង៖</p>
                         <ul class="text-[11px] text-neutral-300 list-disc list-inside pl-4 space-y-1">
                             <li>លុបទិន្នន័យនេះចេញពីបញ្ជីប្រវត្តិ</li>
-                            <li><strong class="text-white">{{ deleteModal.data?.type === 'IN' ? 'ដក' : 'បូក' }}ចំនួន {{ deleteModal.data?.qty }} {{ translateUnit(deleteModal.data?.unitDisplay) }}</strong> ទៅក្នុងស្តុកធំវិញដោយស្វ័យប្រវត្តិ។</li>
+                            <li><strong class="text-white">ស្តារចំនួនស្តុក និងតម្លៃដើម</strong> ទៅសភាពដើមវិញដោយស្វ័យប្រវត្តិ។</li>
                         </ul>
                     </div>
                     <div class="flex gap-3">
@@ -269,25 +291,6 @@
                             យល់ព្រមលុប
                         </button>
                     </div>
-                </div>
-            </div>
-        </transition>
-
-        <transition name="modal-fade">
-            <div v-if="editModal.show" class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm font-khmer">
-                <div class="bg-neutral-900 border border-neutral-700 rounded-3xl w-full max-w-sm p-6 text-center shadow-2xl relative overflow-hidden animate-slide-up">
-                    <div class="absolute top-0 inset-x-0 h-2 bg-blue-500"></div>
-                    <div class="w-16 h-16 bg-blue-500/10 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </div>
-                    <h3 class="text-lg font-black text-white mb-2">ព័ត៌មានពីការកែប្រែ</h3>
-                    <p class="text-[13px] font-bold text-neutral-400 leading-relaxed mb-6">
-                        ដើម្បីរក្សាភាពត្រឹមត្រូវនៃ <span class="text-blue-400">របាយការណ៍គណនេយ្យ និងតម្លៃដើមមធ្យមភាគ</span> ប្រព័ន្ធមិនអនុញ្ញាតឱ្យកែប្រែប្រវត្តិដោយផ្ទាល់ទេ។ <br><br>
-                        សូមធ្វើការ <span class="text-rose-400 border-b border-rose-400 pb-0.5">លុបប្រវត្តិនេះចោល</span> (ប្រព័ន្ធនឹងបូក/ដកស្តុកឱ្យវិញអូតូ) រួចសឹម <span class="text-emerald-400 border-b border-emerald-400 pb-0.5">បញ្ចូលថ្មី</span> ម្តងទៀត។
-                    </p>
-                    <button @click="editModal.show = false" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-500/20">
-                        យល់ព្រម
-                    </button>
                 </div>
             </div>
         </transition>
@@ -321,12 +324,13 @@ const form = reactive({
     qty: null, 
     cost: null, 
     reason: '', 
-    transactionUnit: 'bulk' 
+    transactionUnit: 'bulk',
+    mfgDate: '',
+    expDate: ''
 });
 
 // Modals State
 const deleteModal = reactive({ show: false, data: null, isDeleting: false });
-const editModal = reactive({ show: false });
 
 const vClickOutside = {
     mounted(el, binding) {
@@ -350,16 +354,15 @@ const filteredHistory = computed(() => {
     return history.value.filter(h => h.type === mode.value && activeProductIds.has(h.productId));
 });
 
-// ការគណនា Loss ឆ្លាតវៃផ្អែកលើខ្នាតរាយ ឬ ដុំ
 const lossValue = computed(() => {
     if (!selectedProduct.value || !form.qty || mode.value !== 'OUT') return 0;
     const unitCostBulk = Number(selectedProduct.value.unitCost) || 0;
     const itemsPerCase = Number(selectedProduct.value.itemsPerCase) || 1;
 
     if (form.transactionUnit === 'retail') {
-        return form.qty * (unitCostBulk / itemsPerCase); // ថ្លៃខាតជាដប
+        return form.qty * (unitCostBulk / itemsPerCase); 
     } else {
-        return form.qty * unitCostBulk; // ថ្លៃខាតជាកេះ
+        return form.qty * unitCostBulk; 
     }
 });
 
@@ -374,7 +377,6 @@ const totalLossUSD = computed(() => {
         }, 0);
 });
 
-// មុខងារគណនាថ្លៃដើម ឆ្លាតវៃ
 const calculateTotalCost = () => {
     const q = Number(form.qty) || 0;
     const c = Number(form.cost) || 0;
@@ -401,6 +403,20 @@ const calculateCostPerRetail = () => {
     }
 };
 
+// 🌟 FIX: Auto-calculate cost when changing dropdown Unit 🌟
+watch(() => form.transactionUnit, (newUnit) => {
+    if (mode.value === 'IN' && selectedProduct.value) {
+        const baseBulkCost = Number(selectedProduct.value.unitCost) || 0;
+        const itemsPerCase = Number(selectedProduct.value.itemsPerCase) || 1;
+
+        if (newUnit === 'retail') {
+            form.cost = Number((baseBulkCost / itemsPerCase).toFixed(4));
+        } else {
+            form.cost = baseBulkCost;
+        }
+    }
+});
+
 watch(mode, (newMode) => {
     if (selectedProduct.value) {
         form.transactionUnit = 'bulk';
@@ -422,14 +438,20 @@ const selectProduct = (prod) => {
     
     if (mode.value === 'IN') {
         form.cost = prod.unitCost; 
+        form.mfgDate = prod.mfgDate || '';
+        form.expDate = prod.expDate || '';
     } 
 };
 
 const clearSelection = () => {
     selectedProduct.value = null;
     searchQuery.value = '';
-    form.qty = null; form.cost = null; form.reason = ''; 
+    form.qty = null; 
+    form.cost = null; 
+    form.reason = ''; 
     form.transactionUnit = 'bulk';
+    form.mfgDate = ''; 
+    form.expDate = ''; 
 };
 
 const closeDropdown = () => { showDropdown.value = false; };
@@ -471,6 +493,8 @@ const submitTransaction = async () => {
         
         const adminName = auth.currentUser?.displayName || 'Admin';
 
+        const dataToUpdate = {};
+
         if (mode.value === 'IN') {
             const oldQty = currentQtyBulk;
             const oldUnitCost = newCostBulk; 
@@ -491,6 +515,9 @@ const submitTransaction = async () => {
             transactionTotalValue = form.qty * form.cost; 
             historyUnitCost = form.cost; 
 
+            if (form.mfgDate) dataToUpdate.mfgDate = form.mfgDate;
+            if (form.expDate) dataToUpdate.expDate = form.expDate;
+
         } else {
             newQtyBulk = currentQtyBulk - qtyDeltaBulk;
             historyUnitCost = newCostBulk; 
@@ -502,12 +529,14 @@ const submitTransaction = async () => {
             }
         }
 
-        await updateDoc(productRef, {
+        Object.assign(dataToUpdate, {
             quantity: newQtyBulk,
             unitCost: newCostBulk, 
             totalCost: newQtyBulk * newCostBulk, 
             updatedAt: serverTimestamp()
         });
+
+        await updateDoc(productRef, dataToUpdate);
 
         const displayUnitStr = form.transactionUnit === 'retail' ? (selectedProduct.value.retailUnit || 'bottle') : selectedProduct.value.unit;
 
@@ -536,14 +565,6 @@ const submitTransaction = async () => {
     }
 };
 
-// =====================================
-// 🚀 មុខងារ Edit និង Delete ដ៏វៃឆ្លាត 🚀
-// =====================================
-
-const openEditModal = (transaction) => {
-    editModal.show = true;
-};
-
 const openDeleteModal = (transaction) => {
     deleteModal.data = transaction;
     deleteModal.show = true;
@@ -559,45 +580,59 @@ const confirmDeleteTransaction = async () => {
         const productRef = doc(db, 'stocks', trx.productId);
         const productSnap = await getDoc(productRef);
         
-        // ឆែកមើលថាតើទំនិញនេះនៅមានក្នុងប្រព័ន្ធ ឬ លុបចោលបាត់ហើយ
         if (productSnap.exists()) {
             const prodData = productSnap.data();
-            const currentQty = Number(prodData.quantity) || 0;
-            const currentUnitCost = Number(prodData.unitCost) || 0;
+            const currentQtyBulk = Number(prodData.quantity) || 0;
+            const currentTotalCost = Number(prodData.totalCost) || 0; 
             const itemsPerCase = Number(prodData.itemsPerCase) || 1;
 
-            // វិភាគថាតើប្រវត្តិដែលចង់លុបនោះ ជាខ្នាតរាយ ឬ ខ្នាតដុំ
             const isRetailRecord = (trx.unitDisplay !== prodData.unit && trx.unitDisplay !== translateUnit(prodData.unit));
             
-            let bulkQtyToReverse = Number(trx.qty);
+            let bulkQtyToReverse = Number(trx.qty) || 0;
             if (isRetailRecord) {
-                bulkQtyToReverse = bulkQtyToReverse / itemsPerCase; // បម្លែងពីរាយ ទៅជាកេះវិញ
+                bulkQtyToReverse = bulkQtyToReverse / itemsPerCase; 
             }
 
-            let newQty = currentQty;
+            let transactionUnitCostBulk = Number(trx.unitCost) || 0;
+            if (isRetailRecord) {
+                transactionUnitCostBulk = transactionUnitCostBulk * itemsPerCase;
+            }
+            const transactionTotalCostToReverse = bulkQtyToReverse * transactionUnitCostBulk;
+
+            let newQtyBulk = currentQtyBulk;
+            let newTotalCost = currentTotalCost;
+            let newUnitCost = Number(prodData.unitCost) || 0;
+
             if (trx.type === 'IN') {
-                // បើលុប IN ត្រូវ ដកចេញវិញ
-                newQty = currentQty - bulkQtyToReverse;
-                if (newQty < 0) {
-                    notification.error("មិនអាចលុបបានទេ! ស្តុកទំនិញនេះត្រូវបានលក់ ឬដកចេញខ្លះហើយ (ស្តុកនឹងជាប់អវិជ្ជមាន)។");
+                newQtyBulk = currentQtyBulk - bulkQtyToReverse;
+                newTotalCost = currentTotalCost - transactionTotalCostToReverse;
+                
+                if (newQtyBulk < 0) {
+                    notification.error("មិនអាចលុបបានទេ! ស្តុកទំនិញនេះត្រូវបានលក់ ឬដកចេញខ្លះហើយ។");
                     deleteModal.isDeleting = false;
                     deleteModal.show = false;
                     return;
                 }
             } else if (trx.type === 'OUT') {
-                // បើលុប OUT ត្រូវ បូកចូលវិញ
-                newQty = currentQty + bulkQtyToReverse;
+                newQtyBulk = currentQtyBulk + bulkQtyToReverse;
+                newTotalCost = currentTotalCost + transactionTotalCostToReverse;
             }
 
-            // ធ្វើបច្ចុប្បន្នភាពស្តុកធំ (Restore Quantity) តែរក្សាតម្លៃមធ្យមភាគដដែល
+            if (newQtyBulk > 0) {
+                newUnitCost = newTotalCost / newQtyBulk;
+            } else {
+                newUnitCost = 0; 
+                newTotalCost = 0;
+            }
+
             await updateDoc(productRef, {
-                quantity: newQty,
-                totalCost: newQty * currentUnitCost,
+                quantity: newQtyBulk,
+                totalCost: newTotalCost,
+                unitCost: newUnitCost,
                 updatedAt: serverTimestamp()
             });
         }
 
-        // លុបប្រវត្តិចេញពី Database
         await deleteDoc(doc(db, 'stock_transactions', trx.id));
         
         notification.success("លុបប្រវត្តិ និងធ្វើបច្ចុប្បន្នភាពស្តុកដោយជោគជ័យ!");
@@ -611,7 +646,6 @@ const confirmDeleteTransaction = async () => {
     }
 };
 
-// Fetch History
 onMounted(() => {
     const q = query(collection(db, 'stock_transactions'), orderBy('createdAt', 'desc'));
     onSnapshot(q, (snap) => {
@@ -640,8 +674,13 @@ const translateRetailUnit = (prod) => {
 };
 
 const formatDate = (ts) => {
-    if(!ts) return '';
-    return new Intl.DateTimeFormat('km-KH', { dateStyle: 'medium', timeStyle: 'short' }).format(ts.toDate());
+   if(!ts) return '';
+   let date;
+   if (typeof ts.toDate === 'function') date = ts.toDate();
+   else date = new Date(ts);
+   if (isNaN(date.getTime())) return '';
+   
+   return new Intl.DateTimeFormat('km-KH', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
 };
 </script>
 

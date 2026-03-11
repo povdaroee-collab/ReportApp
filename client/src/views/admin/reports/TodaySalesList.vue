@@ -452,7 +452,6 @@
 
     <div ref="invoiceStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1] opacity-0 print:opacity-100 bg-white"></div>
     <div ref="printStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1] opacity-0 print:opacity-100 bg-white w-[1000px]"></div>
-
 </template>
 
 <script setup>
@@ -500,10 +499,69 @@ const getTodayString = () => {
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`; 
 };
 
+// 🌟 SERVER-SIDE DATE FILTERING 🌟
+const getDateRangeISO = () => {
+    let start, end;
+    
+    const createDateBounds = (dateString) => {
+        const base = new Date(dateString);
+        const startDay = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, 0, 0);
+        const endDay = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 23, 59, 59, 999);
+        return { startDay, endDay };
+    };
+
+    if (filterType.value === 'today') {
+        const { startDay, endDay } = createDateBounds(getTodayString());
+        start = startDay; end = endDay;
+    } else if (filterType.value === 'month') {
+        const today = new Date();
+        start = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0);
+        end = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+    } else if (filterType.value === 'specific') {
+        const { startDay, endDay } = createDateBounds(specificDate.value);
+        start = startDay; end = endDay;
+    } else if (filterType.value === 'range') {
+        const boundsStart = createDateBounds(startDate.value);
+        const boundsEnd = createDateBounds(endDate.value);
+        start = boundsStart.startDay; end = boundsEnd.endDay;
+    }
+    
+    return { startStr: start.toISOString(), endStr: end.toISOString() };
+};
+
+// 🌟 FETCH REALTIME DATA BASED ON FILTER 🌟
+const fetchDynamicSalesData = (userId) => {
+    isLoading.value = true;
+    const { startStr, endStr } = getDateRangeISO();
+
+    // ផ្តាច់ listener ចាស់ចោលដើម្បីកុំឱ្យជាន់គ្នា និងស៊ី reads
+    if (unsubscribeSales) unsubscribeSales();
+
+    const salesQ = query(
+        collection(db, 'sales_reports'), 
+        where('createdBy', '==', userId),
+        where('createdAt', '>=', startStr),
+        where('createdAt', '<=', endStr)
+    );
+
+    unsubscribeSales = onSnapshot(salesQ, (snapshot) => {
+        let fetched = [];
+        snapshot.docs.forEach(docSnap => {
+            fetched.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        allSales.value = fetched.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+        isLoading.value = false;
+    }, (error) => {
+        console.error("Error fetching realtime sales:", error);
+        isLoading.value = false;
+    });
+};
+
 onMounted(() => {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             try {
+                // Fetch static reference data once
                 const unitSnap = await getDocs(collection(db, 'settings_units'));
                 availableUnits.value = unitSnap.docs.map(d => d.data());
 
@@ -516,16 +574,12 @@ onMounted(() => {
                 const arrCombos = snapCombos.docs.map(d => ({ id: d.id, ...d.data(), isCombo: true }));
                 availableProducts.value = [...arrStocks, ...arrCombos];
 
-                // ✅ FETCH ALL SALES FOR ADMIN
-                const salesQ = query(collection(db, 'sales_reports'), where('createdBy', '==', user.uid));
+                // ហៅទាញទិន្នន័យពេលចូលដំបូង
+                fetchDynamicSalesData(user.uid);
 
-                unsubscribeSales = onSnapshot(salesQ, (snapshot) => {
-                    let fetched = [];
-                    snapshot.docs.forEach(docSnap => {
-                        fetched.push({ id: docSnap.id, ...docSnap.data() });
-                    });
-                    allSales.value = fetched.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-                    isLoading.value = false;
+                // Watcher ចាំទាញថ្មីពេលដូរ filter ថ្ងៃខែ
+                watch([filterType, specificDate, startDate, endDate], () => {
+                    fetchDynamicSalesData(user.uid);
                 });
 
             } catch (error) {
@@ -569,30 +623,9 @@ const formatKhmerDateTime = (dateStr) => {
     return `${formatKhmerDate(dateStr)} - ${formatTime(dateStr)}`;
 };
 
-// Smart Filter Logic
-const isDateInFilterScope = (dateStr) => {
-    if (!dateStr) return false;
-    const date = new Date(dateStr);
-    const today = new Date();
-    
-    if (filterType.value === 'today') {
-        return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
-    } else if (filterType.value === 'month') {
-        return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
-    } else if (filterType.value === 'specific') {
-        const sDate = new Date(specificDate.value);
-        return date.getDate() === sDate.getDate() && date.getMonth() === sDate.getMonth() && date.getFullYear() === sDate.getFullYear();
-    } else if (filterType.value === 'range') {
-        const sDate = new Date(startDate.value);
-        const eDate = new Date(endDate.value);
-        eDate.setHours(23, 59, 59, 999); 
-        return date >= sDate && date <= eDate;
-    }
-    return true;
-};
-
+// 🌟 Local filtering is now only for search text, since dates are handled by DB 🌟
 const filteredSales = computed(() => {
-    let result = allSales.value.filter(s => isDateInFilterScope(s.createdAt || s.date));
+    let result = allSales.value;
 
     if (searchQuery.value.trim()) {
         const q = searchQuery.value.toLowerCase().trim();
@@ -737,6 +770,7 @@ const confirmCancel = async () => {
     finally { isCanceling.value = false; }
 };
 
+// 🌟 1. មុខងារចម្លងអត្ថបទ (រក្សាទុកនៅដដែល)
 const copyInvoiceText = (sale) => {
     let text = `🛒 វិក្កយបត្រ (INVOICE)\nលេខ: ${sale.receiptId}\nកាលបរិច្ឆេទ: ${formatKhmerDate(sale.createdAt)}\n--------------------------------\n👤 អតិថិជន: ${sale.customerName}\n📞 ទូរស័ព្ទ: ${sale.customerPhone}\n📍 ទីតាំង: ${sale.location}\n👨‍💼 អ្នកលក់: ${sale.sellerName}\n--------------------------------\n`;
     sale.items.forEach((item, i) => { text += `${i+1}. ${item.name} (${item.type === 'wholesale' ? 'ដុំ' : 'រាយ'})\n   ➔ ${item.qty} ${translateUnit(item.unit)} x $${item.price} = $${item.price * item.qty}\n`; });
@@ -749,6 +783,77 @@ const copyInvoiceText = (sale) => {
     navigator.clipboard.writeText(text).then(() => {
         emit('triggerAlert', 'success', 'ជោគជ័យ', 'បានចម្លងអត្ថបទវិក្កយបត្ររួចរាល់!');
     });
+};
+
+// 🌟 2. មុខងារ Share ទៅ Telegram (Safely formatted)
+const shareToTelegram = (sale) => {
+    try {
+        // Ensure sale object exists
+        if (!sale) {
+            emit('triggerAlert', 'error', 'បរាជ័យ', 'មិនមានទិន្នន័យវិក្កយបត្រទេ');
+            return;
+        }
+
+        // Safely extract values with fallbacks
+        const receiptId = sale.receiptId || 'N/A';
+        const dateStr = formatKhmerDate(sale.createdAt) || 'N/A';
+        const customerName = sale.customerName || 'ទូទៅ';
+        const customerPhone = sale.customerPhone || 'N/A';
+        const location = sale.location || 'N/A';
+        const sellerName = sale.sellerName || 'N/A';
+
+        let text = `🛒 វិក្កយបត្រ (INVOICE)\nលេខ: ${receiptId}\nកាលបរិច្ឆេទ: ${dateStr}\n--------------------------------\n👤 អតិថិជន: ${customerName}\n📞 ទូរស័ព្ទ: ${customerPhone}\n📍 ទីតាំង: ${location}\n👨‍💼 អ្នកលក់: ${sellerName}\n--------------------------------\n`;
+
+        // Safely process items
+        const items = sale.items || [];
+        items.forEach((item, i) => {
+            const name = item.name || 'មិនស្គាល់ទំនិញ';
+            const typeLabel = item.type === 'wholesale' ? 'ដុំ' : 'រាយ';
+            const qty = item.qty || 0;
+            const unit = translateUnit(item.unit) || '';
+            const price = Number(item.price || 0);
+            const total = price * qty;
+            
+            text += `${i+1}. ${name} (${typeLabel})\n   ➔ ${qty} ${unit} x $${price} = $${total}\n`;
+        });
+
+        // Calculate totals
+        const totalAmount = Number(sale.totalAmount || 0);
+        let productsTotal = totalAmount;
+        const deliveryFee = Number(sale.deliveryFee || 0);
+        const deliveryCurrency = sale.deliveryCurrency === 'USD' ? '$' : '៛';
+
+        // Only subtract delivery if it's in USD to match totalAmount currency
+        if ((sale.deliveryCurrency === 'USD' || sale.deliveryCurrency === '$') && deliveryFee > 0) {
+            productsTotal -= deliveryFee;
+        }
+
+        text += `--------------------------------\n💰 សរុបទំនិញ: $${productsTotal}\n`;
+        
+        if (deliveryFee > 0) {
+            text += `🛵 ថ្លៃដឹកជញ្ជូន: ${deliveryFee} ${deliveryCurrency}\n`;
+        }
+        
+        text += `💳 សរុបរួម: $${totalAmount}\n`;
+
+        if (sale.paymentNote) {
+            text += `📝 ចំណាំ: ${sale.paymentNote}\n`;
+        }
+        
+        if (sale.paymentStatus === 'CANCELED') {
+            text += `\n❌ វិក្កយបត្រនេះត្រូវបានបោះបង់ (CANCELED) ❌\nមូលហេតុ: ${sale.cancelReason || 'មិនមានបញ្ជាក់'}`;
+        }
+
+        // Encode and open URL
+        const encodedText = encodeURIComponent(text);
+        const telegramUrl = `https://t.me/share/url?url=&text=${encodedText}`;
+        
+        window.open(telegramUrl, '_blank', 'noopener,noreferrer');
+
+    } catch (error) {
+        console.error("Error generating Telegram share link:", error);
+        emit('triggerAlert', 'error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការបង្កើតទម្រង់ចែករំលែក');
+    }
 };
 
 // EDIT MODAL LOGIC

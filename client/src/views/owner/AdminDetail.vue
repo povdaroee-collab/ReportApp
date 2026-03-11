@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-[100dvh] bg-[#F4F7FE] font-khmer flex flex-col relative print-container print:bg-white pb-32">
+  <div class="min-h-screen bg-[#F4F7FE] font-khmer flex flex-col print-container print:bg-white">
     
     <AdminDetailHeader 
         v-model:dateFilterType="dateFilterType"
@@ -13,12 +13,12 @@
         :isLoadingPage="isLoadingPage"
     />
 
-    <div v-if="isLoadingPage" class="flex-1 flex flex-col items-center justify-center py-32 opacity-60 print:hidden">
+    <div v-if="isLoadingPage && allSales.length === 0" class="flex flex-col items-center justify-center py-32 opacity-60 print:hidden">
        <div class="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-indigo-600 mb-4"></div>
-       <p class="text-slate-500 font-bold tracking-wide">កំពុងទាញយកទិន្នន័យ...</p>
+       <p class="text-slate-500 font-bold tracking-wide">កំពុងទាញយកទិន្នន័យដំបូង...</p>
     </div>
 
-    <div v-else class="flex-1 w-full max-w-[90rem] mx-auto p-4 md:p-8 print:p-0">
+    <div v-else class="w-full max-w-[90rem] mx-auto p-4 md:p-8 print:p-0 flex-1 relative z-10">
         
         <AdminDetailProfileCard 
             :admin="admin"
@@ -49,11 +49,23 @@
 
     </div>
 
-    <AdminDetailBottomSummary 
-        v-if="!isLoadingPage && activeTab === 'report' && filteredSellers.some(s => s.hasSales)"
-        :grandTotals="grandTotals"
-        :unitSettings="unitSettings"
-    />
+    <div class="w-full max-w-[90rem] mx-auto px-4 md:px-8 pb-10">
+        <AdminDetailBottomSummary 
+            v-if="!isLoadingPage && activeTab === 'report' && filteredSellers.some(s => s.hasSales)"
+            :grandTotals="grandTotals"
+            :unitSettings="unitSettings"
+        />
+    </div>
+
+    <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0 translate-y-10" enter-to-class="opacity-100 translate-y-0" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-10">
+        <div v-if="fetchTimer.show" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/90 backdrop-blur-md border border-slate-700 text-white px-5 py-3.5 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center gap-3 pointer-events-none">
+            <div class="animate-spin h-5 w-5 border-2 border-indigo-400 border-t-transparent rounded-full"></div>
+            <span class="text-sm font-bold tracking-wide">កំពុងទាញទិន្នន័យ...</span>
+            <span class="text-[13px] text-indigo-300 font-mono font-black bg-slate-800 px-2 py-0.5 rounded border border-indigo-500/30 w-[45px] text-center">
+                {{ fetchTimer.seconds.toFixed(1) }}s
+            </span>
+        </div>
+    </transition>
 
     <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
         <div v-if="processing.active" class="fixed inset-0 z-[999999] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md print:hidden">
@@ -76,14 +88,14 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { db } from '@/firebaseConfig';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
-// 📦 នាំចូល Child Components ទាំង ៤
+// 📦 នាំចូល Child Components
 import AdminDetailHeader from './Detail/AdminDetailHeader.vue';
 import AdminDetailProfileCard from './Detail/AdminDetailProfileCard.vue';
 import AdminDetailList from './Detail/AdminDetailList.vue';
@@ -100,14 +112,23 @@ const allSales = ref([]);
 const unitSettings = ref([]);
 
 const activeCategory = ref('all');
-const dateFilterType = ref('monthly'); 
-const selectedDate = ref(new Date().toISOString().split('T')[0]);
-const selectedYear = ref(new Date().getFullYear());
-const selectedMonth = ref(new Date().getMonth());
-const customStart = ref(new Date().toISOString().split('T')[0]);
-const customEnd = ref(new Date().toISOString().split('T')[0]);
+const dateFilterType = ref('daily'); 
+
+const today = new Date();
+const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+const selectedDate = ref(todayStr);
+const selectedYear = ref(today.getFullYear());
+const selectedMonth = ref(today.getMonth());
+const customStart = ref(todayStr);
+const customEnd = ref(todayStr);
 
 const monthNames = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
+const availableMonths = computed(() => monthNames.map((name, index) => ({ index, name })));
+const availableYears = computed(() => {
+    const currentYear = new Date().getFullYear();
+    return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
+});
 
 const activeTab = ref('sellers');
 const viewMode = ref('list');
@@ -118,7 +139,104 @@ const itemsPerPage = 12;
 const printStaging = ref(null);
 const processing = ref({ active: false, message: '', progress: 0 });
 
-// --- DATA FETCHING ---
+let unsubscribeSales = null;
+
+// 🌟 មុខងាររាប់វិនាទីអណ្តែតពីលើ (Smart Floating Timer) 🌟
+const fetchTimer = reactive({ show: false, seconds: 0, interval: null });
+
+const startFetchTimer = () => {
+    fetchTimer.show = true;
+    fetchTimer.seconds = 0;
+    if (fetchTimer.interval) clearInterval(fetchTimer.interval);
+    fetchTimer.interval = setInterval(() => { fetchTimer.seconds += 0.1; }, 100);
+};
+
+const stopFetchTimer = () => {
+    fetchTimer.show = false;
+    if (fetchTimer.interval) clearInterval(fetchTimer.interval);
+};
+
+// 🌟 Date Logic for Server Query (Safe Parsing) 🌟
+const getDateRangeISO = () => {
+    try {
+        let start, end;
+        const createDateBounds = (dateString) => {
+            const base = new Date(dateString);
+            if (isNaN(base.getTime())) throw new Error("Invalid Date");
+            const startDay = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, 0, 0);
+            const endDay = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 23, 59, 59, 999);
+            return { startDay, endDay };
+        };
+
+        if (dateFilterType.value === 'daily') {
+            const { startDay, endDay } = createDateBounds(selectedDate.value);
+            start = startDay; end = endDay;
+        } else if (dateFilterType.value === 'monthly') {
+            start = new Date(parseInt(selectedYear.value), parseInt(selectedMonth.value), 1, 0, 0, 0);
+            end = new Date(parseInt(selectedYear.value), parseInt(selectedMonth.value) + 1, 0, 23, 59, 59, 999);
+        } else if (dateFilterType.value === 'yearly') {
+            start = new Date(parseInt(selectedYear.value), 0, 1, 0, 0, 0);
+            end = new Date(parseInt(selectedYear.value), 11, 31, 23, 59, 59, 999);
+        } else if (dateFilterType.value === 'custom') {
+            const boundsStart = createDateBounds(customStart.value);
+            const boundsEnd = createDateBounds(customEnd.value);
+            start = boundsStart.startDay; end = boundsEnd.endDay;
+        }
+        
+        return { startStr: start.toISOString(), endStr: end.toISOString() };
+    } catch (error) {
+        console.warn("Date Parsing Warning, using today's fallback:", error);
+        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+        const todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
+        return { startStr: todayStart.toISOString(), endStr: todayEnd.toISOString() };
+    }
+};
+
+// 🌟 Tracking ID និង Safety Timer 🌟
+let currentFetchId = 0; 
+let safetyTimer = null;
+
+const fetchDynamicSalesData = () => {
+    if (allSales.value.length === 0) isLoadingPage.value = true;
+    
+    const { startStr, endStr } = getDateRangeISO();
+
+    if (unsubscribeSales) unsubscribeSales();
+
+    const salesQ = query(
+        collection(db, 'sales_reports'),
+        where('createdBy', '==', adminId), 
+        where('createdAt', '>=', startStr),
+        where('createdAt', '<=', endStr)
+    );
+
+    currentFetchId++;
+    const thisFetchId = currentFetchId;
+
+    unsubscribeSales = onSnapshot(salesQ, { includeMetadataChanges: true }, (snapshot) => {
+        if (thisFetchId !== currentFetchId) return;
+
+        allSales.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        isLoadingPage.value = false;
+        
+        if (!snapshot.metadata.fromCache) {
+            stopFetchTimer();
+            if (safetyTimer) clearTimeout(safetyTimer);
+        }
+    }, (error) => {
+        console.error("Error fetching sales data:", error);
+        if (thisFetchId === currentFetchId) {
+            isLoadingPage.value = false;
+            stopFetchTimer();
+        }
+    });
+
+    if (safetyTimer) clearTimeout(safetyTimer);
+    safetyTimer = setTimeout(() => {
+        if (thisFetchId === currentFetchId) stopFetchTimer();
+    }, 20000);
+};
+
 onMounted(async () => {
     if (!adminId) {
         router.back();
@@ -139,80 +257,53 @@ onMounted(async () => {
             .map(d => ({ id: d.id, ...d.data() }))
             .filter(s => s.isDeleted === false || s.isDeleted === "false" || !s.isDeleted);
 
-        const salesSnap = await getDocs(collection(db, 'sales_reports'));
-        allSales.value = salesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
         const unitSnap = await getDocs(collection(db, 'settings_units'));
         unitSettings.value = unitSnap.docs.map(d => d.data());
 
-        if (allSales.value.length > 0) {
-            const validSales = allSales.value.filter(s => s.createdAt || s.date);
-            if (validSales.length > 0) {
-                const latestDateStr = validSales.map(s => s.createdAt || s.date).sort((a,b) => new Date(b) - new Date(a))[0];
-                const latestDate = new Date(latestDateStr);
-                
-                selectedYear.value = latestDate.getFullYear();
-                selectedMonth.value = latestDate.getMonth();
-                const year = latestDate.getFullYear();
-                const month = String(latestDate.getMonth() + 1).padStart(2, '0');
-                const day = String(latestDate.getDate()).padStart(2, '0');
-                selectedDate.value = `${year}-${month}-${day}`;
-            }
-        }
+        fetchDynamicSalesData();
+
     } catch (error) {
-        console.error("Error fetching data:", error);
-    } finally {
+        console.error("Error fetching static data:", error);
         isLoadingPage.value = false;
     }
 });
 
-// --- DATE LOGIC ---
-const availableYears = computed(() => {
-    if (allSales.value.length === 0) return [new Date().getFullYear()];
-    const years = new Set(allSales.value.map(s => {
-        const d = s.createdAt || s.date;
-        return d ? new Date(d).getFullYear() : new Date().getFullYear();
-    }));
-    return Array.from(years).sort((a, b) => b - a);
+onUnmounted(() => {
+    if (unsubscribeSales) unsubscribeSales();
+    stopFetchTimer();
+    if (safetyTimer) clearTimeout(safetyTimer);
 });
 
-const availableMonths = computed(() => {
-    if (allSales.value.length === 0) return [{ index: new Date().getMonth(), name: monthNames[new Date().getMonth()] }];
-    const yearSales = allSales.value.filter(s => {
-        const d = s.createdAt || s.date;
-        return d && new Date(d).getFullYear() === parseInt(selectedYear.value);
-    });
-    const months = new Set(yearSales.map(s => new Date(s.createdAt || s.date).getMonth()));
-    return Array.from(months).sort((a, b) => a - b).map(mIndex => ({ index: mIndex, name: monthNames[mIndex] }));
-});
-
-watch(selectedYear, () => {
-    const months = availableMonths.value;
-    if (!months.find(m => m.index === selectedMonth.value)) {
-        if(months.length > 0) selectedMonth.value = months[months.length - 1].index;
+// 🌟 ដំណោះស្រាយការពន្យារពេល (Debounce) 🌟
+let debounceTimeout = null;
+watch([dateFilterType, selectedDate, selectedMonth, selectedYear, customStart, customEnd], () => {
+    if (activeTab.value === 'report') {
+        startFetchTimer();
+        if (debounceTimeout) clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(() => {
+            fetchDynamicSalesData();
+        }, 600);
     }
+}, { deep: true });
+
+watch(activeTab, (newTab) => { 
+    if (newTab === 'report') {
+        viewMode.value = 'list'; 
+        startFetchTimer();
+        if (debounceTimeout) clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(() => {
+            fetchDynamicSalesData(); 
+        }, 300);
+    }
+    currentPage.value = 1; 
 });
 
 const isDateInScope = (dateStr) => {
-   if (!dateStr) return false;
-   const date = new Date(dateStr);
-   if (isNaN(date.getTime())) return false;
-   const dYear = date.getFullYear();
-   const dMonth = date.getMonth();
-   const localDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
-   if (dateFilterType.value === 'daily') return localDateStr === selectedDate.value;
-   if (dateFilterType.value === 'monthly') return dMonth === parseInt(selectedMonth.value) && dYear === parseInt(selectedYear.value);
-   if (dateFilterType.value === 'yearly') return dYear === parseInt(selectedYear.value);
-   if (dateFilterType.value === 'custom') return localDateStr >= customStart.value && localDateStr <= customEnd.value;
-   return false;
+    return true; 
 };
 
-// 🔥 --- CORE CALCULATION (បានកែសម្រួលដើម្បី Group ជាជួរតែមួយ) --- 🔥
 const calculatedSellers = computed(() => {
-    const relevantSales = allSales.value.filter(sale => {
-        return isDateInScope(sale.createdAt || sale.date) && sale.paymentStatus !== 'CANCELED';
-    });
+    const relevantSales = allSales.value.filter(sale => sale.paymentStatus !== 'CANCELED');
 
     if (activeTab.value === 'sellers') {
         return allSellers.value.map(seller => ({ ...seller, uniqueId: seller.id }));
@@ -220,13 +311,11 @@ const calculatedSellers = computed(() => {
 
     let rows = [];
 
-    // ត្រួតពិនិត្យតែ Seller តែប៉ុណ្ណោះ (ដក Admin ចេញ)
     allSellers.value.forEach(seller => {
         const sellerSales = relevantSales.filter(s => (s.uid || s.sellerId) === seller.id || s.sellerName === seller.fullName);
 
         let hasValidSales = false;
         
-        // បង្កើតកន្លែងផ្ទុកទិន្នន័យសរុបសម្រាប់តំណាងលក់ម្នាក់ៗ
         let sellerSummary = {
             productNames: new Set(),
             saleTypes: new Set(),
@@ -239,13 +328,14 @@ const calculatedSellers = computed(() => {
         sellerSales.forEach(sale => {
             if (sale.items && sale.items.length > 0) {
                 sale.items.forEach(item => {
-                    let itemCategory = item.type === 'wholesale' ? 'បោះដុំ' : 'លក់រាយ';
+                    const safeType = String(item.type || '').trim();
+                    const isItemWholesale = safeType.includes('បោះដុំ');
+                    let itemCategory = isItemWholesale ? 'បោះដុំ' : 'លក់រាយ';
                     
                     if (activeCategory.value === 'all' || activeCategory.value === itemCategory) {
                         hasValidSales = true;
                         let pName = item.name || 'មិនស្គាល់ឈ្មោះ';
                         
-                        // ចាប់យកឈ្មោះទំនិញ និងប្រភេទដាក់ចូលគ្នា
                         sellerSummary.productNames.add(pName);
                         sellerSummary.saleTypes.add(itemCategory);
 
@@ -266,13 +356,12 @@ const calculatedSellers = computed(() => {
             }
         });
 
-        // Push បញ្ចូលតែ ១ជួរ (1 Row) ប៉ុណ្ណោះសម្រាប់តំណាងលក់ម្នាក់
         if (hasValidSales) {
             rows.push({
                 ...seller,
                 uniqueId: `${seller.id}_report`,
-                productName: Array.from(sellerSummary.productNames).join(', '), // តម្រៀបឈ្មោះទំនិញដោយសញ្ញាក្បៀស
-                saleType: Array.from(sellerSummary.saleTypes).join(' & '), // តម្រៀបប្រភេទការលក់
+                productName: Array.from(sellerSummary.productNames).join(', '),
+                saleType: Array.from(sellerSummary.saleTypes).join(' & '), 
                 totalClients: sellerSummary.clients.size,
                 revenueUSD: sellerSummary.revenueUSD,
                 revenueKHR: sellerSummary.revenueKHR,
@@ -291,7 +380,6 @@ const calculatedSellers = computed(() => {
     });
 });
 
-watch(activeTab, (newTab) => { if (newTab === 'report') viewMode.value = 'list'; currentPage.value = 1; });
 watch(activeCategory, () => { currentPage.value = 1; });
 watch(searchQuery, () => { currentPage.value = 1; });
 
@@ -318,7 +406,6 @@ const goToSellerDetail = (sellerId) => {
     if (sellerId) router.push({ name: 'SellerSalesDetail', params: { id: sellerId } });
 };
 
-// --- GRAND TOTALS ---
 const grandTotals = computed(() => {
     let stats = { all: { usd: 0, khr: 0, clients: 0, totalUnitsCount: 0, units: {} } };
     if (activeTab.value === 'sellers') return stats; 
@@ -339,16 +426,16 @@ const grandTotals = computed(() => {
     return stats;
 });
 
-// --- HELPER FOR PRINT ---
 const reportDateLabel = computed(() => {
    let dateStr = '';
-   if (dateFilterType.value === 'daily') dateStr = new Intl.DateTimeFormat('km-KH', { dateStyle: 'long' }).format(new Date(selectedDate.value));
-   if (dateFilterType.value === 'monthly') dateStr = `ខែ ${monthNames[selectedMonth.value]} ឆ្នាំ ${selectedYear.value}`;
-   if (dateFilterType.value === 'yearly') dateStr = `ឆ្នាំ ${selectedYear.value}`;
-   if (dateFilterType.value === 'custom') {
-       const s = new Intl.DateTimeFormat('km-KH', { dateStyle: 'medium' }).format(new Date(customStart.value));
-       const e = new Intl.DateTimeFormat('km-KH', { dateStyle: 'medium' }).format(new Date(customEnd.value));
-       dateStr = `${s} ដល់ ${e}`;
+   if (dateFilterType.value === 'daily') {
+       dateStr = new Intl.DateTimeFormat('km-KH', { dateStyle: 'long' }).format(new Date(selectedDate.value));
+   } else if (dateFilterType.value === 'monthly') {
+       dateStr = `ខែ ${monthNames[selectedMonth.value]} ឆ្នាំ ${selectedYear.value}`;
+   } else if (dateFilterType.value === 'yearly') {
+       dateStr = `ឆ្នាំ ${selectedYear.value}`;
+   } else if (dateFilterType.value === 'custom') {
+       dateStr = `${customStart.value} ដល់ ${customEnd.value}`;
    }
    const categoryName = activeCategory.value === 'all' ? 'សរុប (All)' : activeCategory.value;
    return activeTab.value === 'report' ? `${dateStr} - ${categoryName}` : dateStr;
@@ -363,6 +450,7 @@ const translateUnit = (unitVal) => {
     if (u === 'bottle' || u === 'bottles') return 'ដប';
     if (u === 'pack' || u === 'packs') return 'កញ្ចប់';
     if (u === 'case' || u === 'cases') return 'កេះ';
+    if (u === 'set' || u === 'sets') return 'ឈុត';
     return safeVal; 
 };
 
@@ -382,10 +470,10 @@ const executePrint = () => {
         <html>
         <head>
             <title>${title}</title>
-            <link href="https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&family=Battambang:wght@400;700;900&display=swap" rel="stylesheet">
             <style>
                 @page { size: A4 portrait; margin: 0; }
-                body { font-family: 'Battambong', sans-serif; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; margin: 0; padding: 15mm; background-color: white; }
+                body { font-family: 'Kantumruy Pro', 'Battambang', sans-serif; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; margin: 0; padding: 15mm; background-color: white; }
                 table { width: 100%; border-collapse: collapse; }
                 tr { page-break-inside: avoid; page-break-after: auto; }
                 thead { display: table-header-group; }
@@ -482,7 +570,6 @@ const generatePrintHTML = (rows, pageNum, totalPages, isNativePrint = false) => 
                 </div>` : 
                 `<div style="text-align: right; color:#94a3b8; font-weight:bold; font-size:14px;">-</div>`;
 
-            // បានកែសម្រួលដើម្បីគាំទ្រអក្សរចម្រុះ
             const catBadge = `<span style="color: #475569; font-size: 13px; font-weight: bold;">${item.saleType}</span>`;
 
             return `
@@ -570,7 +657,7 @@ const generatePrintHTML = (rows, pageNum, totalPages, isNativePrint = false) => 
         `;
     }
 
-    const pageStyles = isNativePrint ? `width: 100%; box-sizing: border-box; font-family: 'Battambong', sans-serif; line-height: 1.6; padding: 20px;` : `width: 1000px; min-height: 1414px; background: white; padding: 40px; box-sizing: border-box; font-family: 'Battambong', sans-serif; line-height: 1.6; position: relative;`;
+    const pageStyles = isNativePrint ? `width: 100%; box-sizing: border-box; font-family: 'Kantumruy Pro', 'Battambang', sans-serif; line-height: 1.6; padding: 20px;` : `width: 1000px; min-height: 1414px; background: white; padding: 40px; box-sizing: border-box; font-family: 'Kantumruy Pro', 'Battambang', sans-serif; line-height: 1.6; position: relative;`;
     const titleText = isReport ? 'របាយការណ៍លក់តាមតំណាងលក់' : 'បញ្ជីរាយនាមតំណាងលក់';
     const thHTML = isReport ? `<th style="padding: 16px 10px; width: 5%; text-align: center; border-bottom: 2px solid #cbd5e1;">#</th><th style="padding: 16px 10px; width: 25%; border-bottom: 2px solid #cbd5e1;">តំណាងលក់</th><th style="padding: 16px 10px; width: 20%; border-bottom: 2px solid #cbd5e1;">ប្រភេទ (ទំនិញ)</th><th style="padding: 16px 10px; width: 15%; border-bottom: 2px solid #cbd5e1;">ចំនួនលក់</th><th style="padding: 16px 10px; width: 10%; text-align: center; border-bottom: 2px solid #cbd5e1;">ការលក់</th><th style="padding: 16px 10px; width: 10%; text-align: center; border-bottom: 2px solid #cbd5e1;">អតិថិជនសរុប</th><th style="padding: 16px 10px; width: 15%; text-align: right; border-bottom: 2px solid #cbd5e1;">ចំណូល</th>` : `<th style="padding: 16px 10px; width: 5%; text-align: center; border-bottom: 2px solid #cbd5e1;">#</th><th style="padding: 16px 10px; border-bottom: 2px solid #cbd5e1;">តំណាងលក់</th><th style="padding: 16px 10px; text-align: center; border-bottom: 2px solid #cbd5e1;">អត្តលេខ</th><th style="padding: 16px 10px; text-align: center; border-bottom: 2px solid #cbd5e1;">លេខទូរស័ព្ទ</th>`;
 
@@ -598,11 +685,12 @@ const generatePrintHTML = (rows, pageNum, totalPages, isNativePrint = false) => 
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&display=swap');
-.font-khmer { font-family: 'Battambong', sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&family=Battambang:wght@400;700;900&display=swap');
+.font-khmer { font-family: 'Kantumruy Pro', 'Battambang', sans-serif; }
 .animate-fade-in { animation: fadeIn 0.3s ease-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 .animate-fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media print { .print\:hidden { display: none !important; } }
 </style>
+

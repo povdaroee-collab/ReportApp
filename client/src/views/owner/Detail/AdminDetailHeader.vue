@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white/90 backdrop-blur-2xl border-b border-slate-200/60 sticky top-0 z-40 transition-all shadow-sm md:shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] print:hidden">
+  <div class="bg-white/90 backdrop-blur-2xl border-b border-slate-200/60 transition-all shadow-sm font-khmer print:hidden">
     <div class="px-4 md:px-8 py-3 md:py-5">
       
       <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 md:gap-5 mb-3 md:mb-5">
@@ -8,7 +8,7 @@
               <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
            </button>
            <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-slate-700 to-indigo-900 flex items-center justify-center shadow-lg shadow-slate-500/30 text-white shrink-0 relative overflow-hidden">
-              <div class="absolute inset-0 bg-white/20 blur-md rounded-full -top-2 -left-2 w-6 h-6 md:w-8 md:h-8"></div>
+              <div class="absolute inset-0 bg-white/20 blur-md rounded-full -top-2 -left-2 w-6 h-6 md:w-8 h-8"></div>
               <svg class="w-5 h-5 md:w-6 md:h-6 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
            </div>
            <div>
@@ -107,6 +107,9 @@ const filterTabs = [
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&family=Battambang:wght@400;700;900&display=swap');
+.font-khmer { font-family: 'Kantumruy Pro', 'Battambang', sans-serif; }
+
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .animate-fade-in { animation: fadeIn 0.3s ease-out; }
