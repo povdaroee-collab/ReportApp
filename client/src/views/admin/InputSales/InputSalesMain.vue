@@ -154,9 +154,9 @@
                                 </div>
                                 <div class="flex items-center justify-end w-full sm:w-auto shrink-0 mt-1 sm:mt-0">
                                     <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden h-9 shadow-sm w-[110px]">
-                                        <button @click="updateQty(index, -1)" class="w-10 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 active:bg-slate-300 transition-colors text-lg font-bold">−</button>
+                                        <button @click="updateQty(index, -1)" class="w-10 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors text-lg font-bold">−</button>
                                         <input v-model="item.inputQty" @change="commitQty(index)" @keyup.enter="$event.target.blur()" type="number" min="1" class="w-full h-full bg-white text-center text-sm font-black border-x border-slate-200 outline-none p-0 focus:ring-inner">
-                                        <button @click="updateQty(index, 1)" class="w-10 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 active:bg-slate-300 transition-colors text-lg font-bold">+</button>
+                                        <button @click="updateQty(index, 1)" class="w-10 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors text-lg font-bold">+</button>
                                     </div>
                                 </div>
                             </div>
@@ -320,10 +320,8 @@ const combineProductsAndCombos = () => {
 
 // --- 🌟 SMART LOGIC: STOCK CALCULATION 🌟 ---
 
-// ឆែកស្តុកសរុបគិតជា "ឯកតារាយ"
 const getTotalRetailStock = (product) => {
     if (product.isCombo) {
-        // 🌟 ឈុត៖ ឆែកស្តុកទាបបំផុតនៃទំនិញនីមួយៗក្នុងឈុត
         if (!product.items || product.items.length === 0) return 0;
         let minPossibleCombos = Infinity;
         for (const comboItem of product.items) {
@@ -335,12 +333,10 @@ const getTotalRetailStock = (product) => {
         }
         return minPossibleCombos === Infinity ? 0 : minPossibleCombos;
     } else {
-        // 🌟 ទំនិញធម្មតា៖ គុណចំនួនកេះ នឹងចំនួនក្នុង១កេះ
         return Math.floor((Number(product.quantity) || 0) * (Number(product.itemsPerCase) || 1));
     }
 };
 
-// បំបែកស្តុកសរុប ទៅជា "X កេះ Y ដប"
 const formatComplexStock = (product) => {
     const retailTotal = Math.floor(getTotalRetailStock(product)); 
     if (retailTotal <= 0) return '0 ស្តុក';
@@ -351,7 +347,6 @@ const formatComplexStock = (product) => {
 
     const itemsPerCase = Number(product.itemsPerCase) || 1;
     
-    // បើអត់មានខ្នាតរងទេ បង្ហាញលេខធម្មតា
     if (itemsPerCase <= 1 || !product.retailUnit) {
         return `ស្តុក: ${retailTotal.toLocaleString()} ${translateHardcodedUnit(product.retailUnit || product.unit || 'bottle')}`;
     }
@@ -637,6 +632,7 @@ const removeFromCart = async (index) => {
 // --- CHECKOUT LOGIC ---
 const openCheckoutModal = () => { isCheckoutModalOpen.value = true; };
 
+// 🌟 បង្កើតមុខងារទូទាត់ប្រាក់ និងលុប Base64 Image (Smart Payload Optimizer) 🌟
 const submitSale = async (formData) => {
     isSubmitting.value = true;
     try {
@@ -662,11 +658,17 @@ const submitSale = async (formData) => {
                 correctUnit = item.product.retailUnit || 'bottle'; 
             }
 
+            // 🌟 កាត់បន្ថយទំហំទិន្នន័យ (Remove Base64 Images) មុនពេល Save 🌟
+            let safeImage = item.product.image || '';
+            if (safeImage.startsWith('data:image')) {
+                safeImage = ''; // បើរូបភាពជាប្រភេទ Base64 វែងៗ គឺយើងកាត់ចោល ដើម្បីកុំឱ្យហួស 1MB របស់ Firebase
+            }
+
             return {
                 id: item.product.id, 
                 cartItemId: `${item.product.id}_${Date.now()}_${index}`,
                 name: item.product.name, 
-                image: item.product.image || '',
+                image: safeImage, // ប្រើរូបភាពដែលបានសម្អាតរួច
                 price: calculateItemUnitPrice(item), 
                 qty: item.qty,
                 type: finalType, 

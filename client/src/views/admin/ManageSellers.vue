@@ -109,7 +109,7 @@
               
               <div class="px-6 relative flex justify-center -mt-14 z-10 pointer-events-none">
                  <div class="w-[100px] h-[100px] rounded-full p-1.5 bg-white shadow-lg group-hover:scale-105 transition-transform duration-500 pointer-events-auto">
-                    <img :src="seller.photoUrl || 'https://ui-avatars.com/api/?background=random&name='+seller.fullName" class="w-full h-full object-cover rounded-full bg-slate-50" alt="Profile">
+                    <img :src="seller.photoUrl || `https://ui-avatars.com/api/?background=random&name=${seller.fullName}`" class="w-full h-full object-cover rounded-full bg-slate-50" alt="Profile">
                  </div>
               </div>
 
@@ -181,7 +181,7 @@
                         <div class="flex items-center justify-between bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2-2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                                 </div>
                                 <div>
                                     <p class="text-sm font-black text-slate-800">កំណត់សិទ្ធិជា Dealer (អ្នកបោះដុំធំ)</p>
@@ -448,13 +448,12 @@ import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/fire
 import { onAuthStateChanged } from 'firebase/auth'; 
 import axios from 'axios';
 
-// ✅ នាំចូល Toast និង Store
 import Toast from '@/components/Toast.vue';
 import ConfirmDialog from '@/components/shared/ConfirmDialog.vue';
 import { useNotificationStore } from '@/stores/notification';
 
 const router = useRouter(); 
-const notification = useNotificationStore(); // ប្រើ Store សម្រាប់ Notification
+const notification = useNotificationStore(); 
 
 const sellers = ref([]);
 const isLoading = ref(true);
@@ -467,12 +466,11 @@ const isOwner = ref(false);
 const isEditing = ref(false);
 const currentSellerId = ref(null);
 const nameInput = ref(null);
-const confirmDialogRef = ref(null); // Ref ទៅ ConfirmDialog
+const confirmDialogRef = ref(null); 
 
-// ✅ UPDATED FORM: Added 'username' field
 const form = reactive({
   fullName: '', 
-  username: '', // ថ្មី
+  username: '', 
   address: '', 
   telegram: '', 
   phoneNumber: '', 
@@ -541,12 +539,12 @@ const openEditModal = (seller) => {
   isEditing.value = true;
   currentSellerId.value = seller.id;
   Object.assign(form, {
-    fullName: seller.fullName, 
-    username: seller.username || '', // ទាញ username ចាស់មកបង្ហាញ
-    address: seller.address, 
-    telegram: seller.telegram,
-    phoneNumber: seller.phoneNumber, 
-    idNumber: seller.idNumber, 
+    fullName: seller.fullName || '', 
+    username: seller.username || '', 
+    address: seller.address || '', 
+    telegram: seller.telegram || '',
+    phoneNumber: seller.phoneNumber || '', 
+    idNumber: seller.idNumber || '', 
     password: seller.password || '', 
     isDealer: seller.role === 'dealer', 
     profileFile: null, 
@@ -581,23 +579,39 @@ const clearImage = (type) => {
     }
 };
 
+// 🌟 FIX: ការបញ្ជូនទិន្នន័យ (Sanitized) ទៅ Backend 🌟
 const submitSeller = async () => {
   if (!auth.currentUser) return;
   
-  // Update validation check to include username
-  if (!form.fullName || !form.username || !form.telegram || (!isEditing.value && !form.profileFile) || !form.idNumber || !form.password) {
+  // ១. ពិនិត្យមើលវាលចាំបាច់ (Required Fields) ឱ្យបានច្បាស់លាស់
+  const requiredFieldsMissing = !form.fullName.trim() || 
+                                !form.username.trim() || 
+                                !form.telegram.trim() || 
+                                !form.idNumber.trim() || 
+                                !form.password.trim();
+
+  // ពេលបង្កើតថ្មី ដាច់ខាតត្រូវតែមានរូប Profile (បើ Edit មិនចាំបាច់)
+  const isProfileMissingOnCreate = !isEditing.value && !form.profileFile;
+
+  if (requiredFieldsMissing || isProfileMissingOnCreate) {
      return notification.error('សូមបំពេញព័ត៌មានដែលមានសញ្ញាផ្កាយ (*) ទាំងអស់ឱ្យបានត្រឹមត្រូវ!', 'សូមត្រួតពិនិត្យ');
   }
 
   isSubmitting.value = true;
+  
+  // ២. សម្អាតទិន្នន័យ (Sanitization)
+  const cleanIdNumber = form.idNumber.replace(/\s+/g, ''); // ដក Space ចេញពី ID
+  const cleanPhone = form.phoneNumber ? form.phoneNumber.replace(/\s+/g, '') : ''; // ដក Space ពីលេខទូរស័ព្ទ
+  const cleanTelegram = form.telegram.replace('@', '').trim(); // ដកសញ្ញា @ ចេញបើគាត់ច្រឡំវាយបញ្ចូល
+
   const formData = new FormData();
-  formData.append('fullName', form.fullName);
-  formData.append('username', form.username); // បញ្ជូន username
-  formData.append('address', form.address);
-  formData.append('telegram', form.telegram);
-  formData.append('phoneNumber', form.phoneNumber);
-  formData.append('idNumber', form.idNumber);
-  formData.append('password', form.password); 
+  formData.append('fullName', form.fullName.trim());
+  formData.append('username', form.username.trim());
+  formData.append('address', form.address.trim() || 'N/A');
+  formData.append('telegram', cleanTelegram);
+  formData.append('phoneNumber', cleanPhone);
+  formData.append('idNumber', cleanIdNumber);
+  formData.append('password', form.password.trim()); 
   formData.append('role', form.isDealer ? 'dealer' : 'seller'); 
   
   if (form.profileFile) formData.append('profileImage', form.profileFile);
@@ -631,7 +645,7 @@ const submitSeller = async () => {
      } else if (error.response && error.response.data && error.response.data.error === "USERNAME_EXISTS") {
          notification.error('ឈ្មោះគណនី (Username) នេះមានអ្នកប្រើប្រាស់រួចហើយ!', 'បដិសេធ');
      } else {
-         notification.error(error.response?.data?.message || 'មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ');
+         notification.error(error.response?.data?.message || 'មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ (500 Error)');
      }
   } finally {
      isSubmitting.value = false;
@@ -681,4 +695,4 @@ const executeDelete = async (id) => {
   -webkit-box-orient: vertical;  
   overflow: hidden;
 }
-</style>     
+</style>
