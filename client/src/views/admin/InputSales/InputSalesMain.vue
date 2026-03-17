@@ -270,20 +270,38 @@ const formatPrice = (val, currency = 'USD') => {
 const translateHardcodedUnit = (unit) => { const map = { bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ', set: 'ឈុត' }; return map[unit] || unit; };
 
 // --- FETCH DATA ---
+// --- FETCH DATA ---
 onMounted(() => {
-    onAuthStateChanged(auth, async (user) => {
+    // ដាក់ការស្តាប់ Auth ចូលទៅក្នុងអថេរ ដើម្បីអាចផ្តាច់វាបាន
+    const authListener = onAuthStateChanged(auth, async (user) => {
         if (user) {
             try {
+                // ផ្តាច់ Listner ចាស់ៗចោលសិន មុននឹងចាប់ផ្តើមថ្មី ដើម្បីការពារកុំឱ្យជាន់គ្នា (Memory Leak)
+                if (unsubscribeProducts) unsubscribeProducts();
+                if (unsubscribeCombos) unsubscribeCombos();
+                if (unsubscribeSellers) unsubscribeSellers();
+                if (unsubscribeSales) unsubscribeSales();
+
                 unsubscribeProducts = onSnapshot(collection(db, 'stocks'), (snapshot) => {
                     originalStocks.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isCombo: false })).filter(i => !i.isDeleted);
                     combineProductsAndCombos();
+                }, (error) => {
+                     console.error("Products Snapshot Error:", error);
                 });
+
                 unsubscribeCombos = onSnapshot(collection(db, 'combos'), (snapshot) => {
                     combosGlobal.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isCombo: true }));
                     combineProductsAndCombos();
+                }, (error) => {
+                     console.error("Combos Snapshot Error:", error);
                 });
+
                 const qSellers = query(collection(db, "users"), where("role", "in", ["seller", "dealer"]), where("createdBy", "==", user.uid));
-                unsubscribeSellers = onSnapshot(qSellers, (snapshot) => { sellers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); });
+                unsubscribeSellers = onSnapshot(qSellers, (snapshot) => { 
+                    sellers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
+                }, (error) => {
+                     console.error("Sellers Snapshot Error:", error);
+                });
                 
                 const qSales = query(collection(db, 'sales_reports'), where('createdBy', '==', user.uid));
                 unsubscribeSales = onSnapshot(qSales, (snapshot) => {
@@ -295,15 +313,24 @@ onMounted(() => {
                         }
                     });
                     savedCustomers.value = Object.values(uniqueCustomers);
+                }, (error) => {
+                     console.error("Sales Snapshot Error:", error);
                 });
-            } catch (error) { console.error(error); }
-        } else router.push('/');
+            } catch (error) { console.error("Setup Error:", error); }
+        } else {
+            router.push('/');
+        }
     });
-});
 
-onUnmounted(() => { 
-    if (unsubscribeProducts) unsubscribeProducts(); if (unsubscribeCombos) unsubscribeCombos(); 
-    if (unsubscribeSellers) unsubscribeSellers(); if (unsubscribeSales) unsubscribeSales(); 
+    // បញ្ចូលការបិទ Auth Listener ទៅក្នុង onUnmounted
+    onUnmounted(() => {
+        if (authListener) authListener();
+        if (unsubscribeProducts) unsubscribeProducts(); 
+        if (unsubscribeCombos) unsubscribeCombos(); 
+        if (unsubscribeSellers) unsubscribeSellers(); 
+        if (unsubscribeSales) unsubscribeSales(); 
+        if (reservationTimer.value) clearInterval(reservationTimer.value); // បិទ Timer បើមាន
+    });
 });
 
 const combineProductsAndCombos = () => {
@@ -493,7 +520,9 @@ const handleCartTimeout = async () => {
     cart.value = []; 
     showMobileCart.value = false;
     isCheckoutModalOpen.value = false;
-    notification.warning("រយៈពេលកក់ស្តុកបានផុតកំណត់! កន្ត្រកត្រូវបានសម្អាត។");
+    
+    // ប្តូរពី warning មក error វិញត្រង់នេះ 👇
+    notification.error("រយៈពេលកក់ស្តុកបានផុតកំណត់! កន្ត្រកត្រូវបានសម្អាត។");
     
     for (const item of itemsToReturn) {
         const retailQtyToReturn = getRetailQtyEquivalent(item.product, item.qty, item.selectedUnit);

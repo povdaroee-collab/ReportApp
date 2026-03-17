@@ -57,12 +57,18 @@
                                 <button @click="$emit('update:activityFilter', 'inactive'); closeSmartMenu()" class="px-4 py-2 rounded-lg text-xs font-bold transition-all" :class="activityFilter === 'inactive' ? 'bg-white text-rose-600 shadow-sm ring-1 ring-rose-100' : 'text-slate-500'">គ្មានលក់</button>
                             </div>
 
-                            <div class="flex gap-2">
-                                <button @click="handlePrint" :disabled="filteredList.length === 0" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white py-2.5 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 font-bold text-xs disabled:opacity-50">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2-2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2v4h10z"></path></svg>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button @click="handlePrint" :disabled="filteredList.length === 0" class="col-span-2 bg-slate-800 hover:bg-slate-900 text-white py-2.5 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 font-bold text-xs disabled:opacity-50">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                    Print
                                 </button>
-                                <button @click="handlePDF" :disabled="filteredList.length === 0" class="flex-1 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white py-2.5 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 font-bold text-xs disabled:opacity-50">
+                                <button @click="handlePDF" :disabled="filteredList.length === 0" class="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white py-2.5 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 font-bold text-xs disabled:opacity-50">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                    PDF
+                                </button>
+                                <button @click="handleExcel" :disabled="filteredList.length === 0" class="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white py-2.5 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 font-bold text-xs disabled:opacity-50">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                    Excel
                                 </button>
                             </div>
                         </div>
@@ -85,12 +91,18 @@
 
                 <div class="flex gap-2">
                     <button @click="$emit('print')" :disabled="filteredList.length === 0" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-slate-900/20 flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2-2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2v4h10z"></path></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                         <span>Print</span>
                     </button>
+                    
                     <button @click="$emit('pdf')" :disabled="filteredList.length === 0" class="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-rose-500/30 flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         <span>PDF</span>
+                    </button>
+
+                    <button @click="$emit('excel')" :disabled="filteredList.length === 0" class="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span>Excel</span>
                     </button>
                 </div>
             </div>
@@ -237,17 +249,17 @@ const props = defineProps({
   unitSettings: Array,
   activeCategory: String,
   activityFilter: String,
-  showMobileFilters: Boolean // ✅ ទទួល State ពី File មេដើម្បីដឹងថាបើកឬបិទ
+  showMobileFilters: Boolean 
 });
 
-const emit = defineEmits(['update:activeCategory', 'update:activityFilter', 'print', 'pdf', 'toggleMobileFilters']);
+// Added 'excel' to emitted events
+const emit = defineEmits(['update:activeCategory', 'update:activityFilter', 'print', 'pdf', 'excel', 'toggleMobileFilters']);
 const router = useRouter();
 
 const searchQuery = ref('');
 const expandedRowIds = ref(new Set());
-const isSmartMenuOpen = ref(false); // State សម្រាប់បើក/បិទ Dropdown លើ Mobile
+const isSmartMenuOpen = ref(false); 
 
-// Function សម្រាប់បិទ Smart Menu
 const closeSmartMenu = () => {
     isSmartMenuOpen.value = false;
 };
@@ -262,7 +274,12 @@ const handlePDF = () => {
     emit('pdf');
 };
 
-// ប្រើ v-click-outside manual ដើម្បីចុចក្រៅបិទ Menu
+// Added handleExcel method
+const handleExcel = () => {
+    closeSmartMenu();
+    emit('excel');
+};
+
 const handleClickOutside = (event) => {
     const container = document.querySelector('.user-dropdown-container');
     if (isSmartMenuOpen.value && container && !container.contains(event.target)) {

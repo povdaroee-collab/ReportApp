@@ -16,18 +16,18 @@
                 
                 <div class="bg-rose-50/80 border border-rose-100/80 rounded-2xl p-5 mb-8 relative z-10 shadow-inner">
                     <p class="text-[15px] font-bold text-slate-700 leading-[1.8]">
-                        ប្រព័ន្ធគ្រប់គ្រងស្តុក <span class="text-rose-600 font-black">ហួសសុពលភាពប្រើប្រាស់ហើយ!</span> <br>
-                        ការផ្ដល់ជូនឥតគិតថ្លៃរយៈពេលមួយខែអស់ license!
-                        <br>
-                        ឥឡូវនេះអ្នកត្រូវ 
-                        <span class="inline-block mt-1 font-black bg-rose-600 text-white px-3 py-1 rounded-lg shadow-sm text-sm tracking-wider">Upgrade ទៅ  Pro Version 💎</span> 
+                        សូមអធ្យាស្រ័យ! ប្រព័ន្ធគ្រប់គ្រងស្តុក <span class="text-rose-600 font-black">ហួសសុពលភាពប្រើប្រាស់ហើយ!</span> <br>
+                        សូមលោកអ្នកបង់សេវាកម្ម និង server clound សម្រាប់ខែបន្ទាប់ ឥឡូវនេះ
+                        
+                        
+                        <!-- <span class="inline-block mt-1 font-black bg-rose-600 text-white px-3 py-1 rounded-lg shadow-sm text-sm tracking-wider">Upgrade ទៅ  Pro Version 💎</span>  -->
                         <br> ទើបអាចបន្តការប្រើប្រាស់បាន។ 
                     </p>
                 </div>
                 
                 <a :href="developerContactLink" target="_blank" class="w-full bg-gradient-to-r from-[#0088cc] to-[#00a8ff] hover:from-[#0077b5] hover:to-[#0097e6] text-white font-black py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.98] shadow-[0_10px_25px_rgba(0,136,204,0.4)] flex items-center justify-center gap-3 text-base relative z-10 hover:shadow-[0_15px_35px_rgba(0,136,204,0.5)]">
                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.223-.548.223l.188-2.85 5.18-4.68c.223-.198-.054-.31-.346-.11l-6.4 4.02-2.76-.86c-.6-.19-.61-.6.125-.9l10.81-4.17c.5-.19.93.11.75.815z"/></svg>
-                    សូមទំនាក់ទំនងទៅអ្នកអភិវឌ្ឍន៍កម្មវិធី
+                    សូមទំនាក់ទំនងទៅអ្នកអភិវឌ្ឍន៍កម្មវិធី ! សូមអរគុណ!
                 </a>
             </div>
         </div>

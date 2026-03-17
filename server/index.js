@@ -6,6 +6,7 @@ const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const verifyToken = require('./middleware/authMiddleware');
 const fs = require('fs');
+const axios = require('axios'); // <-- 🌟 បន្ថែមថ្មីសម្រាប់ផ្ញើសារ Telegram
 
 const app = express();
 app.use(cors({
@@ -384,7 +385,47 @@ app.post('/api/sales/create', verifyToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// 8. REQUEST FINANCE PASSWORD RESET VIA TELEGRAM
+app.post('/api/request-finance-reset', verifyToken, async (req, res) => {
+    try {
+        const { name, email, uid } = req.body;
+        
+        // 🌟 1. ទាញយក Password ចេញពី Database ដោយប្រើ UID
+        const userDoc = await db.collection('users').doc(uid).get();
+        let currentPassword = "មិនទាន់បានកំណត់ទេ";
+        
+        if (userDoc.exists && userDoc.data().financePassword) {
+            currentPassword = userDoc.data().financePassword;
+        }
+
+        // 🌟 2. រៀបចំទម្រង់សារ (បញ្ចូលលេខសម្ងាត់ចូល)
+        const message = `🚨 <b>សំណើសុំមើលលេខសម្ងាត់ហិរញ្ញវត្ថុ</b>\n\n👤 ឈ្មោះ: ${name}\n📧 អ៊ីមែល: ${email}\n🔑 UID: <code>${uid}</code>\n\n🔓 <b>លេខសម្ងាត់របស់អ្នកគឺ:</b> <code>${currentPassword}</code>`;
+        
+        // ទាញយកអញ្ញាតពី .env
+        const botToken = process.env.TELEGRAM_BOT_TOKEN;
+        const devChatId = process.env.TELEGRAM_DEV_CHAT_ID;
+
+        if (!botToken || !devChatId) {
+            return res.status(500).json({ error: "Telegram Configuration Missing" });
+        }
+
+        // បាញ់ទៅ Telegram
+        await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            chat_id: devChatId,
+            text: message,
+            parse_mode: "HTML"
+        });
+        
+        res.json({ success: true, message: "Request sent successfully" });
+
+    } catch (error) {
+        console.error("Telegram Error:", error);
+        res.status(500).json({ error: "Failed to send telegram message" });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-}); 
+});

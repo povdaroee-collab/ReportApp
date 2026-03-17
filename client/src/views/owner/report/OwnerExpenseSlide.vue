@@ -3,7 +3,7 @@
     <div v-if="show" class="fixed inset-0 z-[999998] bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="$emit('close')"></div>
 
     <transition name="slide">
-      <div v-if="show" class="fixed inset-y-0 right-0 z-[999999] w-full md:w-[500px] bg-slate-50 shadow-2xl flex flex-col font-khmer border-l border-slate-200">
+      <div v-if="show" class="fixed inset-y-0 right-0 z-[999999] w-full md:w-[550px] bg-slate-50 shadow-2xl flex flex-col font-khmer border-l border-slate-200">
         
         <div class="px-6 py-5 bg-white flex items-center justify-between shrink-0 z-20">
           <div class="flex items-center gap-3">
@@ -129,49 +129,71 @@
             </button>
         </div>
 
-        <div v-show="activeTab === 'list'" class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 custom-scrollbar space-y-4">
-            <div v-if="expensesList.length === 0" class="flex flex-col items-center justify-center py-20 text-slate-400 opacity-60">
-                <svg class="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                <span class="font-bold text-[15px]">មិនទាន់មានទិន្នន័យចំណាយទេ</span>
-            </div>
+        <div v-show="activeTab === 'list'" class="flex-1 overflow-y-auto bg-slate-50 custom-scrollbar flex flex-col relative">
             
-            <div v-else v-for="(item, index) in paginatedList" :key="item.id" class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative animate-fade-in-up">
-                <div class="absolute top-0 right-0 px-3 py-1 bg-slate-100 text-slate-500 text-[11px] font-black rounded-bl-xl border-l border-b border-slate-200">#{{ (currentPage - 1) * itemsPerPage + index + 1 }}</div>
-                
-                <div class="pr-14">
-                    <h4 class="font-black text-slate-800 text-[15px] mb-1">{{ item.reason }}</h4>
-                    <div class="text-xl font-black text-rose-600 mb-4">{{ item.amount?.toLocaleString() }} {{ item.currency === 'USD' ? '$' : '៛' }}</div>
+            <div class="px-6 py-4 bg-white border-b border-slate-200 flex justify-between items-center sticky top-0 z-10 shadow-sm">
+                <div class="text-sm font-black text-slate-700 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                    ចំនួនទិន្នន័យ: {{ expensesList.length }}
                 </div>
-                
-                <div class="grid grid-cols-1 gap-2.5 text-[12px] font-bold text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <div class="flex items-center gap-2">
-                        <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg> 
-                        <span>ស្នើដោយ: <span class="text-slate-800">{{ item.requester }}</span></span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> 
-                        <span>កាលបរិច្ឆេទ: <span class="text-slate-800">{{ formatDate(item.createdAt || item.date) }}</span></span>
-                    </div>
-                    <div class="flex items-start gap-2 pt-1 border-t border-slate-200/60 mt-1">
-                        <svg class="w-4 h-4 shrink-0 text-indigo-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg> 
-                        <span class="leading-relaxed">កាត់ទៅលើ: <span class="text-indigo-600">{{ formatTargets(item.targetAdmins) }}</span></span>
-                    </div>
-                </div>
-
-                <div class="absolute bottom-5 right-5 flex gap-2">
-                    <button @click="editExpense(item)" class="w-9 h-9 bg-slate-100 hover:bg-blue-500 hover:text-white text-slate-500 rounded-xl flex items-center justify-center transition-all shadow-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                <div class="flex items-center gap-2">
+                    <button @click="downloadExcel" :disabled="isExportingExcel || expensesList.length === 0" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-lg text-[11px] font-black transition-all disabled:opacity-50">
+                        <span v-if="isExportingExcel" class="animate-spin h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full"></span>
+                        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Excel
                     </button>
-                    <button @click="confirmDelete(item.id)" class="w-9 h-9 bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-500 rounded-xl flex items-center justify-center transition-all shadow-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <button @click="downloadPDF" :disabled="isExportingPDF || expensesList.length === 0" class="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg text-[11px] font-black transition-all disabled:opacity-50">
+                        <span v-if="isExportingPDF" class="animate-spin h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full"></span>
+                        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        PDF
                     </button>
                 </div>
             </div>
 
-            <div v-if="totalPages > 1" class="flex justify-between items-center bg-white p-3 rounded-2xl border border-slate-200 mt-6 shadow-sm">
-                <button @click="currentPage--" :disabled="currentPage === 1" class="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
-                <span class="text-[13px] font-black text-slate-600 bg-slate-100 px-4 py-1.5 rounded-lg">ទំព័រ {{ currentPage }} នៃ {{ totalPages }}</span>
-                <button @click="currentPage++" :disabled="currentPage === totalPages" class="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+            <div class="p-4 md:p-6 space-y-4">
+                <div v-if="expensesList.length === 0" class="flex flex-col items-center justify-center py-20 text-slate-400 opacity-60">
+                    <svg class="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span class="font-bold text-[15px]">មិនទាន់មានទិន្នន័យចំណាយទេ</span>
+                </div>
+                
+                <div v-else v-for="(item, index) in paginatedList" :key="item.id" class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative animate-fade-in-up">
+                    <div class="absolute top-0 right-0 px-3 py-1 bg-slate-100 text-slate-500 text-[11px] font-black rounded-bl-xl border-l border-b border-slate-200">#{{ (currentPage - 1) * itemsPerPage + index + 1 }}</div>
+                    
+                    <div class="pr-14">
+                        <h4 class="font-black text-slate-800 text-[15px] mb-1">{{ item.reason }}</h4>
+                        <div class="text-xl font-black text-rose-600 mb-4">{{ item.amount?.toLocaleString() }} {{ item.currency === 'USD' ? '$' : '៛' }}</div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 gap-2.5 text-[12px] font-bold text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg> 
+                            <span>ស្នើដោយ: <span class="text-slate-800">{{ item.requester }}</span></span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> 
+                            <span>កាលបរិច្ឆេទ: <span class="text-slate-800">{{ formatDate(item.createdAt || item.date) }}</span></span>
+                        </div>
+                        <div class="flex items-start gap-2 pt-1 border-t border-slate-200/60 mt-1">
+                            <svg class="w-4 h-4 shrink-0 text-indigo-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg> 
+                            <span class="leading-relaxed">កាត់ទៅលើ: <span class="text-indigo-600">{{ formatTargets(item.targetAdmins) }}</span></span>
+                        </div>
+                    </div>
+
+                    <div class="absolute bottom-5 right-5 flex gap-2">
+                        <button @click="editExpense(item)" class="w-9 h-9 bg-slate-100 hover:bg-blue-500 hover:text-white text-slate-500 rounded-xl flex items-center justify-center transition-all shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        </button>
+                        <button @click="confirmDelete(item.id)" class="w-9 h-9 bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-500 rounded-xl flex items-center justify-center transition-all shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="totalPages > 1" class="flex justify-between items-center bg-white p-3 rounded-2xl border border-slate-200 mt-6 shadow-sm">
+                    <button @click="currentPage--" :disabled="currentPage === 1" class="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+                    <span class="text-[13px] font-black text-slate-600 bg-slate-100 px-4 py-1.5 rounded-lg">ទំព័រ {{ currentPage }} នៃ {{ totalPages }}</span>
+                    <button @click="currentPage++" :disabled="currentPage === totalPages" class="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+                </div>
             </div>
         </div>
 
@@ -203,18 +225,22 @@
         </div>
     </transition>
 
+    <div ref="printStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1] opacity-0"></div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, reactive } from 'vue';
+import { ref, computed, onMounted, watch, reactive, nextTick } from 'vue';
 import { db, auth } from '@/firebaseConfig';
 import { collection, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 const props = defineProps({ 
     show: Boolean, 
     activeAdmins: Array,
-    expensesList: Array, // Realtime list from parent
+    expensesList: Array, 
     
     dateFilterType: String,
     selectedDate: String,
@@ -235,7 +261,12 @@ const emit = defineEmits([
 const activeTab = ref('add');
 const isSubmitting = ref(false);
 const defaultAdminName = ref('');
-const formError = ref(''); // State សម្រាប់បង្ហាញ Error Message ស្អាតៗ
+const formError = ref(''); 
+
+// Export States
+const isExportingPDF = ref(false);
+const isExportingExcel = ref(false);
+const printStaging = ref(null);
 
 const expenses = ref([]);
 const editingId = ref(null);
@@ -243,7 +274,6 @@ const editingId = ref(null);
 const currentPage = ref(1);
 const itemsPerPage = 30;
 
-// Custom Alert State
 const deleteAlert = reactive({ show: false, targetId: null });
 
 const initDefaultRow = () => {
@@ -290,11 +320,9 @@ const handleIndividualToggle = (index) => {
     }
 };
 
-// 🌟 FIX: កំណត់កាលបរិច្ឆេទ (Date) ឱ្យត្រូវតាម Filter ដែលកំពុងរើស 🌟
 const submitExpenses = async () => {
     formError.value = '';
     
-    // Custom Validation
     for (let i = 0; i < expenses.value.length; i++) {
         const exp = expenses.value[i];
         if (!exp.reason.trim()) {
@@ -309,14 +337,13 @@ const submitExpenses = async () => {
 
     isSubmitting.value = true;
     try {
-        // 🌟 មុខងារចាប់យកថ្ងៃខែតាម Filter 🌟
         const saveDate = new Date();
         if (props.dateFilterType === 'daily' && props.selectedDate) {
             const [y, m, d] = props.selectedDate.split('-');
             saveDate.setFullYear(y, m - 1, d);
         }
         const createdAtStr = saveDate.toISOString();
-        const justDateStr = createdAtStr.split('T')[0]; // Save YYYY-MM-DD
+        const justDateStr = createdAtStr.split('T')[0]; 
 
         if (editingId.value) {
             const exp = expenses.value[0];
@@ -331,8 +358,8 @@ const submitExpenses = async () => {
                     requester: exp.requester || defaultAdminName.value || 'មិនបញ្ជាក់',
                     targetAdmins: exp.targetAdmins,
                     createdBy: auth.currentUser?.uid, 
-                    createdAt: createdAtStr,   // ✅ Save ត្រូវថ្ងៃដែលបានជ្រើសរើស
-                    date: justDateStr          // ✅ Save String ទុកសម្រាប់ងាយស្រួល Query
+                    createdAt: createdAtStr,   
+                    date: justDateStr          
                 });
             });
             await Promise.all(promises);
@@ -394,6 +421,214 @@ const formatTargets = (targets) => {
     });
     return names.join(', ');
 };
+
+// ==========================================
+// 🌟 EXPORT LOGIC (PDF & EXCEL រចនាថ្មី) 🌟
+// ==========================================
+
+const getFilterLabelForExport = () => {
+    if (props.dateFilterType === 'daily') return `ប្រចាំថ្ងៃទី ${props.selectedDate}`;
+    if (props.dateFilterType === 'monthly') return `ប្រចាំខែទី ${props.selectedMonth + 1} ឆ្នាំ ${props.selectedYear}`;
+    if (props.dateFilterType === 'yearly') return `ប្រចាំឆ្នាំ ${props.selectedYear}`;
+    return `ចាប់ពី ${props.customStart} ដល់ ${props.customEnd}`;
+};
+
+// 🌟 ១. TEMPLATE សម្រាប់ PDF (ស្រស់ស្អាត ទំនើប) 🌟
+const getPDFTemplate = () => {
+    const totalUSD = props.expensesList.filter(e => e.currency === 'USD').reduce((sum, e) => sum + Number(e.amount), 0);
+    const totalKHR = props.expensesList.filter(e => e.currency !== 'USD').reduce((sum, e) => sum + Number(e.amount), 0);
+
+    const rowsHTML = props.expensesList.map((item, index) => {
+        const amountDisplay = `${Number(item.amount).toLocaleString()} ${item.currency === 'USD' ? '$' : '៛'}`;
+        const amountColor = item.currency === 'USD' ? '#e11d48' : '#ea580c'; 
+        
+        return `
+        <tr style="background-color: ${index % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 12px; text-align: center; color: #64748b; font-size: 13px;">${index + 1}</td>
+            <td style="padding: 12px; font-weight: bold; color: #1e293b; font-size: 14px;">${item.reason}</td>
+            <td style="padding: 12px; text-align: center; color: #475569; font-size: 13px;">${item.requester || 'មិនបញ្ជាក់'}</td>
+            <td style="padding: 12px; text-align: right; font-weight: bold; color: ${amountColor}; font-size: 15px;">${amountDisplay}</td>
+            <td style="padding: 12px; text-align: center; color: #64748b; font-size: 12px;">${formatDate(item.createdAt || item.date)}</td>
+            <td style="padding: 12px; color: #4338ca; font-size: 12px;">${formatTargets(item.targetAdmins)}</td>
+        </tr>
+    `}).join('');
+
+    return `
+        <div id="expense-export-target" style="width: 1050px; padding: 50px; background-color: #ffffff; font-family: 'Battambong', 'Khmer OS Battambong', sans-serif; position: relative;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px;">
+                <div>
+                    <h1 style="margin: 0 0 10px 0; font-size: 28px; color: #0f172a; font-weight: 900; letter-spacing: 1px;">របាយការណ៍ចំណាយ</h1>
+                    <div style="display: inline-block; background-color: #f1f5f9; padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 14px; color: #475569; font-weight: bold;">
+                        📅 ${getFilterLabelForExport()}
+                    </div>
+                </div>
+                <div style="text-align: right; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; background: #f8fafc; min-width: 250px;">
+                    <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b; font-weight: bold; text-transform: uppercase;">ព័ត៌មានឯកសារ</p>
+                    <p style="margin: 0 0 5px 0; font-size: 14px; color: #1e293b;">ទាញយកដោយ: <b style="color: #4f46e5;">${defaultAdminName.value || 'Admin'}</b></p>
+                    <p style="margin: 0; font-size: 14px; color: #1e293b;">ម៉ោង: <b>${new Date().toLocaleTimeString('en-US')}</b></p>
+                </div>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px; border: 1px solid #e2e8f0;">
+                <thead>
+                    <tr style="background-color: #1e293b; color: white;">
+                        <th style="padding: 15px 12px; text-align: center; font-size: 13px;">ល.រ</th>
+                        <th style="padding: 15px 12px; text-align: left; font-size: 13px;">បរិយាយ / មូលហេតុ</th>
+                        <th style="padding: 15px 12px; text-align: center; font-size: 13px;">អ្នកស្នើប្រាក់</th>
+                        <th style="padding: 15px 12px; text-align: right; font-size: 13px;">ទឹកប្រាក់</th>
+                        <th style="padding: 15px 12px; text-align: center; font-size: 13px;">កាលបរិច្ឆេទ</th>
+                        <th style="padding: 15px 12px; text-align: left; font-size: 13px;">កាត់លើអ្នកគ្រប់គ្រង</th>
+                    </tr>
+                </thead>
+                <tbody>${rowsHTML}</tbody>
+            </table>
+
+            <div style="display: flex; justify-content: flex-end;">
+                <div style="background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border: 1px solid #fecdd3; border-radius: 16px; padding: 25px; width: 400px; box-shadow: 0 10px 25px -5px rgba(225, 29, 72, 0.1);">
+                    <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #be123c; border-bottom: 1px dashed #fda4af; padding-bottom: 10px;">សរុបការចំណាយ (Grand Total)</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="color: #9f1239; font-weight: bold; font-size: 15px;">សរុប (USD):</span>
+                        <span style="font-size: 24px; font-weight: 900; color: #e11d48;">${totalUSD.toLocaleString(undefined, {minimumFractionDigits:2})} $</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #9f1239; font-weight: bold; font-size: 15px;">សរុប (KHR):</span>
+                        <span style="font-size: 24px; font-weight: 900; color: #ea580c;">${totalKHR.toLocaleString()} ៛</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+};
+
+// 🌟 ២. TEMPLATE សម្រាប់ EXCEL (ទម្រង់តារាងសុទ្ធ ងាយស្រួលមើល) 🌟
+const generateExcelData = () => {
+    const totalUSD = props.expensesList.filter(e => e.currency === 'USD').reduce((sum, e) => sum + Number(e.amount), 0);
+    const totalKHR = props.expensesList.filter(e => e.currency !== 'USD').reduce((sum, e) => sum + Number(e.amount), 0);
+
+    let rows = '';
+    props.expensesList.forEach((item, index) => {
+        const amountDisplay = `${Number(item.amount).toLocaleString()} ${item.currency === 'USD' ? '$' : '៛'}`;
+        rows += `
+            <tr>
+                <td style="text-align: center; border: 1px solid #000000; vertical-align: middle;">${index + 1}</td>
+                <td style="border: 1px solid #000000; vertical-align: middle;">${item.reason}</td>
+                <td style="text-align: center; border: 1px solid #000000; vertical-align: middle;">${item.requester || 'មិនបញ្ជាក់'}</td>
+                <td style="text-align: right; border: 1px solid #000000; vertical-align: middle; color: ${item.currency === 'USD' ? '#ff0000' : '#ff8800'}; font-weight: bold;">${amountDisplay}</td>
+                <td style="text-align: center; border: 1px solid #000000; vertical-align: middle;">${formatDate(item.createdAt || item.date)}</td>
+                <td style="border: 1px solid #000000; vertical-align: middle;">${formatTargets(item.targetAdmins)}</td>
+            </tr>
+        `;
+    });
+
+    return `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="utf-8">
+            <style>
+                table { font-family: 'Battambong', 'Arial', sans-serif; border-collapse: collapse; }
+                th { background-color: #1e293b; color: #ffffff; font-weight: bold; border: 1px solid #000000; padding: 10px; font-size: 12pt; }
+                td { padding: 8px; font-size: 11pt; }
+                .title { font-size: 18pt; font-weight: bold; text-align: center; background-color: #f1f5f9; height: 40px; vertical-align: middle;}
+                .subtitle { font-size: 12pt; font-weight: bold; text-align: center; background-color: #f1f5f9; height: 30px; vertical-align: middle;}
+                .total-label { font-weight: bold; text-align: right; background-color: #fff1f2; border: 1px solid #000000;}
+                .total-val { font-weight: bold; font-size: 14pt; background-color: #fff1f2; border: 1px solid #000000;}
+            </style>
+        </head>
+        <body>
+            <table>
+                <tr>
+                    <td colspan="6" class="title">របាយការណ៍ចំណាយ (Expense Report)</td>
+                </tr>
+                <tr>
+                    <td colspan="6" class="subtitle">កាលបរិច្ឆេទ: ${getFilterLabelForExport()} | ទាញយកនៅ: ${new Date().toLocaleString('km-KH')}</td>
+                </tr>
+                <tr>
+                    <td colspan="6"></td>
+                </tr>
+                <tr>
+                    <th width="50">ល.រ</th>
+                    <th width="300">បរិយាយ / មូលហេតុ</th>
+                    <th width="150">អ្នកស្នើប្រាក់</th>
+                    <th width="120">ទឹកប្រាក់</th>
+                    <th width="150">កាលបរិច្ឆេទ</th>
+                    <th width="250">កាត់លើអ្នកគ្រប់គ្រង</th>
+                </tr>
+                ${rows}
+                <tr>
+                    <td colspan="6"></td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="total-label">សរុបការចំណាយ (USD):</td>
+                    <td colspan="3" class="total-val" style="color: #e11d48;">${totalUSD.toLocaleString()} $</td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="total-label">សរុបការចំណាយ (KHR):</td>
+                    <td colspan="3" class="total-val" style="color: #ea580c;">${totalKHR.toLocaleString()} ៛</td>
+                </tr>
+            </table>
+        </body>
+        </html>
+    `;
+};
+
+const downloadPDF = async () => {
+    isExportingPDF.value = true;
+    try {
+        printStaging.value.innerHTML = getPDFTemplate();
+        await nextTick(); 
+        await document.fonts.ready; 
+        await new Promise(r => setTimeout(r, 500)); 
+        
+        const targetElement = document.getElementById('expense-export-target');
+        
+        const canvas = await html2canvas(targetElement, { 
+            scale: 2, 
+            useCORS: true, 
+            backgroundColor: "#ffffff",
+            windowWidth: 1100
+        });
+        
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = 210; 
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Expense_Report_${new Date().getTime()}.pdf`);
+        
+        printStaging.value.innerHTML = '';
+    } catch(e) { 
+        console.error(e); 
+        alert("មានបញ្ហាក្នុងការទាញយក PDF");
+    } finally { 
+        isExportingPDF.value = false; 
+    }
+};
+
+const downloadExcel = () => {
+    isExportingExcel.value = true;
+    try {
+        const htmlContent = generateExcelData();
+        const blob = new Blob(['\ufeff', htmlContent], { type: 'application/vnd.ms-excel' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Expense_Report_${new Date().getTime()}.xls`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        console.error(e);
+        alert("មានបញ្ហាក្នុងការទាញយក Excel");
+    } finally {
+        isExportingExcel.value = false;
+    }
+};
+
+
 </script>
 
 <style scoped>

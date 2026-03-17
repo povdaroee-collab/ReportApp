@@ -51,6 +51,10 @@
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                   ទាញយក PDF
               </button>
+               <button @click="openPrintModal('excel'); showMobileFilters = false" class="col-span-2 flex items-center justify-center gap-2 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm active:scale-95 transition-all shadow-md shadow-emerald-500/30">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  ទាញយក Excel
+              </button>
           </div>
       </div>
 
@@ -81,6 +85,7 @@
                     @toggleMobileFilters="showMobileFilters = !showMobileFilters"
                     @print="openPrintModal('print')"
                     @pdf="openPrintModal('pdf')"
+                    @excel="openPrintModal('excel')"
                 />
             </div>
         </template>
@@ -109,13 +114,14 @@
         <div v-if="printModal.show" class="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm font-khmer">
             <div class="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
                 <div class="flex items-center gap-3 mb-4 shrink-0">
-                    <div class="w-12 h-12 rounded-full flex items-center justify-center" :class="printModal.type === 'pdf' ? 'bg-rose-50 text-rose-500' : 'bg-slate-100 text-slate-700'">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center" :class="printModal.type === 'pdf' ? 'bg-rose-50 text-rose-500' : (printModal.type === 'excel' ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-100 text-slate-700')">
                         <svg v-if="printModal.type === 'pdf'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <svg v-else-if="printModal.type === 'excel'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                     </div>
                     <div>
                         <h3 class="font-black text-slate-800 text-lg">កំណត់របាយការណ៍</h3>
-                        <p class="text-xs font-bold text-slate-500">ទាញយកជាទម្រង់ {{ printModal.type === 'pdf' ? 'ឯកសារ PDF' : 'បោះពុម្ព (Print)' }}</p>
+                        <p class="text-xs font-bold text-slate-500">ទាញយកជាទម្រង់ {{ printModal.type === 'pdf' ? 'ឯកសារ PDF' : (printModal.type === 'excel' ? 'ឯកសារ Excel' : 'បោះពុម្ព (Print)') }}</p>
                     </div>
                 </div>
 
@@ -139,7 +145,7 @@
 
                 <div class="flex gap-3 shrink-0 pt-2">
                     <button @click="printModal.show = false" class="flex-1 py-3.5 rounded-xl font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 transition-colors shadow-sm">បោះបង់</button>
-                    <button @click="confirmPrintAction" :disabled="printModal.selectedAdmins.length === 0" class="flex-[1.5] py-3.5 rounded-xl font-black text-white shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" :class="printModal.type === 'pdf' ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-rose-500/30' : 'bg-slate-800 hover:bg-slate-900 shadow-slate-900/20'">
+                    <button @click="confirmPrintAction" :disabled="printModal.selectedAdmins.length === 0" class="flex-[1.5] py-3.5 rounded-xl font-black text-white shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" :class="printModal.type === 'pdf' ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-rose-500/30' : (printModal.type === 'excel' ? 'bg-gradient-to-r from-emerald-500 to-green-600 shadow-emerald-500/30' : 'bg-slate-800 hover:bg-slate-900 shadow-slate-900/20')">
                         បន្តការទាញយក
                     </button>
                 </div>
@@ -644,6 +650,7 @@ const checkSelectAllStatus = () => {
 const confirmPrintAction = () => {
     printModal.show = false;
     if (printModal.type === 'print') executeNativePrint();
+    else if (printModal.type === 'excel') generateExcel();
     else generatePDF();
 };
 
@@ -1227,19 +1234,166 @@ const generatePDF = async () => {
         processing.value.active = false;
     }
 };
+
+// 🌟 NEW FUNCTION: GENERATE EXCEL 🌟
+const generateExcel = () => {
+    processing.value = { active: true, message: 'កំពុងរៀបចំទិន្នន័យ Excel...', progress: 50 };
+
+    try {
+        const stats = advancedPrintStats.value;
+        const rows = rowsToPrint.value;
+
+        // Helper to map units nicely
+        const formatUnits = (unitObj) => {
+            if (!unitObj) return '';
+            return Object.entries(unitObj).map(([u, c]) => `${c} ${translateUnit(u)}`).join(', ');
+        };
+
+        // Main Admin Table Rows
+        let mainTableRows = '';
+        rows.forEach(item => {
+            const hasS = item.hasSales;
+            const cat = hasS ? item.category : '-';
+            const sStr = hasS ? formatUnits(item.unitCounts) : 'គ្មានការលក់';
+            const cStr = hasS ? item.totalClients : '-';
+            const rUSD = hasS ? fC(item.revenueUSD) : '-';
+            const rKHR = hasS ? fC(item.revenueKHR) : '-';
+            
+            mainTableRows += `
+                <tr>
+                    <td style="border: 1px solid #cbd5e1; text-align: center;">${item.printIndex}</td>
+                    <td style="border: 1px solid #cbd5e1; font-weight: bold;">${item.fullName}</td>
+                    <td style="border: 1px solid #cbd5e1; text-align: center;">${cat}</td>
+                    <td style="border: 1px solid #cbd5e1;">${sStr}</td>
+                    <td style="border: 1px solid #cbd5e1; text-align: center;">${cStr}</td>
+                    <td style="border: 1px solid #cbd5e1; text-align: right; color:#059669; font-weight:bold;">${rUSD}</td>
+                    <td style="border: 1px solid #cbd5e1; text-align: right; color:#2563eb; font-weight:bold;">${rKHR}</td>
+                </tr>
+            `;
+        });
+
+        // Helper to generate section rows (PP, Prov, Grand)
+        const generateSectionRows = (title, sectionData, showExpenses = false, expensesList = []) => {
+            let sectionRows = `
+                <tr><td colspan="7"></td></tr>
+                <tr><th colspan="7" style="background-color: #1e293b; color: white; font-size: 14pt; text-align: left;">${title}</th></tr>
+            `;
+
+            // PAID
+            sectionRows += `<tr><th colspan="7" style="background-color: #d1fae5; color: #065f46; text-align: left;">✅ ទំនិញបានទូទាត់រួច (PAID)</th></tr>`;
+            
+            const addProductRows = (catName, catData) => {
+                if(Object.keys(catData.products).length > 0) {
+                     sectionRows += `<tr><th colspan="7" style="background-color: #f1f5f9; text-align: left;">${catName} (អតិថិជន: ${catData.clients})</th></tr>`;
+                     sectionRows += `<tr><th>ឈ្មោះទំនិញ</th><th>បរិមាណ</th><th colspan="2">អតិថិជន</th><th colspan="3">ចំណូលសរុប (USD)</th></tr>`;
+                     catData.products.forEach(p => {
+                         sectionRows += `<tr>
+                            <td style="border: 1px solid #cbd5e1;">${p.name}</td>
+                            <td style="border: 1px solid #cbd5e1; text-align: center;">${p.qty} ${translateUnit(p.unit)}</td>
+                            <td colspan="2" style="border: 1px solid #cbd5e1; text-align: center;">${p.clients}</td>
+                            <td colspan="3" style="border: 1px solid #cbd5e1; text-align: right; color:#1e293b; font-weight:bold;">${fC(p.usd)}</td>
+                         </tr>`;
+                     });
+                     sectionRows += `<tr><td colspan="4" style="text-align: right; font-weight:bold; background-color:#f8fafc;">សរុប ${catName}:</td><td colspan="3" style="text-align: right; font-weight:bold; background-color:#f8fafc; color:#059669;">${fC(catData.itemPriceTotalUSD)}</td></tr>`;
+                }
+            };
+            addProductRows('លក់បោះដុំ (Wholesale)', sectionData.paid.wholesale);
+            addProductRows('លក់រាយ (Retail)', sectionData.paid.retail);
+            sectionRows += `<tr><td colspan="4" style="text-align: right; font-weight:bold; background-color:#ecfdf5;">ថ្លៃដឹកជញ្ជូនសរុប (Delivery Paid):</td><td colspan="3" style="text-align: right; font-weight:bold; background-color:#ecfdf5; color:#059669;">${fC(sectionData.paid.deliveryFeeUSD)}</td></tr>`;
+
+            // UNPAID
+            sectionRows += `<tr><th colspan="7" style="background-color: #fef3c7; color: #92400e; text-align: left;">⏳ មិនទាន់បានទូទាត់ (PENDING)</th></tr>`;
+            addProductRows('លក់បោះដុំ (Wholesale)', sectionData.unpaid.wholesale);
+            addProductRows('លក់រាយ (Retail)', sectionData.unpaid.retail);
+            sectionRows += `<tr><td colspan="4" style="text-align: right; font-weight:bold; background-color:#fffbeb;">ថ្លៃដឹកជញ្ជូនសរុប (Delivery Pending):</td><td colspan="3" style="text-align: right; font-weight:bold; background-color:#fffbeb; color:#d97706;">${fC(sectionData.unpaid.deliveryFeeUSD)}</td></tr>`;
+
+            // Expenses (Only for Grand)
+            if (showExpenses && expensesList.length > 0) {
+                 sectionRows += `<tr><th colspan="7" style="background-color: #ffe4e6; color: #9f1239; text-align: left;">💸 ការចំណាយទូទៅ (EXPENSES)</th></tr>`;
+                 sectionRows += `<tr><th colspan="4">បរិយាយ</th><th>អ្នកស្នើ</th><th colspan="2">តម្លៃ (USD)</th></tr>`;
+                 expensesList.forEach(exp => {
+                     let eUSD = exp.currency==='KHR' ? exp.amount/4000 : exp.amount;
+                     sectionRows += `<tr>
+                        <td colspan="4" style="border: 1px solid #cbd5e1;">${exp.reason}</td>
+                        <td style="border: 1px solid #cbd5e1; text-align: center;">${exp.requester}</td>
+                        <td colspan="2" style="border: 1px solid #cbd5e1; text-align: right; color:#e11d48; font-weight:bold;">${fC(eUSD)}</td>
+                     </tr>`;
+                 });
+                 sectionRows += `<tr><td colspan="5" style="text-align: right; font-weight:bold; background-color:#fff1f2;">សរុបចំណាយ:</td><td colspan="2" style="text-align: right; font-weight:bold; background-color:#fff1f2; color:#be123c;">${fC(sectionData.summary.totalExpensesUSD)}</td></tr>`;
+            }
+
+            // Summary Block
+            sectionRows += `
+                <tr><td colspan="7"></td></tr>
+                <tr><th colspan="5" style="text-align: right; background-color:#f8fafc;">ចំណូលសរុប (ទូទាត់រួច PAID):</th><td colspan="2" style="text-align: right; font-weight:bold; background-color:#f8fafc; color:#059669;">${fC(sectionData.summary.paidTotal)}</td></tr>
+                <tr><th colspan="5" style="text-align: right; background-color:#f8fafc;">មិនទាន់ទូទាត់ (PENDING):</th><td colspan="2" style="text-align: right; font-weight:bold; background-color:#f8fafc; color:#d97706;">${fC(sectionData.summary.unpaidTotal)}</td></tr>
+            `;
+            if (showExpenses) {
+                sectionRows += `
+                    <tr><th colspan="5" style="text-align: right; background-color:#f8fafc;">ចំណាយសរុប (Expenses):</th><td colspan="2" style="text-align: right; font-weight:bold; background-color:#f8fafc; color:#be123c;">- ${fC(sectionData.summary.totalExpensesUSD)}</td></tr>
+                    <tr><th colspan="5" style="text-align: right; background-color:#f8fafc;">តម្លៃដើមទំនិញ (COGS):</th><td colspan="2" style="text-align: right; font-weight:bold; background-color:#f8fafc; color:#475569;">- ${fC(sectionData.summary.totalPaidCostUSD)}</td></tr>
+                    <tr><th colspan="5" style="text-align: right; background-color:#e0e7ff; font-size:14pt;">ប្រាក់ចំណេញសុទ្ធ (NET PROFIT):</th><td colspan="2" style="text-align: right; font-weight:bold; background-color:#e0e7ff; font-size:14pt; color:${sectionData.summary.netProfit>=0?'#059669':'#e11d48'};">${fC(sectionData.summary.netProfit)}</td></tr>
+                `;
+            } else {
+                 sectionRows += `<tr><th colspan="5" style="text-align: right; background-color:#f8fafc;">តម្លៃដើមទំនិញ (COGS):</th><td colspan="2" style="text-align: right; font-weight:bold; background-color:#f8fafc; color:#475569;">${fC(sectionData.summary.totalPaidCostUSD)}</td></tr>`;
+            }
+
+            return sectionRows;
+        };
+
+        const excelHTML = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    table { font-family: 'Battambang', Arial, sans-serif; border-collapse: collapse; }
+                    th { border: 1px solid #cbd5e1; padding: 10px; }
+                    td { border: 1px solid #cbd5e1; padding: 8px; }
+                </style>
+            </head>
+            <body>
+                <table>
+                    <tr><th colspan="7" style="font-size:18pt; text-align:center; background-color:#f1f5f9; height:40px;">របាយការណ៍គណនេយ្យលម្អិត</th></tr>
+                    <tr><th colspan="7" style="font-size:12pt; text-align:center; background-color:#f1f5f9; font-weight:normal;">កាលបរិច្ឆេទ: ${reportDateLabel.value} | សម្រាប់: ${reportAdminLabel.value}</th></tr>
+                    <tr><td colspan="7"></td></tr>
+                    
+                    <tr><th colspan="7" style="background-color: #1e293b; color: white; font-size: 12pt; text-align: left;">បញ្ជីអ្នកគ្រប់គ្រង</th></tr>
+                    <tr style="background-color: #f8fafc;">
+                        <th>#</th><th>អ្នកគ្រប់គ្រង</th><th>ប្រភេទ</th><th>ចំនួនលក់សរុប</th><th>អតិថិជន</th><th>ចំណូល (USD)</th><th>ចំណូល (KHR)</th>
+                    </tr>
+                    ${mainTableRows}
+
+                    ${generateSectionRows('📊 ទិន្នន័យរួមសរុប (រាជធានីភ្នំពេញ + ខេត្ត)', stats.grand, true, stats.expensesList)}
+                    ${generateSectionRows('🏙️ ទិន្នន័យរាជធានីភ្នំពេញ (Phnom Penh)', stats.pp)}
+                    ${generateSectionRows('🛣️ ទិន្នន័យតាមបណ្តាខេត្ត (Provinces)', stats.prov)}
+                    
+                    <tr><td colspan="7"></td></tr>
+                    <tr><td colspan="7" style="text-align: right; color: #64748b;">ទាញយកដោយ: ${adminName.value} | ${new Date().toLocaleString('km-KH')}</td></tr>
+                </table>
+            </body>
+            </html>
+        `;
+
+        processing.value.progress = 100;
+        processing.value.message = 'រួចរាល់!';
+
+        const blob = new Blob(['\ufeff', excelHTML], { type: 'application/vnd.ms-excel' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Accounting_Report_${dateFilterType.value}_${new Date().getTime()}.xls`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        notification.success('ទាញយក Excel បានជោគជ័យ!');
+    } catch(e) {
+        console.error(e);
+        triggerAlert('error', 'បរាជ័យ', 'មិនអាចទាញយក Excel បានទេ');
+    } finally {
+        setTimeout(() => { processing.value.active = false; }, 500);
+    }
+};
+
 </script>
-
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&family=Battambang:wght@400;700;900&display=swap');
-
-.font-khmer { 
-    font-family: 'Kantumruy Pro', 'Battambang', sans-serif; 
-}
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
-.animate-fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-
-@media print { .print\:hidden { display: none !important; } }
-</style>

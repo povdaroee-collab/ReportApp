@@ -102,17 +102,17 @@
                                     v-model.number="form.qty" 
                                     type="number" step="any" min="0.01" required 
                                     placeholder="បញ្ចូលចំនួន..." 
-                                    class="w-full bg-transparent px-4 py-3 text-white font-black outline-none"
+                                    class="w-full bg-transparent px-4 py-3 text-white font-black outline-none h-[46px]"
                                 >
                                 <select 
                                     v-if="selectedProduct.unit === 'case'" 
                                     v-model="form.transactionUnit" 
-                                    class="bg-neutral-700 border-l border-neutral-600 px-3 py-3 text-white text-[11px] font-bold outline-none cursor-pointer hover:bg-neutral-600 transition-colors"
+                                    class="bg-neutral-700 border-l border-neutral-600 px-3 py-3 text-white text-[11px] font-bold outline-none cursor-pointer hover:bg-neutral-600 transition-colors h-[46px]"
                                 >
                                     <option value="bulk">កេះ ({{ translateUnit(selectedProduct.unit) }})</option>
                                     <option value="retail">ដប / រាយ ({{ translateRetailUnit(selectedProduct) }})</option>
                                 </select>
-                                <div v-else class="bg-neutral-700 border-l border-neutral-600 px-4 py-3 text-white text-[11px] font-bold flex items-center justify-center">
+                                <div v-else class="bg-neutral-700 border-l border-neutral-600 px-4 py-3 text-white text-[11px] font-bold flex items-center justify-center h-[46px]">
                                     {{ translateUnit(selectedProduct.unit) }}
                                 </div>
                             </div>
@@ -123,8 +123,8 @@
                                 ថ្លៃដើមទិញចូលថ្មី / ១ {{ form.transactionUnit === 'retail' ? 'ដប (រាយ)' : translateUnit(selectedProduct.unit) }} <span class="text-rose-500">*</span>
                             </label>
                             <div class="relative">
-                                <span class="absolute left-4 top-3 text-emerald-500 font-black">{{ selectedProduct.currency === 'USD' ? '$' : '៛' }}</span>
-                                <input v-model.number="form.cost" type="number" step="any" min="0" required class="w-full bg-neutral-800 border border-emerald-500/50 rounded-xl pl-8 pr-4 py-3 text-emerald-400 font-black outline-none focus:ring-1 focus:ring-emerald-500 transition-all">
+                                <span class="absolute left-4 top-[13px] text-emerald-500 font-black">{{ selectedProduct.currency === 'USD' ? '$' : '៛' }}</span>
+                                <input v-model.number="form.cost" type="number" step="any" min="0" required class="w-full bg-neutral-800 border border-emerald-500/50 rounded-xl pl-8 pr-4 py-3 text-emerald-400 font-black outline-none focus:ring-1 focus:ring-emerald-500 transition-all h-[46px]">
                             </div>
                         </div>
 
@@ -147,7 +147,7 @@
                             <input 
                                 v-model="form.mfgDate" 
                                 type="date" 
-                                class="w-full bg-neutral-900 border border-neutral-600 rounded-lg px-3 py-2.5 text-xs font-bold text-neutral-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 outline-none transition-colors cursor-pointer"
+                                class="w-full bg-neutral-900 border border-neutral-600 rounded-lg px-3 py-2.5 text-xs font-bold text-neutral-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 outline-none transition-colors cursor-pointer [color-scheme:dark]"
                             >
                         </div>
                         <div class="bg-neutral-800/80 p-3 rounded-xl border border-neutral-700 shadow-inner">
@@ -158,7 +158,7 @@
                             <input 
                                 v-model="form.expDate" 
                                 type="date" 
-                                class="w-full bg-neutral-900 border border-neutral-600 rounded-lg px-3 py-2.5 text-xs font-bold text-neutral-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 outline-none transition-colors cursor-pointer"
+                                class="w-full bg-neutral-900 border border-neutral-600 rounded-lg px-3 py-2.5 text-xs font-bold text-neutral-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 outline-none transition-colors cursor-pointer [color-scheme:dark]"
                             >
                         </div>
                     </div>
@@ -180,9 +180,20 @@
                         </div>
                     </div>
 
-                    <div class="mb-6">
-                        <label class="block text-[11px] font-black text-neutral-300 mb-1.5">មូលហេតុ / ចំណាំ (Reason) <span v-if="mode==='OUT'" class="text-rose-500">*</span></label>
-                        <input v-model="form.reason" type="text" :placeholder="mode === 'IN' ? 'ឧ. ទិញចូលពីក្រុមហ៊ុន...' : 'ឧ. ខូចគុណភាព, បែកបាក់, ហួសដឺឡេ...'" :required="mode === 'OUT'" class="w-full bg-neutral-800 border border-neutral-600 rounded-xl px-4 py-3 text-white text-[13px] outline-none focus:border-amber-500 transition-all font-bold">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                        <div>
+                            <label class="block text-[11px] font-black text-neutral-300 mb-1.5">កាលបរិច្ឆេទ (Date) <span class="text-rose-500">*</span></label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-neutral-500 pointer-events-none">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                </span>
+                                <input v-model="form.transactionDate" type="date" required class="w-full bg-neutral-800 border border-neutral-600 rounded-xl pl-11 pr-4 py-3 text-white text-[13px] outline-none focus:border-amber-500 transition-all font-bold cursor-pointer h-[46px] [color-scheme:dark]">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black text-neutral-300 mb-1.5">មូលហេតុ / ចំណាំ (Reason) <span v-if="mode==='OUT'" class="text-rose-500">*</span></label>
+                            <input v-model="form.reason" type="text" :placeholder="mode === 'IN' ? 'ឧ. ទិញចូលពីក្រុមហ៊ុន...' : 'ឧ. ខូចគុណភាព, បែកបាក់, ហួសដឺឡេ...'" :required="mode === 'OUT'" class="w-full bg-neutral-800 border border-neutral-600 rounded-xl px-4 py-3 text-white text-[13px] outline-none focus:border-amber-500 transition-all font-bold h-[46px]">
+                        </div>
                     </div>
 
                     <div class="flex justify-end pt-4 border-t border-neutral-800">
@@ -209,16 +220,29 @@
                     </button>
                 </div>
                 
-                <div v-if="mode === 'OUT'" class="bg-rose-500/10 border border-rose-500/30 px-5 py-2.5 rounded-xl text-rose-400 font-bold text-sm shadow-inner flex items-center gap-2 animate-fade-in">
-                    ការខាតបង់សរុប (Loss): 
-                    <span class="text-xl font-black">{{ formatPrice(totalLossUSD) }}$</span>
+                <div class="flex items-center gap-3">
+                    <div v-if="mode === 'OUT'" class="bg-rose-500/10 border border-rose-500/30 px-4 py-2 rounded-xl text-rose-400 font-bold text-sm shadow-inner flex items-center gap-2">
+                        ការខាតបង់សរុប (Loss): 
+                        <span class="text-lg font-black">{{ formatPrice(totalLossUSD) }}$</span>
+                    </div>
+                    
+                    <button 
+                        @click="fetchHistory" 
+                        :disabled="!hasNewData || isLoadingHistory"
+                        class="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all shadow-sm border"
+                        :class="hasNewData ? 'bg-blue-600 text-white hover:bg-blue-500 border-blue-500 animate-pulse' : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed'"
+                    >
+                        <svg class="w-4 h-4" :class="{'animate-spin': isLoadingHistory}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Refresh
+                    </button>
                 </div>
             </div>
 
-            <div class="overflow-x-auto custom-scrollbar rounded-xl border border-neutral-700">
+            <div class="overflow-x-auto custom-scrollbar rounded-t-xl border border-neutral-700 border-b-0">
                 <table class="w-full text-left border-collapse min-w-[1000px]">
                     <thead class="bg-neutral-900 text-neutral-400 text-[11px] uppercase font-black tracking-widest border-b border-neutral-700">
                         <tr>
+                            <th class="px-5 py-4 w-12 text-center">#</th>
                             <th class="px-5 py-4">កាលបរិច្ឆេទ</th>
                             <th class="px-5 py-4 text-center">ប្រភេទ</th>
                             <th class="px-5 py-4">ទំនិញ</th>
@@ -231,12 +255,13 @@
                     </thead>
                     <tbody class="divide-y divide-neutral-800 bg-neutral-800/30">
                         <tr v-if="isLoadingHistory">
-                            <td colspan="8" class="py-12 text-center"><div class="animate-spin rounded-full h-8 w-8 border-2 border-amber-500 border-t-transparent mx-auto"></div></td>
+                            <td colspan="9" class="py-12 text-center"><div class="animate-spin rounded-full h-8 w-8 border-2 border-amber-500 border-t-transparent mx-auto"></div></td>
                         </tr>
-                        <tr v-else-if="filteredHistory.length === 0">
-                            <td colspan="8" class="py-12 text-center text-neutral-500 font-bold">មិនទាន់មានប្រវត្តិប្រតិបត្តិការទេ</td>
+                        <tr v-else-if="paginatedHistory.length === 0">
+                            <td colspan="9" class="py-12 text-center text-neutral-500 font-bold">មិនទាន់មានប្រវត្តិប្រតិបត្តិការទេ</td>
                         </tr>
-                        <tr v-else v-for="h in filteredHistory" :key="h.id" class="hover:bg-neutral-700/50 transition-colors">
+                        <tr v-else v-for="(h, idx) in paginatedHistory" :key="h.id" class="hover:bg-neutral-700/50 transition-colors">
+                            <td class="px-5 py-3.5 text-xs text-center font-bold text-neutral-500">{{ (currentPage - 1) * 20 + idx + 1 }}</td>
                             <td class="px-5 py-3.5 text-xs font-bold text-neutral-300">{{ formatDate(h.createdAt) }}</td>
                             <td class="px-5 py-3.5 text-center">
                                 <span class="px-2.5 py-1 rounded text-[10px] font-black tracking-widest shadow-sm" :class="h.type === 'IN' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'">
@@ -262,6 +287,26 @@
                     </tbody>
                 </table>
             </div>
+
+            <div v-if="historyTotalPages > 1" class="bg-neutral-900 p-4 rounded-b-xl border border-neutral-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p class="text-xs font-bold text-neutral-400 pl-2">
+                    បង្ហាញទំព័រ {{ currentPage }} នៃ {{ historyTotalPages }}
+                </p>
+                <div class="flex items-center gap-1.5">
+                    <button @click="currentPage--" :disabled="currentPage === 1" class="w-9 h-9 flex items-center justify-center rounded-xl bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors border border-neutral-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <div class="flex gap-1 overflow-x-auto custom-scrollbar max-w-[200px]">
+                        <button v-for="p in visiblePages" :key="p" @click="currentPage = p" class="w-9 h-9 shrink-0 flex items-center justify-center rounded-xl font-bold text-sm transition-colors border" :class="currentPage === p ? 'bg-blue-600 text-white border-blue-500 shadow-md' : 'bg-neutral-800 text-neutral-400 border-neutral-600 hover:bg-neutral-700 hover:text-white'">
+                            {{ p }}
+                        </button>
+                    </div>
+                    <button @click="currentPage++" :disabled="currentPage === historyTotalPages" class="w-9 h-9 flex items-center justify-center rounded-xl bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors border border-neutral-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+            </div>
+
         </div>
 
         <transition name="modal-fade">
@@ -299,9 +344,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
 import { db, auth } from '@/firebaseConfig';
-import { collection, addDoc, doc, getDoc, updateDoc, serverTimestamp, query, orderBy, onSnapshot, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, orderBy, onSnapshot, deleteDoc, limit } from 'firebase/firestore';
 import { useNotificationStore } from '@/stores/notification';
 
 const props = defineProps({
@@ -309,6 +354,13 @@ const props = defineProps({
 });
 
 const notification = useNotificationStore();
+
+const getTodayDate = () => {
+    const d = new Date();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${month}-${day}`;
+};
 
 // State
 const mode = ref('IN'); 
@@ -324,12 +376,12 @@ const form = reactive({
     qty: null, 
     cost: null, 
     reason: '', 
+    transactionDate: getTodayDate(),
     transactionUnit: 'bulk',
     mfgDate: '',
     expDate: ''
 });
 
-// Modals State
 const deleteModal = reactive({ show: false, data: null, isDeleting: false });
 
 const vClickOutside = {
@@ -347,11 +399,6 @@ const filteredProducts = computed(() => {
     if (!searchQuery.value) return props.products.slice(0, 15);
     const q = searchQuery.value.toLowerCase();
     return props.products.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
-});
-
-const filteredHistory = computed(() => {
-    const activeProductIds = new Set(props.products.map(p => p.id));
-    return history.value.filter(h => h.type === mode.value && activeProductIds.has(h.productId));
 });
 
 const lossValue = computed(() => {
@@ -403,7 +450,6 @@ const calculateCostPerRetail = () => {
     }
 };
 
-// 🌟 FIX: Auto-calculate cost when changing dropdown Unit 🌟
 watch(() => form.transactionUnit, (newUnit) => {
     if (mode.value === 'IN' && selectedProduct.value) {
         const baseBulkCost = Number(selectedProduct.value.unitCost) || 0;
@@ -425,6 +471,7 @@ watch(mode, (newMode) => {
         }
         form.reason = '';
     }
+    currentPage.value = 1; 
 });
 
 // Actions
@@ -449,6 +496,7 @@ const clearSelection = () => {
     form.qty = null; 
     form.cost = null; 
     form.reason = ''; 
+    form.transactionDate = getTodayDate();
     form.transactionUnit = 'bulk';
     form.mfgDate = ''; 
     form.expDate = ''; 
@@ -540,6 +588,14 @@ const submitTransaction = async () => {
 
         const displayUnitStr = form.transactionUnit === 'retail' ? (selectedProduct.value.retailUnit || 'bottle') : selectedProduct.value.unit;
 
+        let finalCreatedAt = serverTimestamp();
+        if (form.transactionDate) {
+            const [y, m, d] = form.transactionDate.split('-');
+            const customDate = new Date();
+            customDate.setFullYear(y, m - 1, d);
+            finalCreatedAt = customDate;
+        }
+
         await addDoc(collection(db, 'stock_transactions'), {
             type: mode.value,
             productId: selectedProduct.value.id,
@@ -551,11 +607,13 @@ const submitTransaction = async () => {
             currency: selectedProduct.value.currency,
             reason: form.reason || (mode.value === 'IN' ? 'នាំចូលស្តុកបន្ថែម' : 'ដកចេញ'),
             createdBy: adminName,
-            createdAt: serverTimestamp()
+            createdAt: finalCreatedAt 
         });
 
         notification.success(`បាន${mode.value === 'IN' ? 'នាំចូល' : 'ដកចេញ'}ដោយជោគជ័យ!`);
         clearSelection();
+        
+        fetchHistory();
 
     } catch (error) {
         console.error(error);
@@ -637,6 +695,8 @@ const confirmDeleteTransaction = async () => {
         
         notification.success("លុបប្រវត្តិ និងធ្វើបច្ចុប្បន្នភាពស្តុកដោយជោគជ័យ!");
         deleteModal.show = false;
+        
+        fetchHistory();
 
     } catch (error) {
         console.error("Delete Error:", error);
@@ -646,13 +706,76 @@ const confirmDeleteTransaction = async () => {
     }
 };
 
-onMounted(() => {
-    const q = query(collection(db, 'stock_transactions'), orderBy('createdAt', 'desc'));
-    onSnapshot(q, (snap) => {
-        history.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+// ==========================================
+// 🌟 SMART FETCHING & PAGINATION LOGIC 🌟
+// ==========================================
+const hasNewData = ref(false); // <--- បន្ថែមបន្ទាត់នេះ
+let historyUnsubscribe = null;
+let latestDocId = null;
+
+const fetchHistory = async () => {
+    isLoadingHistory.value = true;
+    hasNewData.value = false;
+    try {
+        const q = query(collection(db, 'stock_transactions'), orderBy('createdAt', 'desc'));
+        const snap = await getDocs(q);
+        history.value = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (history.value.length > 0) {
+            latestDocId = history.value[0].id;
+        }
+    } catch (e) {
+        console.error(e);
+    } finally {
         isLoadingHistory.value = false;
+        setupHistoryListener();
+    }
+};
+
+const setupHistoryListener = () => {
+    if (historyUnsubscribe) historyUnsubscribe();
+    const q = query(collection(db, 'stock_transactions'), orderBy('createdAt', 'desc'), limit(1));
+    historyUnsubscribe = onSnapshot(q, (snap) => {
+        if (!snap.empty) {
+            const newTopId = snap.docs[0].id;
+            if (latestDocId && newTopId !== latestDocId && !isLoadingHistory.value) {
+                hasNewData.value = true;
+            }
+        }
     });
+};
+
+onMounted(() => {
+    fetchHistory();
 });
+
+onUnmounted(() => {
+    if (historyUnsubscribe) historyUnsubscribe();
+});
+
+// Pagination state
+const currentPage = ref(1);
+const filteredHistoryBase = computed(() => {
+    const activeProductIds = new Set(props.products.map(p => p.id));
+    return history.value.filter(h => h.type === mode.value && activeProductIds.has(h.productId));
+});
+
+const historyTotalPages = computed(() => Math.ceil(filteredHistoryBase.value.length / 20) || 1);
+
+const paginatedHistory = computed(() => {
+    const start = (currentPage.value - 1) * 20;
+    return filteredHistoryBase.value.slice(start, start + 20);
+});
+
+const visiblePages = computed(() => {
+    const pages = []; const maxVisible = 5;
+    let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
+    let end = Math.min(historyTotalPages.value, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+});
+
 
 // Utils
 const formatPrice = (val) => Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
@@ -680,15 +803,15 @@ const formatDate = (ts) => {
    else date = new Date(ts);
    if (isNaN(date.getTime())) return '';
    
-   return new Intl.DateTimeFormat('km-KH', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+   return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
 };
 </script>
 
 <style scoped>
 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #52525b; border-radius: 10px; }
-.custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #71717a; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+.custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #475569; }
 
 .animate-fade-in { animation: fadeIn 0.3s ease-out; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -704,4 +827,5 @@ const formatDate = (ts) => {
 
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.7; cursor: pointer; }
 </style>

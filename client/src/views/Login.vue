@@ -1,5 +1,7 @@
 <template>
-  <div class="min-h-[100dvh] flex items-center justify-center bg-[#0a0a0a] font-khmer relative overflow-hidden selection:bg-amber-500 selection:text-black px-4 sm:px-0" @click="closeDropdown">
+  <div class="min-h-[100dvh] flex items-center justify-center font-khmer relative overflow-hidden px-4 sm:px-0 transition-colors duration-1000" 
+       :class="isSuperAdmin ? 'bg-[#050505]' : 'bg-[#0a0a0a]'" 
+       @click="closeDropdown">
     
     <Teleport to="body">
       <div class="fixed top-4 right-4 z-[9999] w-full max-w-[90vw] sm:max-w-sm pointer-events-none flex flex-col gap-2">
@@ -9,32 +11,58 @@
       </div>
     </Teleport>
 
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-amber-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
-      <div class="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-yellow-500/10 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
-      <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
+    <div class="absolute inset-0 overflow-hidden pointer-events-none transition-all duration-1000">
+      <div class="absolute inset-0 transition-opacity duration-1000" :class="isSuperAdmin ? 'opacity-0' : 'opacity-100'">
+        <div class="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-amber-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div class="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-yellow-500/10 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
+      </div>
+      
+      <div class="absolute inset-0 transition-opacity duration-1000" :class="isSuperAdmin ? 'opacity-100' : 'opacity-0'">
+        <div class="absolute top-[-30%] right-[-20%] w-[70%] h-[70%] bg-indigo-600/20 rounded-full blur-[150px] animate-spin-slow"></div>
+        <div class="absolute bottom-[-30%] left-[-20%] w-[70%] h-[70%] bg-emerald-500/15 rounded-full blur-[150px] animate-reverse-spin-slow"></div>
+        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.15] mix-blend-overlay"></div>
+        <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_10%,transparent_100%)]"></div>
+      </div>
     </div>
 
-    <div class="relative w-full max-w-md perspective-1000">
+    <div class="relative w-full max-w-md perspective-1000 transition-all duration-700" :class="isSuperAdmin ? 'scale-[1.02]' : 'scale-100'">
       
-      <div class="relative bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2rem] p-6 sm:p-8 md:p-10 shadow-[0_0_60px_-15px_rgba(245,158,11,0.15)] overflow-hidden group">
+      <div class="relative backdrop-blur-3xl rounded-[2rem] p-6 sm:p-8 md:p-10 overflow-hidden group transition-all duration-700"
+           :class="isSuperAdmin ? 'bg-black/40 border border-white/10 shadow-[0_0_80px_-15px_rgba(59,130,246,0.3)]' : 'bg-white/[0.02] border border-white/5 shadow-[0_0_60px_-15px_rgba(245,158,11,0.15)]'">
         
-        <div class="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+        <div class="absolute inset-0 transition-opacity duration-700 pointer-events-none opacity-0 group-hover:opacity-100"
+             :class="isSuperAdmin ? 'bg-gradient-to-br from-indigo-500/10 via-emerald-500/5 to-transparent' : 'bg-gradient-to-br from-amber-500/5 to-transparent'"></div>
 
-        <div class="text-center mb-8 sm:mb-10 relative z-10">
-          <div class="inline-flex p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-amber-500/10 to-yellow-500/5 border border-amber-500/20 mb-4 sm:mb-5 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="text-center mb-8 sm:mb-10 relative z-10 transition-all duration-500">
+          <div class="inline-flex p-2.5 sm:p-3 rounded-2xl border transition-all duration-700 relative overflow-hidden"
+               :class="isSuperAdmin ? 'bg-gradient-to-br from-indigo-500/20 to-emerald-500/10 border-indigo-400/30 shadow-[0_0_30px_rgba(59,130,246,0.4)]' : 'bg-gradient-to-br from-amber-500/10 to-yellow-500/5 border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.2)]'">
+            
+            <div v-if="isSuperAdmin" class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 animate-shimmer"></div>
+            
+            <svg v-if="!isSuperAdmin" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
+            
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10 text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
           </div>
-          <h1 class="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-100 to-white tracking-wide">ចូលប្រព័ន្ធ</h1>
-          <p class="text-amber-500/70 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] font-black mt-2">Report Management System</p>
+          
+          <h1 class="text-2xl sm:text-3xl font-black text-transparent bg-clip-text tracking-wide transition-all duration-700"
+              :class="isSuperAdmin ? 'bg-gradient-to-r from-emerald-200 via-white to-indigo-200 drop-shadow-sm' : 'bg-gradient-to-r from-white via-amber-100 to-white'">
+            ចូលប្រព័ន្ធ
+          </h1>
+          <p class="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] font-black mt-2 transition-colors duration-500"
+             :class="isSuperAdmin ? 'text-emerald-400/80' : 'text-amber-500/70'">
+            {{ isSuperAdmin ? 'SUPER ADMIN CONSOLE' : 'Report Management System' }}
+          </p>
         </div>
 
         <form @submit.prevent="handleLogin" class="space-y-4 sm:space-y-5 relative z-10">
           
           <div class="group relative user-dropdown-container z-[60]">
-            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300 group-focus-within:text-amber-400 text-neutral-500">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300 text-neutral-500"
+                 :class="isSuperAdmin ? 'group-focus-within:text-emerald-400' : 'group-focus-within:text-amber-400'">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
             </div>
             <input 
@@ -47,7 +75,8 @@
               @keydown.esc="closeDropdown"
               type="text" 
               autocomplete="off"
-              class="w-full bg-[#171717] border border-neutral-800 rounded-xl py-3 sm:py-3.5 pl-10 sm:pl-11 pr-4 text-sm sm:text-base text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300 hover:border-neutral-700 font-medium" 
+              class="w-full rounded-xl py-3 sm:py-3.5 pl-10 sm:pl-11 pr-4 text-sm sm:text-base text-white placeholder-neutral-600 focus:outline-none transition-all duration-500 font-medium" 
+              :class="isSuperAdmin ? 'bg-black/50 border border-indigo-500/30 focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 hover:border-indigo-400/50 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]' : 'bg-[#171717] border border-neutral-800 focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 hover:border-neutral-700'"
               placeholder="ឈ្មោះគណនី (Username)" 
               required 
             />
@@ -61,12 +90,12 @@
                     :class="highlightedIndex === index ? 'bg-[#262626]' : 'hover:bg-[#262626]'"
                 >
                     <div class="flex items-center gap-2 sm:gap-3">
-                        <div class="w-6 h-6 rounded-full bg-neutral-800 flex items-center justify-center text-[10px] font-black text-amber-500 border transition-colors"
-                             :class="highlightedIndex === index ? 'border-amber-500/50' : 'border-neutral-700'">
+                        <div class="w-6 h-6 rounded-full bg-neutral-800 flex items-center justify-center text-[10px] font-black border transition-colors"
+                             :class="isSuperAdmin ? 'text-emerald-500 border-emerald-500/50' : 'text-amber-500 border-amber-500/50'">
                             {{ acc.username.charAt(0).toUpperCase() }}
                         </div>
                         <span class="text-xs sm:text-sm font-bold transition-colors"
-                              :class="highlightedIndex === index ? 'text-amber-400' : 'text-neutral-300'">
+                              :class="highlightedIndex === index ? (isSuperAdmin ? 'text-emerald-400' : 'text-amber-400') : 'text-neutral-300'">
                             {{ acc.username }}
                         </span>
                     </div>
@@ -78,7 +107,8 @@
           </div>
 
           <div class="group relative z-10">
-            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300 group-focus-within:text-amber-400 text-neutral-500">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300 text-neutral-500"
+                 :class="isSuperAdmin ? 'group-focus-within:text-emerald-400' : 'group-focus-within:text-amber-400'">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
             </div>
             
@@ -86,7 +116,8 @@
               ref="passwordInputRef"
               v-model="password" 
               :type="showPassword ? 'text' : 'password'" 
-              class="w-full bg-[#171717] border border-neutral-800 rounded-xl py-3 sm:py-3.5 pl-10 sm:pl-11 pr-12 text-sm sm:text-base text-white placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300 hover:border-neutral-700 font-medium font-mono tracking-wider" 
+              class="w-full rounded-xl py-3 sm:py-3.5 pl-10 sm:pl-11 pr-12 text-sm sm:text-base text-white placeholder-neutral-600 focus:outline-none transition-all duration-500 font-medium font-mono tracking-wider" 
+              :class="isSuperAdmin ? 'bg-black/50 border border-indigo-500/30 focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 hover:border-indigo-400/50 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]' : 'bg-[#171717] border border-neutral-800 focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 hover:border-neutral-700'"
               placeholder="ពាក្យសម្ងាត់ (Password)" 
               required 
             />
@@ -94,7 +125,8 @@
             <button 
               type="button" 
               @click="showPassword = !showPassword" 
-              class="absolute inset-y-0 right-0 pr-4 flex items-center text-neutral-500 hover:text-amber-400 transition-colors focus:outline-none"
+              class="absolute inset-y-0 right-0 pr-4 flex items-center text-neutral-500 transition-colors focus:outline-none"
+              :class="isSuperAdmin ? 'hover:text-emerald-400' : 'hover:text-amber-400'"
               tabindex="-1"
             >
               <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
@@ -104,27 +136,33 @@
 
           <div class="flex items-center justify-between mt-2 z-10 relative flex-wrap gap-y-2">
              <label class="flex items-center gap-2 cursor-pointer group select-none">
-                <div class="relative flex items-center justify-center w-4 h-4 rounded border border-neutral-600 bg-[#171717] group-hover:border-amber-500/50 transition-colors">
+                <div class="relative flex items-center justify-center w-4 h-4 rounded border transition-colors"
+                     :class="isSuperAdmin ? 'border-neutral-600 bg-black/50 group-hover:border-emerald-500/50' : 'border-neutral-600 bg-[#171717] group-hover:border-amber-500/50'">
                    <input type="checkbox" v-model="rememberMe" class="opacity-0 absolute inset-0 cursor-pointer z-10" />
-                   <svg v-if="rememberMe" class="w-3 h-3 text-amber-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                   <svg v-if="rememberMe" class="w-3 h-3 pointer-events-none" :class="isSuperAdmin ? 'text-emerald-400' : 'text-amber-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                 </div>
                 <span class="text-[10px] sm:text-[11px] font-bold text-neutral-400 group-hover:text-neutral-300 transition-colors">ចងចាំគណនីខ្ញុំ</span>
              </label>
 
-             <a href="https://t.me/MMKDaro" target="_blank" class="text-[10px] sm:text-[11px] font-bold text-neutral-500 hover:text-amber-400 transition-colors flex items-center gap-1">
+             <a href="https://t.me/MMKDaro" target="_blank" class="text-[10px] sm:text-[11px] font-bold text-neutral-500 transition-colors flex items-center gap-1"
+                :class="isSuperAdmin ? 'hover:text-emerald-400' : 'hover:text-amber-400'">
                 ភ្លេចពាក្យសម្ងាត់?
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
              </a>
           </div>
 
-          <button type="submit" ref="loginButtonRef" class="w-full relative overflow-hidden group bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black font-black py-3 sm:py-3.5 text-sm sm:text-base rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.3)] transform transition-all duration-200 hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 mt-4 sm:mt-5 z-10" :disabled="isLoading">
+          <button type="submit" ref="loginButtonRef" class="w-full relative overflow-hidden group font-black py-3 sm:py-3.5 text-sm sm:text-base rounded-xl transform transition-all duration-500 hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 mt-4 sm:mt-5 z-10 border" 
+                  :class="isSuperAdmin ? 'bg-gradient-to-r from-indigo-600 via-emerald-600 to-indigo-600 bg-[length:200%_auto] animate-gradient-x text-white border-white/20 shadow-[0_0_30px_rgba(52,211,153,0.4)] hover:shadow-[0_0_40px_rgba(52,211,153,0.6)]' : 'bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black border-transparent shadow-[0_0_20px_rgba(245,158,11,0.3)]'"
+                  :disabled="isLoading">
+            
             <div class="absolute inset-0 bg-white/30 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out skew-x-12"></div>
+            
             <span v-if="!isLoading" class="relative z-10 flex items-center justify-center gap-2">
-              ចូលប្រព័ន្ធ (LOGIN)
+              {{ isSuperAdmin ? 'AUTHORIZE ACCESS' : 'ចូលប្រព័ន្ធ (LOGIN)' }}
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
             </span>
             <span v-else class="flex items-center justify-center gap-2 relative z-10">
-              <svg class="animate-spin h-4 w-4 sm:h-5 sm:w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <svg class="animate-spin h-4 w-4 sm:h-5 sm:w-5" :class="isSuperAdmin ? 'text-white' : 'text-black'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
               កំពុងដំណើរការ...
             </span>
           </button>
@@ -132,8 +170,9 @@
         </form>
       </div>
 
-      <p class="text-center text-neutral-600 text-[9px] sm:text-[10px] mt-6 sm:mt-8 font-black uppercase tracking-widest">
-        &copy; 2026 Report System. All rights reserved.
+      <p class="text-center text-[9px] sm:text-[10px] mt-6 sm:mt-8 font-black uppercase tracking-widest transition-colors duration-500"
+         :class="isSuperAdmin ? 'text-emerald-500/50' : 'text-neutral-600'">
+        &copy; 2026 Report System. All rights reserved. | version 1.2
       </p>
 
     </div>
@@ -150,7 +189,6 @@ import { auth, db } from '@/firebaseConfig';
 import Toast from '@/components/Toast.vue';
 import { useNotificationStore } from '@/stores/notification';
 
-// Refs for DOM elements to handle focus
 const usernameInputRef = ref(null);
 const passwordInputRef = ref(null);
 const loginButtonRef = ref(null);
@@ -163,13 +201,19 @@ const isLoading = ref(false);
 const router = useRouter();
 const notification = useNotificationStore();
 
+// 🌟 SMART DETECT SUPER ADMIN 🌟
+// បើ username ស្មើ 'supperadmin' ឬ 'appmallsupperadmin' វានឹង Return TRUE ភ្លាមៗ
+const isSuperAdmin = computed(() => {
+    const u = username.value.toLowerCase().trim();
+    return  u === 'pov' || u === 'supperadmin' || u === 'appmallsupperadmin';
+});
+
 // --- Smart Remember Me State ---
 const LS_ACCOUNTS_KEY = 'rms_saved_accounts';
 const savedAccounts = ref([]);
 const showSavedUsers = ref(false);
 const highlightedIndex = ref(-1);
 
-// Load accounts on mount
 onMounted(() => {
   const stored = localStorage.getItem(LS_ACCOUNTS_KEY);
   if (stored) {
@@ -186,7 +230,6 @@ const closeDropdown = () => {
     highlightedIndex.value = -1;
 };
 
-// Handle Input Change
 const handleUsernameInput = () => {
     if (username.value.length >= 2 || savedAccounts.value.some(acc => acc.username.toLowerCase().startsWith(username.value.toLowerCase()))) {
         showSavedUsers.value = true;
@@ -195,12 +238,10 @@ const handleUsernameInput = () => {
     }
     
     highlightedIndex.value = -1;
-    
     rememberMe.value = false;
     password.value = '';
 };
 
-// Filter dropdown based on input
 const filteredAccounts = computed(() => {
     if (!username.value) return [];
     return savedAccounts.value.filter(acc => 
@@ -208,17 +249,11 @@ const filteredAccounts = computed(() => {
     );
 });
 
-// Keyboard Navigation
 const navigateDropdown = (direction) => {
     if (!showSavedUsers.value || filteredAccounts.value.length === 0) return;
-    
     highlightedIndex.value += direction;
-    
-    if (highlightedIndex.value < 0) {
-        highlightedIndex.value = filteredAccounts.value.length - 1;
-    } else if (highlightedIndex.value >= filteredAccounts.value.length) {
-        highlightedIndex.value = 0;
-    }
+    if (highlightedIndex.value < 0) highlightedIndex.value = filteredAccounts.value.length - 1;
+    else if (highlightedIndex.value >= filteredAccounts.value.length) highlightedIndex.value = 0;
 };
 
 const selectHighlightedAccount = () => {
@@ -231,7 +266,6 @@ const selectHighlightedAccount = () => {
     }
 };
 
-// Auto-fill when clicked from dropdown or selected via Enter
 const selectSavedAccount = (account) => {
     username.value = account.username;
     try {
@@ -247,7 +281,6 @@ const selectSavedAccount = (account) => {
     }, 100);
 };
 
-// Delete account from local storage
 const removeSavedAccount = (usernameToRemove, event) => {
     event.stopPropagation(); 
     savedAccounts.value = savedAccounts.value.filter(acc => acc.username !== usernameToRemove);
@@ -295,7 +328,6 @@ const handleLogin = async () => {
         return;
       }
 
-      // --- SAVE OR REMOVE FROM LOCAL STORAGE UPON SUCCESS ---
       let currentAccounts = [...savedAccounts.value];
       const existingIndex = currentAccounts.findIndex(acc => acc.username === username.value);
 
@@ -304,20 +336,14 @@ const handleLogin = async () => {
               username: username.value,
               password: btoa(password.value) 
           };
-          if (existingIndex !== -1) {
-              currentAccounts[existingIndex] = newAcc; 
-          } else {
-              currentAccounts.push(newAcc); 
-          }
+          if (existingIndex !== -1) currentAccounts[existingIndex] = newAcc; 
+          else currentAccounts.push(newAcc); 
       } else {
-          if (existingIndex !== -1) {
-              currentAccounts.splice(existingIndex, 1);
-          }
+          if (existingIndex !== -1) currentAccounts.splice(existingIndex, 1);
       }
       localStorage.setItem(LS_ACCOUNTS_KEY, JSON.stringify(currentAccounts));
       savedAccounts.value = currentAccounts;
 
-      // --- REDIRECT ---
       if (userData.role === 'superadmin' || userData.role === 'owner') {
         notification.success(`ស្វាគមន៍ម្ចាស់ប្រព័ន្ធ ${userData.fullName}`, 'ជោគជ័យ');
         setTimeout(() => router.push('/app/owner/dashboard'), 1000);
@@ -365,7 +391,30 @@ const handleLogin = async () => {
 }
 .animate-pulse-slow { animation: pulse-slow 8s infinite ease-in-out; }
 
-/* Custom scrollbar for the dropdown */
+/* Premium Animations */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow { animation: spin-slow 15s linear infinite; }
+
+@keyframes reverse-spin-slow {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+.animate-reverse-spin-slow { animation: reverse-spin-slow 20s linear infinite; }
+
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.animate-gradient-x { animation: gradient-x 3s ease infinite; }
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+.animate-shimmer { animation: shimmer 2s infinite; }
+
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #404040; border-radius: 10px; }
