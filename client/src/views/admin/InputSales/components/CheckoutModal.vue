@@ -54,7 +54,7 @@
                         បំពេញស្វ័យប្រវត្តិ (AI)
                     </h4>
                     <div class="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                        <span class="text-[10px] font-black text-indigo-600">Credit: {{ Math.max(0, 250 - currentDailyUsage) }}/250</span>
+                        <span class="text-[10px] font-black text-indigo-600">Credit: {{ Math.max(0, 314 - currentDailyUsage) }}/314</span>
                     </div>
                   </div>
                   
@@ -633,7 +633,7 @@ const handleBackdropClick = () => {
 };
 
 const showUpgradeModal = ref(false);
-const MAX_DAILY_LIMIT = 250; 
+const MAX_DAILY_LIMIT = 314; 
 const currentDailyUsage = ref(0);
 
 const checkAndIncrementUsage = () => {

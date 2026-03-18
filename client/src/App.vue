@@ -46,7 +46,7 @@ const closeUpdate = () => {
           <ul class="space-y-2.5 text-sm font-bold text-slate-700">
             <li class="flex items-start gap-2.5">
               <svg class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-              <span>បន្ថែម Cridit មុខងារបញ្ជូលទិន្នន័យលឿន +250 Credit(FULL)/ក្នុងមួយថ្ងៃ</span>
+              <span>បន្ថែម Cridit មុខងារបញ្ជូលទិន្នន័យលឿន +314 Credit(FULL)/ក្នុងមួយថ្ងៃ</span>
             </li>
             <!-- <li class="flex items-start gap-2.5">
               <svg class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
