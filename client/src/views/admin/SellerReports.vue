@@ -501,8 +501,12 @@ const baseCalculatedData = computed(() => {
             if (sale.productName) {
                 productsSet.add(sale.productName);
                 let pKey = `${sale.productName}_${sale.unit}`;
-                if (!productAgg[pKey]) productAgg[pKey] = { name: sale.productName, unit: sale.unit, qty: 0 };
+                if (!productAgg[pKey]) productAgg[pKey] = { 
+                    name: sale.productName, unit: sale.unit, qty: 0, 
+                    price: sale.price, totalPrice: 0, paymentStatus: sale.paymentStatus 
+                };
                 productAgg[pKey].qty += Number(sale.totalSold || 0);
+                productAgg[pKey].totalPrice += Number(sale.totalPrice || 0);
             }
            });
 
@@ -759,6 +763,7 @@ const selectedDateFormatter = (dateStr) => {
 
 const getPrintDataPayload = () => ({
     filteredSellers: filteredSellers.value,
+    allSales: allSales.value, // <-- បន្ថែមបន្ទាត់នេះ
     regionalReportSummary: regionalReportSummary.value, 
     grandTotals: grandTotals.value,
     reportDateLabel: reportDateLabel.value,
