@@ -89,6 +89,11 @@
                     <button @click="$emit('update:activityFilter', 'inactive')" class="px-4 py-2 rounded-lg text-xs font-bold transition-all" :class="activityFilter === 'inactive' ? 'bg-white text-rose-600 shadow-sm ring-1 ring-rose-100' : 'text-slate-500 hover:text-rose-600'">គ្មានលក់</button>
                 </div>
 
+                <button v-if="currentUserRole === 'superadmin'" @click="$emit('preview')" class="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 rounded-xl font-bold text-[12px] transition-all shadow-sm active:scale-95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    Preview
+                </button>
+
                 <div class="flex gap-2">
                     <button @click="$emit('print')" :disabled="filteredList.length === 0" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-slate-900/20 flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
@@ -249,11 +254,12 @@ const props = defineProps({
   unitSettings: Array,
   activeCategory: String,
   activityFilter: String,
-  showMobileFilters: Boolean 
+  showMobileFilters: Boolean ,
+  currentUserRole: String // 🌟 បន្ថែមបន្ទាត់នេះ 🌟
 });
 
 // Added 'excel' to emitted events
-const emit = defineEmits(['update:activeCategory', 'update:activityFilter', 'print', 'pdf', 'excel', 'toggleMobileFilters']);
+const emit = defineEmits(['update:activeCategory', 'update:activityFilter', 'print', 'pdf', 'excel', 'toggleMobileFilters','preview']);
 const router = useRouter();
 
 const searchQuery = ref('');

@@ -112,12 +112,24 @@ const isSaving = ref(false);
 const searchQuery = ref(''); 
 let unsubscribeStocks = null; 
 
-// 🌟 បន្ថែម mfgDate និង expDate ចូលក្នុងទម្រង់ (Form) 🌟
+// 🌟 បន្ថែម State ថ្មីៗចូលក្នុង Form (Category, itemsPerBox, colors, sizes) 🌟
 const form = reactive({
-  id: null, name: '', barcode: '', imagePreview: null,
-  quantity: 0, unit: 'bottle', itemsPerCase: 12, currency: 'USD',
-  costMode: 'total', inputCost: 0,
-  mfgDate: '', expDate: ''
+  id: null, 
+  name: '', 
+  barcode: '', 
+  imagePreview: null,
+  category: 'DFG', // 👈 Default Category
+  quantity: 0, 
+  unit: 'case', 
+  itemsPerCase: 12, 
+  itemsPerBox: 50, // 👈 សម្រាប់ "ម៉ាស់" (១ប្រអប់មាន ៥០សន្លឹក)
+  currency: 'USD',
+  costMode: 'total', 
+  inputCost: 0,
+  mfgDate: '', 
+  expDate: '',
+  colors: [], // 👈 ពណ៌
+  sizes: []   // 👈 ទំហំ
 });
 
 const generateBarcode = () => `STK-${Date.now().toString().slice(-6)}${Math.floor(1000 + Math.random() * 9000)}`;
@@ -138,10 +150,16 @@ const fetchStocks = () => {
     });
 };
 
-onMounted(() => { fetchStocks(); if (!isEditing.value) form.barcode = generateBarcode(); });
-onUnmounted(() => { if (unsubscribeStocks) unsubscribeStocks(); });
+onMounted(() => { 
+    fetchStocks(); 
+    if (!isEditing.value) form.barcode = generateBarcode(); 
+});
 
-// Smart Duplicate Detection
+onUnmounted(() => { 
+    if (unsubscribeStocks) unsubscribeStocks(); 
+});
+
+// Smart Duplicate Detection (Update to include new fields)
 watch(() => form.name, (newName) => {
     if (activeTab.value !== 'add' || !newName) return;
     const existing = stockList.value.find(item => item.name.toLowerCase() === newName.trim().toLowerCase());
@@ -149,15 +167,33 @@ watch(() => form.name, (newName) => {
         if (form.id !== existing.id) {
             isEditing.value = true; duplicateDetected.value = true;
             Object.assign(form, { 
-                id: existing.id, barcode: existing.barcode, imagePreview: existing.image, 
-                quantity: existing.quantity, unit: existing.unit, itemsPerCase: existing.itemsPerCase || 12, 
-                currency: existing.currency, costMode: 'unit', inputCost: existing.unitCost,
-                mfgDate: existing.mfgDate || '', expDate: existing.expDate || '' // ទាញថ្ងៃផុតកំណត់ចាស់មកបង្ហាញ
+                id: existing.id, 
+                name: existing.name,
+                barcode: existing.barcode, 
+                imagePreview: existing.image, 
+                category: existing.category || 'DFG',
+                quantity: existing.quantity, 
+                unit: existing.unit || 'bottle', 
+                itemsPerCase: existing.itemsPerCase || 12, 
+                itemsPerBox: existing.itemsPerBox || 1,
+                currency: existing.currency, 
+                costMode: 'unit', 
+                inputCost: existing.unitCost,
+                mfgDate: existing.mfgDate || '', 
+                expDate: existing.expDate || '',
+                colors: existing.colors || [],
+                sizes: existing.sizes || []
             });
         }
     } else if (duplicateDetected.value) {
-        isEditing.value = false; duplicateDetected.value = false; form.id = null; form.barcode = generateBarcode(); 
-        form.mfgDate = ''; form.expDate = '';
+        isEditing.value = false; 
+        duplicateDetected.value = false; 
+        form.id = null; 
+        form.barcode = generateBarcode(); 
+        form.mfgDate = ''; 
+        form.expDate = '';
+        form.colors = [];
+        form.sizes = [];
     }
 });
 
@@ -165,12 +201,23 @@ const saveProduct = async () => {
   isSaving.value = true;
   let finalUnitCost = form.costMode === 'total' ? (form.quantity > 0 ? form.inputCost / form.quantity : 0) : form.inputCost;
 
+  // 🌟 បង្កើត Payload ទិន្នន័យលម្អិត 🌟
   const productData = {
-    name: form.name, barcode: form.barcode, image: form.imagePreview, quantity: form.quantity,
-    unit: form.unit, itemsPerCase: form.unit === 'case' ? form.itemsPerCase : null,
-    currency: form.currency, unitCost: finalUnitCost, totalCost: finalUnitCost * form.quantity, 
-    mfgDate: form.mfgDate || null, // រក្សាទុកថ្ងៃផលិត
-    expDate: form.expDate || null, // រក្សាទុកថ្ងៃផុតកំណត់
+    name: form.name, 
+    barcode: form.barcode, 
+    image: form.imagePreview, 
+    category: form.category,
+    quantity: form.quantity,
+    unit: form.unit, 
+    itemsPerCase: form.unit === 'case' ? form.itemsPerCase : null,
+    itemsPerBox: (form.unit === 'case' && form.category === 'ម៉ាស់') ? form.itemsPerBox : null,
+    currency: form.currency, 
+    unitCost: finalUnitCost, 
+    totalCost: finalUnitCost * form.quantity, 
+    mfgDate: form.mfgDate || null, 
+    expDate: form.expDate || null, 
+    colors: (form.category === 'ខោ' || form.category === 'អាវ') ? form.colors : [],
+    sizes: (form.category === 'ខោ' || form.category === 'អាវ') ? form.sizes : [],
     updatedAt: serverTimestamp(),
     isDeleted: false 
   };
@@ -180,16 +227,19 @@ const saveProduct = async () => {
         await updateDoc(doc(db, "stocks", form.id), productData);
         notification.success("បានកែប្រែព័ត៌មានស្តុកដោយជោគជ័យ!");
       } else {
-        productData.createdAt = serverTimestamp(); productData.stock_reserved = 0; 
+        productData.createdAt = serverTimestamp(); 
+        productData.stock_reserved = 0; 
         await addDoc(collection(db, "stocks"), productData);
         notification.success("បានបង្កើតស្តុកថ្មីដោយជោគជ័យ!");
       }
       resetForm();
-  } catch (error) { notification.error("មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ"); } 
-  finally { isSaving.value = false; }
+  } catch (error) { 
+      notification.error("មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ"); 
+  } finally { 
+      isSaving.value = false; 
+  }
 };
 
-// Update Image from Modal
 const handleUpdateImageOnly = async ({ id, image }) => {
     try {
         await updateDoc(doc(db, "stocks", id), { image: image, updatedAt: serverTimestamp() });
@@ -199,7 +249,6 @@ const handleUpdateImageOnly = async ({ id, image }) => {
     }
 };
 
-// Soft Delete (លាក់ចូលធុងសម្រាម)
 const moveToTrash = async (item) => {
   if (await confirmDialogRef.value.open("បញ្ជូនទៅធុងសម្រាម?", `តើអ្នកចង់បញ្ជូន "${item.name}" ទៅធុងសម្រាមមែនទេ? \n\n(ទំនិញនេះនឹងលែងអាចលក់បាន ប៉ុន្តែអ្នកអាចទាញយកមកវិញបាននៅផ្ទាំងធុងសម្រាម)`)) {
     try {
@@ -212,7 +261,6 @@ const moveToTrash = async (item) => {
   }
 };
 
-// 🔥 RESTORE ពីធុងសម្រាមមកវិញ 🔥
 const restoreFromTrash = async (item) => {
     try {
         await updateDoc(doc(db, "stocks", item.id), { 
@@ -224,7 +272,6 @@ const restoreFromTrash = async (item) => {
     }
 };
 
-// 🔥 លុបជារៀងរហូត (Hard Delete) 🔥
 const permanentDelete = async (item) => {
     if (await confirmDialogRef.value.open("⚠️ លុបជារៀងរហូត?", `តើអ្នកពិតជាចង់លុបទំនិញ "${item.name}" ជារៀងរហូតមែនទេ?\n\nទិន្នន័យដែលលុបហើយ មិនអាចទាញយកមកវិញបានឡើយ!`)) {
         try {
@@ -246,13 +293,25 @@ const handleImageUpload = (e) => {
 };
 
 const resetForm = () => {
-  Object.assign(form, { id: null, name: '', barcode: generateBarcode(), imagePreview: null, quantity: 0, unit: 'bottle', itemsPerCase: 12, currency: 'USD', costMode: 'total', inputCost: 0, mfgDate: '', expDate: '' });
+  Object.assign(form, { 
+      id: null, name: '', barcode: generateBarcode(), imagePreview: null, 
+      category: 'DFG', quantity: 0, unit: 'case', itemsPerCase: 12, itemsPerBox: 50, 
+      currency: 'USD', costMode: 'total', inputCost: 0, mfgDate: '', expDate: '',
+      colors: [], sizes: []
+  });
   isEditing.value = false; duplicateDetected.value = false;
 };
 
 const editItem = (item) => {
   isEditing.value = true; duplicateDetected.value = false; activeTab.value = 'add';
-  Object.assign(form, { id: item.id, name: item.name, barcode: item.barcode, imagePreview: item.image, quantity: item.quantity, unit: item.unit, itemsPerCase: item.itemsPerCase || 12, currency: item.currency, costMode: 'unit', inputCost: item.unitCost, mfgDate: item.mfgDate || '', expDate: item.expDate || '' });
+  Object.assign(form, { 
+      id: item.id, name: item.name, barcode: item.barcode, imagePreview: item.image, 
+      category: item.category || 'DFG', quantity: item.quantity, unit: item.unit || 'bottle', 
+      itemsPerCase: item.itemsPerCase || 12, itemsPerBox: item.itemsPerBox || 1, 
+      currency: item.currency, costMode: 'unit', inputCost: item.unitCost, 
+      mfgDate: item.mfgDate || '', expDate: item.expDate || '',
+      colors: item.colors || [], sizes: item.sizes || []
+  });
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 

@@ -98,7 +98,7 @@
                 <th class="px-4 py-3 border-b border-slate-200 min-w-[150px]">វិក្កយបត្រ / អតិថិជន</th>
                 <th class="px-4 py-3 border-b border-slate-200 min-w-[250px]">ឈ្មោះទំនិញ</th>
                 <th class="px-4 py-3 text-center border-b border-slate-200 w-[100px]">ប្រភេទ</th>
-                <th class="px-4 py-3 text-center border-b border-slate-200 w-[100px]">បរិមាណ</th>
+                <th class="px-4 py-3 text-center border-b border-slate-200 w-[120px]">បរិមាណ <span class="text-slate-400 text-[9px]">(តម្លៃរាយ)</span></th>
                 <th class="px-4 py-3 text-right border-b border-slate-200 min-w-[120px]">សរុប (Total)</th>
               </tr>
             </thead>
@@ -126,7 +126,10 @@
                     </span>
                 </td>
                 <td class="px-4 py-3.5 text-center">
-                    <span class="font-black text-slate-700 bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-200">{{ item.qty }} {{ translateUnit(item.unit) }}</span>
+                    <div class="flex flex-col items-center justify-center">
+                        <span class="font-black text-slate-700 bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-200">{{ item.qty }} {{ translateUnit(item.unit) }}</span>
+                        <span class="text-[10px] text-slate-400 font-bold mt-1">({{ formatCurrency(item.unitPrice) }})</span>
+                    </div>
                 </td>
                 <td class="px-4 py-3.5 text-right font-black text-emerald-600 text-sm">
                     {{ formatCurrency(item.totalPrice) }}
@@ -259,19 +262,19 @@ const translateUnit = (unit) => {
 let debounceTimeout = null;
 
 const setFilterType = (type) => {
-    startFetchTimer(); // លោតនាឡិកាភ្លាមៗពេលចុច
+    startFetchTimer(); 
     if (debounceTimeout) clearTimeout(debounceTimeout);
     
     debounceTimeout = setTimeout(() => {
         dateFilter.value = type;
         currentPage.value = 1;
-        stopFetchTimer(); // បិទនាឡិកាវិញព្រោះការ Filter លើ Client លឿនណាស់ (Instant)
+        stopFetchTimer(); 
     }, 300);
 };
 
 const fetchSellerData = async () => {
     if (allSalesItems.value.length === 0) isLoading.value = true;
-    startFetchTimer(); // ចាប់ផ្ដើមរាប់ពេលទាញទិន្នន័យពី Firebase
+    startFetchTimer(); 
     
     try {
         const unitSnap = await getDocs(collection(db, 'settings_units'));
@@ -297,13 +300,28 @@ const fetchSellerData = async () => {
 
         let flatItems = [];
         uniqueDocs.forEach((data, docId) => {
-            if (data.paymentStatus === 'CANCELED') return; 
+            // ✅ ត្រង CANCELED ចេញពីទិន្នន័យដើម
+            if (data.paymentStatus === 'CANCELED' || data.paymentStatus === 'Canceled') return; 
+            
             const dateStr = data.createdAt || data.date;
             
             if (data.items && Array.isArray(data.items)) {
                 data.items.forEach((item, index) => {
                     let typeStr = String(item.type || '').toLowerCase();
                     let isWholesale = typeStr.includes('បោះដុំ') || typeStr.includes('wholesale');
+
+                    // 🌟 គណនាតម្លៃ និងបញ្ជូល UnitPrice 🌟
+                    let qty = Number(item.qty || 1);
+                    let priceUsd = Number(item.price || item.unitPrice || 0);
+                    let totalUsd = Number(item.total || item.totalAmount || 0);
+                    
+                    if (data.currency === 'KHR' || data.currency === '៛' || String(item.price).includes('៛')) {
+                        priceUsd /= 4000;
+                        totalUsd /= 4000;
+                    }
+                    
+                    if (totalUsd === 0 && priceUsd > 0) totalUsd = priceUsd * qty;
+                    let unitPrice = qty > 0 ? (totalUsd / qty) : 0;
 
                     flatItems.push({
                         id: `${docId}_${index}`,
@@ -312,9 +330,10 @@ const fetchSellerData = async () => {
                         date: dateStr,
                         productName: item.name,
                         category: isWholesale ? 'បោះដុំ' : 'លក់រាយ',
-                        qty: Number(item.qty),
+                        qty: qty,
                         unit: item.unit,
-                        totalPrice: (data.currency === 'KHR' || data.currency === '៛') ? (Number(item.price * item.qty) / 4000) : Number(item.price * item.qty)
+                        unitPrice: unitPrice, // ✅ បញ្ចូលតម្លៃរាយ
+                        totalPrice: totalUsd
                     });
                 });
             }
@@ -326,7 +345,7 @@ const fetchSellerData = async () => {
         console.error("Error fetching detail:", error);
     } finally {
         isLoading.value = false;
-        stopFetchTimer(); // ទាញចប់បិទនាឡិកា
+        stopFetchTimer(); 
     }
 };
 
@@ -424,7 +443,10 @@ const generateReportHTML = () => {
                 <td style="padding: 10px; font-weight: bold; color: #1e293b;">${item.customerName || 'អតិថិជនទូទៅ'}</td>
                 <td style="padding: 10px;">${item.productName}</td>
                 <td style="padding: 10px; text-align: center; font-size: 10px; color: #64748b;">${item.category}</td>
-                <td style="padding: 10px; text-align: center; font-weight: bold; color: #0ea5e9;">${item.qty} ${translateUnit(item.unit)}</td>
+                <td style="padding: 10px; text-align: center; font-weight: bold; color: #0ea5e9;">
+                    ${item.qty} ${translateUnit(item.unit)}
+                    <br><span style="font-size: 9px; color: #94a3b8;">(${formatCurrency(item.unitPrice)})</span>
+                </td>
                 <td style="padding: 10px; text-align: right; font-weight: 900; color: #059669;">
                     ${formatCurrency(item.totalPrice)}
                 </td>
@@ -456,9 +478,9 @@ const generateReportHTML = () => {
                         <th style="padding: 10px; width: 5%; text-align: center;">#</th>
                         <th style="padding: 10px; width: 18%;">វិក្កយបត្រ & ថ្ងៃទី</th>
                         <th style="padding: 10px; width: 17%;">អតិថិជន</th>
-                        <th style="padding: 10px; width: 30%;">ឈ្មោះទំនិញ</th>
+                        <th style="padding: 10px; width: 25%;">ឈ្មោះទំនិញ</th>
                         <th style="padding: 10px; width: 10%; text-align: center;">ប្រភេទ</th>
-                        <th style="padding: 10px; width: 10%; text-align: center;">បរិមាណ</th>
+                        <th style="padding: 10px; width: 15%; text-align: center;">បរិមាណ (តម្លៃរាយ)</th>
                         <th style="padding: 10px; width: 10%; text-align: right;">សរុប ($)</th>
                     </tr>
                 </thead>

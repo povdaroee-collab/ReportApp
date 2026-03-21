@@ -13,18 +13,32 @@
         <button @click="mainTab = 'today'" class="pb-3 text-sm font-black border-b-2 transition-all flex items-center gap-2 whitespace-nowrap" :class="mainTab === 'today' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg> ព័ត៌មានលក់ថ្ងៃនេះ <span class="bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded-full animate-pulse shadow-sm">Live</span>
         </button>
+
+        <div class="ml-auto pb-3 flex items-center pr-1">
+            <button @click="showFloatingReceipt = !showFloatingReceipt" class="flex items-center gap-1.5 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white px-3 md:px-4 py-1.5 rounded-xl font-black text-[11px] md:text-xs transition-all shadow-md active:scale-95 whitespace-nowrap">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                វិក្កយបត្រ Live
+            </button>
+        </div>
     </div>
 
     <div v-show="mainTab === 'pos'" class="flex-1 overflow-hidden flex relative">
         
         <PosProductGrid 
+            :products="mixedProducts"
             :searchQuery="searchQuery"
             @update:searchQuery="searchQuery = $event"
             :isLoadingProducts="isLoadingProducts"
-            :filteredProducts="filteredProducts"
+            :filteredProducts="paginatedProducts" 
+            :totalProductsCount="filteredProducts.length" 
+            :activeFilter="activeFilter"
+            @update:activeFilter="updateActiveFilter"
+            :currentPage="currentPage"
+            @update:currentPage="currentPage = $event"
             :getTotalRetailStock="getTotalRetailStock"
             :formatComplexStock="formatComplexStock"
             :translateHardcodedUnit="translateHardcodedUnit"
+            :translateRetailUnit="translateRetailUnit"
             :formatPrice="formatPrice"
             @add-to-cart="addToCart"
         />
@@ -40,6 +54,11 @@
             :getSingleBasePrice="getSingleBasePrice"
             :formatPrice="formatPrice"
             :translateHardcodedUnit="translateHardcodedUnit"
+            :translateRetailUnit="translateRetailUnit"
+            :suggestedAddons="suggestedAddons"
+            :autoOpenReceipt="autoOpenReceipt"
+            @update:autoOpenReceipt="autoOpenReceipt = $event"
+            @add-suggestion="addSuggestedItem"
             @open-mobile="showMobileCart = true"
             @close-mobile="showMobileCart = false"
             @remove="removeFromCart"
@@ -59,6 +78,17 @@
             <POSTodaySales @triggerAlert="triggerAlert" />
         </div>
     </div>
+
+    <PosFloatingReceipt 
+        :show="showFloatingReceipt"
+        @close="showFloatingReceipt = false"
+        :cart="cart"
+        :cartTotalUSD="cartTotalUSD"
+        :calculateItemPrice="calculateItemPrice"
+        :getSingleBasePrice="getSingleBasePrice"
+        :formatPrice="formatPrice"
+        :translateRetailUnit="translateRetailUnit"
+    />
 
     <CheckoutModal ref="checkoutModalRef" :show="isCheckoutModalOpen" :cartLength="cart.length" :cartTotalUSD="cartTotalUSD" :sellers="sellers" :savedCustomers="savedCustomers" :isSubmitting="isSubmitting" @close="isCheckoutModalOpen = false" @confirm="submitSale" />
     <SuccessModal :show="isSuccessModalOpen" :isSendingToBot="isSendingToBot" @close="closeSuccessModal" @print="printInvoice" @download-pdf="downloadPDF" @share-app="shareToTelegramApp" @send-bot="sendToTelegramBotGroup" />
@@ -86,7 +116,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
+import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { db, auth } from '@/firebaseConfig';
 import { collection, addDoc, query, where, onSnapshot, doc, updateDoc, increment, setDoc, deleteDoc } from 'firebase/firestore'; 
@@ -97,9 +127,9 @@ import { useNotificationStore } from '@/stores/notification';
 import POSTodaySales from '../reports/pos/POSTodaySales.vue'; 
 import CheckoutModal from './components/CheckoutModal.vue';
 import SuccessModal from './components/SuccessModal.vue';
-// Import New Extracted Components
 import PosProductGrid from './components/PosProductGrid.vue';
 import PosCartSidebar from './components/PosCartSidebar.vue';
+import PosFloatingReceipt from './components/PosFloatingReceipt.vue';
 
 const router = useRouter();
 const notification = useNotificationStore();
@@ -107,6 +137,8 @@ const notification = useNotificationStore();
 // --- STATE ---
 const mainTab = ref('pos'); 
 const showMobileCart = ref(false); 
+const showFloatingReceipt = ref(false); 
+const autoOpenReceipt = ref(true); // 🌟 STATE គ្រប់គ្រងការបើកវិក្កយបត្រស្វ័យប្រវត្តិ
 
 const mixedProducts = ref([]); 
 const originalStocks = ref([]); 
@@ -114,7 +146,11 @@ const combosGlobal = ref([]);
 const sellers = ref([]);
 const savedCustomers = ref([]); 
 const isLoadingProducts = ref(true);
+
 const searchQuery = ref('');
+const activeFilter = ref('ALL'); 
+const currentPage = ref(1);
+const ITEMS_PER_PAGE = 20;
 
 const warningModal = reactive({ show: false, message: '' });
 const showWarning = (msg) => { warningModal.message = msg; warningModal.show = true; };
@@ -145,7 +181,16 @@ const formatPrice = (val, currency = 'USD') => {
     let formattedNum = Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 3 });
     return formattedNum + (currency === 'USD' ? ' $' : ' ៛');  
 };
-const translateHardcodedUnit = (unit) => { const map = { bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ', set: 'ឈុត' }; return map[unit] || unit; };
+const translateHardcodedUnit = (unit) => { const map = { bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ', set: 'ឈុត', pair: 'គូ', pcs: 'PCS' }; return map[unit] || unit; };
+
+const translateRetailUnit = (prod) => {
+    if (!prod) return 'ដប';
+    if (prod.isCombo) return 'ឈុត';
+    if (prod.category === 'ម៉ាស់') return 'សន្លឹក';
+    if (prod.category === 'ស្បែកជើង') return 'គូ';
+    if (prod.category === 'ការបូប' || prod.category === 'ខោ' || prod.category === 'អាវ') return 'PCS';
+    return translateHardcodedUnit(prod.retailUnit || 'bottle');
+};
 
 // --- FETCH DATA ---
 onMounted(() => {
@@ -211,7 +256,56 @@ const combineProductsAndCombos = () => {
     isLoadingProducts.value = false;
 };
 
-// --- LOGIC FUNCTIONS (Passed to children as props) ---
+const updateActiveFilter = (filterName) => {
+    activeFilter.value = filterName;
+    currentPage.value = 1; 
+};
+
+watch(searchQuery, () => {
+    currentPage.value = 1;
+});
+
+const filteredProducts = computed(() => {
+    let result = mixedProducts.value;
+
+    if (activeFilter.value === 'BIOAOUA') {
+        result = result.filter(p => !p.isCombo && p.name && p.name.toUpperCase().includes('BIOAOUA'));
+    } else if (activeFilter.value === 'DR+') {
+        result = result.filter(p => !p.isCombo && p.name && p.name.toUpperCase().includes('DR+'));
+    } else if (activeFilter.value === 'MASK') {
+        result = result.filter(p => !p.isCombo && p.name && p.name.toUpperCase().includes('MASK'));
+    } else if (activeFilter.value === 'OTHER') {
+        result = result.filter(p => {
+            if (p.isCombo) return false; 
+            if (!p.name) return true;
+            const upperName = p.name.toUpperCase();
+            return !upperName.includes('BIOAOUA') && !upperName.includes('DR+') && !upperName.includes('MASK');
+        });
+    }
+
+    if (searchQuery.value) {
+        const q = searchQuery.value.toLowerCase().trim();
+        result = result.filter(p => 
+            (p.name && p.name.toLowerCase().includes(q)) || 
+            (p.barcode && p.barcode.toLowerCase().includes(q))
+        );
+    }
+
+    return result;
+});
+
+const paginatedProducts = computed(() => {
+    const start = (currentPage.value - 1) * ITEMS_PER_PAGE;
+    return filteredProducts.value.slice(start, start + ITEMS_PER_PAGE);
+});
+
+const suggestedAddons = computed(() => {
+    const hasTriggerItem = cart.value.some(item => item.product.name && item.product.name.toUpperCase().includes('ACF78'));
+    if (!hasTriggerItem) return [];
+    return mixedProducts.value.filter(p => p.name && p.name.toUpperCase().includes('AU001@P'));
+});
+
+// --- LOGIC FUNCTIONS ---
 const getTotalRetailStock = (product) => {
     if (product.isCombo) {
         if (!product.items || product.items.length === 0) return 0;
@@ -219,44 +313,83 @@ const getTotalRetailStock = (product) => {
         for (const comboItem of product.items) {
             const stockItem = originalStocks.value.find(s => s.id === comboItem.productId);
             if (!stockItem) return 0; 
-            const itemRetailStock = Math.floor((Number(stockItem.quantity) || 0) * (Number(stockItem.itemsPerCase) || 1));
+            let itemRetailStock = 0;
+            if (stockItem.unit === 'case') {
+                 const perCase = Number(stockItem.itemsPerCase) || 1;
+                 const perBox = stockItem.category === 'ម៉ាស់' ? (Number(stockItem.itemsPerBox) || 1) : 1;
+                 itemRetailStock = Math.floor((Number(stockItem.quantity) || 0) * perCase * perBox);
+            } else {
+                 itemRetailStock = Math.floor(Number(stockItem.quantity) || 0);
+            }
             const canMake = Math.floor(itemRetailStock / (Number(comboItem.qty) || 1));
             if (canMake < minPossibleCombos) minPossibleCombos = canMake;
         }
         return minPossibleCombos === Infinity ? 0 : minPossibleCombos;
     } else {
-        return Math.floor((Number(product.quantity) || 0) * (Number(product.itemsPerCase) || 1));
+        if (product.unit === 'case') {
+             const perCase = Number(product.itemsPerCase) || 1;
+             const perBox = product.category === 'ម៉ាស់' ? (Number(product.itemsPerBox) || 1) : 1;
+             return Math.floor((Number(product.quantity) || 0) * perCase * perBox);
+        }
+        return Math.floor(Number(product.quantity) || 0);
     }
 };
 
 const formatComplexStock = (product) => {
     const retailTotal = Math.floor(getTotalRetailStock(product)); 
     if (retailTotal <= 0) return '0 ស្តុក';
-    if (product.isCombo) return `ស្តុក: ${retailTotal.toLocaleString()} ឈុត`;
-    const itemsPerCase = Number(product.itemsPerCase) || 1;
-    if (itemsPerCase <= 1 || !product.retailUnit) return `ស្តុក: ${retailTotal.toLocaleString()} ${translateHardcodedUnit(product.retailUnit || product.unit || 'bottle')}`;
-    const cases = Math.floor(retailTotal / itemsPerCase);
-    const bottles = Math.floor(retailTotal % itemsPerCase);
-    let result = [];
-    if (cases > 0) result.push(`${cases} ${translateHardcodedUnit(product.unit || 'case')}`);
-    if (bottles > 0) result.push(`${bottles} ${translateHardcodedUnit(product.retailUnit || 'bottle')}`);
-    return result.length > 0 ? result.join(' ') : '0';
+    if (product.isCombo) return `${retailTotal.toLocaleString()} ឈុត`;
+    
+    if (product.unit === 'case') {
+        const perCase = Number(product.itemsPerCase) || 1;
+        const perBox = product.category === 'ម៉ាស់' ? (Number(product.itemsPerBox) || 1) : 1;
+        
+        const totalInBaseRetail = retailTotal;
+        const cases = Math.floor(totalInBaseRetail / (perCase * perBox));
+        let remainderText = '';
+        
+        if (product.category === 'ម៉ាស់') {
+            const remainingPiecesAfterCases = totalInBaseRetail % (perCase * perBox);
+            const boxes = Math.floor(remainingPiecesAfterCases / perBox);
+            const sheets = remainingPiecesAfterCases % perBox;
+            
+            let parts = [];
+            if (cases > 0) parts.push(`${cases} កេះ`);
+            if (boxes > 0) parts.push(`${boxes} ប្រអប់`);
+            if (sheets > 0) parts.push(`${sheets} សន្លឹក`);
+            return parts.join(' ');
+        } else {
+            const retailRem = totalInBaseRetail % perCase;
+            let parts = [];
+            if (cases > 0) parts.push(`${cases} កេះ`);
+            if (retailRem > 0) parts.push(`${retailRem} ${translateRetailUnit(product)}`);
+            return parts.join(' ');
+        }
+    }
+    
+    return `${retailTotal.toLocaleString()} ${translateRetailUnit(product)}`;
 };
 
 const getRetailQtyEquivalent = (product, qty, selectedUnit) => {
     if (product.isCombo) return qty;
-    return selectedUnit === 'case' ? qty * (Number(product.itemsPerCase) || 1) : qty;
+    if (selectedUnit === 'case') {
+        const perCase = Number(product.itemsPerCase) || 1;
+        const perBox = product.category === 'ម៉ាស់' ? (Number(product.itemsPerBox) || 1) : 1;
+        return qty * perCase * perBox;
+    }
+    if (selectedUnit === 'box' && product.category === 'ម៉ាស់') {
+        return qty * (Number(product.itemsPerBox) || 1);
+    }
+    return qty;
 };
-
-const filteredProducts = computed(() => {
-    if (!searchQuery.value) return mixedProducts.value;
-    const q = searchQuery.value.toLowerCase();
-    return mixedProducts.value.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
-});
 
 const getSingleBasePrice = (item) => {
     const { product, qty, selectedUnit } = item;
-    const targetUnit = product.isCombo ? 'set' : (selectedUnit === 'case' ? 'case' : 'bottle');
+    let targetUnit = 'bottle';
+    if (product.isCombo) targetUnit = 'set';
+    else if (selectedUnit === 'case') targetUnit = 'case';
+    else if (selectedUnit === 'box') targetUnit = 'box';
+
     if (product.wholesaleTiers && Array.isArray(product.wholesaleTiers) && product.wholesaleTiers.length > 0) {
         let unitTiers = product.wholesaleTiers.filter(t => t.unit === targetUnit);
         if (product.isCombo && unitTiers.length === 0) { unitTiers = product.wholesaleTiers; }
@@ -270,10 +403,25 @@ const getSingleBasePrice = (item) => {
 };
 
 const getSingleCasePrice = (item) => getSingleBasePrice(item) * (Number(item.product.itemsPerCase) || 1);
+
 const calculateItemUnitPrice = (item) => {
     if (item.isManualPrice) return Number(item.manualPrice) || 0;
     if (item.product.isCombo) return getSingleBasePrice(item);
-    return item.selectedUnit === 'case' ? getSingleCasePrice(item) : getSingleBasePrice(item);
+    
+    const basePrice = getSingleBasePrice(item);
+    if (item.selectedUnit === 'case') {
+        const perCase = Number(item.product.itemsPerCase) || 1;
+        const perBox = item.product.category === 'ម៉ាស់' ? (Number(item.product.itemsPerBox) || 1) : 1;
+        const tierFound = item.product.wholesaleTiers?.find(t=>t.unit === 'case');
+        return tierFound ? basePrice : (basePrice * perCase * perBox);
+    }
+    if (item.selectedUnit === 'box' && item.product.category === 'ម៉ាស់') {
+         const perBox = Number(item.product.itemsPerBox) || 1;
+         const tierFound = item.product.wholesaleTiers?.find(t=>t.unit === 'box');
+         return tierFound ? basePrice : (basePrice * perBox);
+    }
+
+    return basePrice;
 };
 
 const calculateItemPrice = (item) => calculateItemUnitPrice(item) * item.qty;
@@ -281,7 +429,11 @@ const cartTotalUSD = computed(() => cart.value.reduce((total, item) => total + c
 
 const getAutoCalculatedType = (item) => {
     const { product, selectedUnit, isManualPrice, manualPrice, qty } = item;
-    const targetUnit = product.isCombo ? 'set' : (selectedUnit === 'case' ? 'case' : 'bottle');
+    let targetUnit = 'bottle';
+    if (product.isCombo) targetUnit = 'set';
+    else if (selectedUnit === 'case') targetUnit = 'case';
+    else if (selectedUnit === 'box') targetUnit = 'box';
+
     let sysWholesalePrice = null;
     if (product.wholesaleTiers && Array.isArray(product.wholesaleTiers) && product.wholesaleTiers.length > 0) {
         let unitTiers = product.wholesaleTiers.filter(t => t.unit === targetUnit);
@@ -305,16 +457,46 @@ const getAutoCalculatedType = (item) => {
     return product.isCombo ? 'ឈុត' : 'លក់រាយ';
 };
 
-const getBadgeLabel = (item) => (item.manualType && item.manualType !== 'auto') ? item.manualType : getAutoCalculatedType(item);
 const getBadgeClass = (item) => {
-    const label = getBadgeLabel(item);
+    const label = (item.manualType && item.manualType !== 'auto') ? item.manualType : getAutoCalculatedType(item);
     if (item.manualType && item.manualType !== 'auto') return 'bg-amber-50 text-amber-700 border-amber-300 shadow-sm'; 
     if (label.includes('បោះដុំ')) return 'bg-purple-50 text-purple-600 border-purple-200';
     if (label.includes('ឈុត')) return 'bg-orange-50 text-orange-600 border-orange-200';
     return 'bg-indigo-50 text-indigo-600 border-indigo-200';
 };
 
-// --- ACTION LOGIC (Passed to children as emits) ---
+// --- ACTION LOGIC ---
+const addSuggestedItem = async (product) => {
+    const maxStock = getTotalRetailStock(product);
+    if (maxStock <= 0) return notification.error("អស់ពីស្តុកហើយ!");
+    
+    const defaultUnit = 'retail';
+    const retailQtyToAdd = getRetailQtyEquivalent(product, 1, defaultUnit);
+    
+    const existingIndex = cart.value.findIndex(item => item.product.id === product.id && item.selectedUnit === defaultUnit && item.isManualPrice && item.manualPrice === 0);
+    
+    if (existingIndex !== -1) {
+        if (cart.value[existingIndex].qty + 1 > maxStock) return notification.error(`មានស្តុកត្រឹមតែ ${maxStock} ប៉ុណ្ណោះ`);
+        cart.value[existingIndex].qty += 1;
+        cart.value[existingIndex].inputQty = cart.value[existingIndex].qty;
+    } else {
+        if (retailQtyToAdd > maxStock) return notification.error(`មានស្តុកត្រឹមតែ ${maxStock} ប៉ុណ្ណោះ`);
+        cart.value.push({ 
+            product: product, 
+            qty: 1, 
+            inputQty: 1, 
+            selectedUnit: defaultUnit, 
+            isManualPrice: true,
+            manualPrice: 0,
+            manualType: 'ថែមជូន'
+        });
+    }
+    
+    await modifyStockReservation(product, retailQtyToAdd); 
+    await updateActiveCartBackend();
+    notification.success(`បានបន្ថែមទំនិញថែមជូនចូលកន្ត្រក!`);
+};
+
 const handleManualPriceToggle = (index) => {
     const item = cart.value[index];
     if (item.isManualPrice) {
@@ -372,13 +554,26 @@ const modifyStockReservation = async (product, retailQtyDelta) => {
             for (const subItem of product.items) {
                 const stockRef = doc(db, 'stocks', subItem.productId);
                 const originalStock = originalStocks.value.find(s => s.id === subItem.productId);
-                const perCase = originalStock ? (Number(originalStock.itemsPerCase) || 1) : 1;
-                const bulkQtyDelta = (subItem.qty * retailQtyDelta) / perCase; 
+                
+                let perCase = 1;
+                let perBox = 1;
+                if (originalStock && originalStock.unit === 'case') {
+                    perCase = Number(originalStock.itemsPerCase) || 1;
+                    if (originalStock.category === 'ម៉ាស់') perBox = Number(originalStock.itemsPerBox) || 1;
+                }
+                
+                const bulkQtyDelta = (subItem.qty * retailQtyDelta) / (perCase * perBox); 
                 await updateDoc(stockRef, { quantity: increment(-bulkQtyDelta), stock_reserved: increment(bulkQtyDelta) });
             }
         } else {
             const stockRef = doc(db, 'stocks', product.id);
-            const bulkQtyDelta = retailQtyDelta / (Number(product.itemsPerCase) || 1); 
+            let perCase = 1;
+            let perBox = 1;
+            if (product.unit === 'case') {
+                 perCase = Number(product.itemsPerCase) || 1;
+                 if (product.category === 'ម៉ាស់') perBox = Number(product.itemsPerBox) || 1;
+            }
+            const bulkQtyDelta = retailQtyDelta / (perCase * perBox); 
             await updateDoc(stockRef, { quantity: increment(-bulkQtyDelta), stock_reserved: increment(bulkQtyDelta) });
         }
     } catch (e) { console.error(e); }
@@ -392,15 +587,20 @@ const addToCart = async (product) => {
     const existingIndex = cart.value.findIndex(item => item.product.id === product.id && item.selectedUnit === defaultUnit && !item.isManualPrice);
     
     if (existingIndex !== -1) {
-        if (cart.value[existingIndex].qty + 1 > maxStock) return notification.error(`មានស្តុកត្រឹមតែ ${maxStock} ប៉ុណ្ណោះ`);
+        if (cart.value[existingIndex].qty + 1 > maxStock) return notification.error(`មានស្តុកត្រឹមតែ ${formatComplexStock(product)} ប៉ុណ្ណោះ`);
         cart.value[existingIndex].qty += 1;
         cart.value[existingIndex].inputQty = cart.value[existingIndex].qty;
     } else {
-        if (retailQtyToAdd > maxStock) return notification.error(`មានស្តុកត្រឹមតែ ${maxStock} ប៉ុណ្ណោះ`);
+        if (retailQtyToAdd > maxStock) return notification.error(`មានស្តុកត្រឹមតែ ${formatComplexStock(product)} ប៉ុណ្ណោះ`);
         cart.value.push({ product: product, qty: 1, inputQty: 1, selectedUnit: defaultUnit, isManualPrice: false, manualPrice: 0, manualType: 'auto' });
     }
     await modifyStockReservation(product, retailQtyToAdd); 
     await updateActiveCartBackend();
+
+    // 🌟 បើកវិក្កយបត្រស្វ័យប្រវត្តិ ប្រសិនបើបានបើក AutoToggle 🌟
+    if (autoOpenReceipt.value) {
+        showFloatingReceipt.value = true;
+    }
 };
 
 const handleUnitChange = async (index, event) => {
@@ -443,7 +643,7 @@ const commitQty = async (index) => {
     if (delta === 0) return;
     const maxRetailStock = getTotalRetailStock(item.product);
     const retailDelta = getRetailQtyEquivalent(item.product, delta, item.selectedUnit);
-    if (retailDelta > 0 && retailDelta > maxRetailStock) { notification.error(`ស្តុកមានត្រឹមតែ ${maxRetailStock} ប៉ុណ្ណោះ`); item.inputQty = item.qty; return; }
+    if (retailDelta > 0 && retailDelta > maxRetailStock) { notification.error(`ស្តុកមានមិនគ្រប់គ្រាន់`); item.inputQty = item.qty; return; }
     item.qty = newQty; item.inputQty = newQty; 
     await modifyStockReservation(item.product, retailDelta); 
     await updateActiveCartBackend();
@@ -455,9 +655,17 @@ const removeFromCart = async (index) => {
     cart.value.splice(index, 1);
     await modifyStockReservation(item.product, -retailQtyToReturn); 
     await updateActiveCartBackend();
+    
+    if (cart.value.length === 0) {
+        showFloatingReceipt.value = false;
+    }
 };
 
-const openCheckoutModal = () => { isCheckoutModalOpen.value = true; };
+// 🌟 បិទវិក្កយបត្រស្វ័យប្រវត្តិ ពេលចុចប៊ូតុង បន្តការទូទាត់ 🌟
+const openCheckoutModal = () => { 
+    isCheckoutModalOpen.value = true; 
+    showFloatingReceipt.value = false;
+};
 
 const submitSale = async (formData) => {
     isSubmitting.value = true;
@@ -471,6 +679,18 @@ const submitSale = async (formData) => {
             let correctUnit = item.product.isCombo ? 'set' : (item.selectedUnit === 'case' ? (item.product.unit || 'case') : (item.product.retailUnit || 'bottle'));
             let safeImage = item.product.image || '';
             if (safeImage.startsWith('data:image')) safeImage = ''; 
+            
+            let itemCost = 0;
+            if (item.product.isCombo) {
+                itemCost = item.product.totalBaseCost;
+            } else {
+                const perCase = Number(item.product.itemsPerCase) || 1;
+                const perBox = item.product.category === 'ម៉ាស់' ? (Number(item.product.itemsPerBox) || 1) : 1;
+                
+                if (item.selectedUnit === 'case') itemCost = Number(item.product.unitCost);
+                else if (item.selectedUnit === 'box' && item.product.category === 'ម៉ាស់') itemCost = Number(item.product.unitCost) / perCase;
+                else itemCost = Number(item.product.unitCost) / (perCase * perBox);
+            }
 
             return {
                 id: item.product.id, cartItemId: `${item.product.id}_${Date.now()}_${index}`,
@@ -478,7 +698,7 @@ const submitSale = async (formData) => {
                 qty: item.qty, type: finalType, isManualPriceApplied: Boolean(item.isManualPrice), 
                 isManualTypeApplied: item.manualType !== 'auto', unit: correctUnit, 
                 itemsPerCase: Number(item.product.itemsPerCase) || 1, isCombo: Boolean(item.product.isCombo),
-                cost: item.product.isCombo ? item.product.totalBaseCost : (item.selectedUnit === 'case' ? Number(item.product.unitCost) : (Number(item.product.unitCost)/Number(item.product.itemsPerCase || 1)))
+                cost: itemCost
             };
         });
 
@@ -499,12 +719,22 @@ const submitSale = async (formData) => {
             if (item.product.isCombo) {
                 for (const subItem of item.product.items) {
                     const originalStock = originalStocks.value.find(s => s.id === subItem.productId);
-                    const perCase = originalStock ? (Number(originalStock.itemsPerCase) || 1) : 1;
-                    await updateDoc(doc(db, 'stocks', subItem.productId), { stock_reserved: increment(-((subItem.qty * item.qty) / perCase)) });
+                    let perCase = 1; let perBox = 1;
+                    if (originalStock && originalStock.unit === 'case') {
+                         perCase = Number(originalStock.itemsPerCase) || 1;
+                         if (originalStock.category === 'ម៉ាស់') perBox = Number(originalStock.itemsPerBox) || 1;
+                    }
+                    const bulkQtyToDeduct = (subItem.qty * item.qty) / (perCase * perBox);
+                    await updateDoc(doc(db, 'stocks', subItem.productId), { stock_reserved: increment(-bulkQtyToDeduct) });
                 }
             } else {
                 const retailQtyToDeduct = getRetailQtyEquivalent(item.product, item.qty, item.selectedUnit);
-                const bulkQtyToDeduct = retailQtyToDeduct / (Number(item.product.itemsPerCase) || 1);
+                let perCase = 1; let perBox = 1;
+                if (item.product.unit === 'case') {
+                     perCase = Number(item.product.itemsPerCase) || 1;
+                     if (item.product.category === 'ម៉ាស់') perBox = Number(item.product.itemsPerBox) || 1;
+                }
+                const bulkQtyToDeduct = retailQtyToDeduct / (perCase * perBox);
                 await updateDoc(doc(db, 'stocks', item.product.id), { stock_reserved: increment(-bulkQtyToDeduct) });
             }
         }
@@ -549,7 +779,7 @@ const sendToTelegramBotGroup = async () => { /* Logic */ };
 .animate-bounce-short { animation: bounceShort 1s ease-in-out infinite; }
 @keyframes bounceShort { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15%); } }
 .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0); } }
 .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s ease; }
 .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
 </style>

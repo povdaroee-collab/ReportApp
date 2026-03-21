@@ -103,16 +103,22 @@
 
                 <div class="pt-4 border-t border-slate-100">
                     <div class="flex justify-between items-center mb-3">
-                        <label class="block text-[11px] font-black text-slate-600 uppercase">លក្ខខណ្ឌលក់ដុំ (WHOLESALE TIERS)</label>
-                        <button type="button" @click="addTier" class="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded font-bold hover:bg-indigo-100 flex items-center gap-1">
+                        <div class="flex items-center gap-3">
+                            <label class="block text-[11px] font-black text-slate-600 uppercase">លក្ខខណ្ឌលក់ដុំ (WHOLESALE)</label>
+                            <label class="relative inline-flex items-center cursor-pointer" title="បិទ ឬ បើកការលក់ដុំ">
+                                <input type="checkbox" v-model="form.enableWholesale" class="sr-only peer">
+                                <div class="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-500"></div>
+                            </label>
+                        </div>
+                        <button v-if="form.enableWholesale" type="button" @click="addTier" class="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded font-bold hover:bg-indigo-100 flex items-center gap-1 transition-opacity">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                             បន្ថែម
                         </button>
                     </div>
                     
-                    <div class="space-y-3 max-h-48 overflow-y-auto custom-scrollbar pr-1">
-                        <div v-for="(tier, idx) in form.wholesaleTiers" :key="idx" class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative animate-slide-up">
-                            <button v-if="form.wholesaleTiers.length > 1" type="button" @click="removeTier(idx)" class="absolute -top-2 -right-2 w-5 h-5 bg-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors rounded-full flex justify-center items-center shadow-sm"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                    <div :class="!form.enableWholesale ? 'opacity-50 pointer-events-none grayscale' : ''" class="space-y-3 max-h-48 overflow-y-auto custom-scrollbar pr-1 transition-all duration-300">
+                        <div v-for="(tier, idx) in form.wholesaleTiers" :key="idx" class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative animate-slide-up group hover:border-indigo-300 transition-colors">
+                            <button v-if="form.wholesaleTiers.length > 1" type="button" @click="removeTier(idx)" class="absolute -top-2 -right-2 w-5 h-5 bg-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors rounded-full flex justify-center items-center shadow-sm opacity-0 group-hover:opacity-100"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                             <div class="grid grid-cols-3 gap-3">
                                 <div>
                                     <span class="text-[9px] text-slate-500 font-black tracking-wide uppercase block text-center mb-1">ទិញចាប់ពី (ឈុត)</span>
@@ -291,8 +297,8 @@ import { useNotificationStore } from '@/stores/notification';
 const notification = useNotificationStore();
 
 // ================= STATE =================
-const allProductsDict = ref({}); // រក្សាទុកទិន្នន័យទំនិញទាំងអស់ (ទាំងលុប និងមិនលុប) សម្រាប់ផ្ទៀងផ្ទាត់
-const availableProducts = ref([]); // ទំនិញដែលអាចជ្រើសរើសចូលឈុតបាន (Active ប៉ុណ្ណោះ)
+const allProductsDict = ref({}); 
+const availableProducts = ref([]); 
 const combos = ref([]);
 const isLoadingCombos = ref(true);
 const isSaving = ref(false);
@@ -317,13 +323,14 @@ const showDeleteModal = ref(false);
 const comboToDelete = ref(null);
 const isDeleting = ref(false);
 
-// Form Data
+// Form Data (🌟 Added enableWholesale Toggle 🌟)
 const form = reactive({
     id: null,
     name: '',
     items: [],
     retailPrice: 0,
     sellerIncentive: 0,
+    enableWholesale: true, // 👈 New State for Toggle
     wholesaleTiers: [{ minQty: 2, price: 0, incentive: 0 }]
 });
 
@@ -363,7 +370,6 @@ const paginatedCombos = computed(() => {
 // ================= ACTIONS =================
 onMounted(async () => {
     try {
-        // 1. Fetch All Stocks (រួមទាំងទំនិញដែលបាន Soft Delete ចូលធុងសម្រាម)
         const pSnap = await getDocs(collection(db, 'stocks'));
         const tempDict = {};
         const available = [];
@@ -377,13 +383,12 @@ onMounted(async () => {
                 id: d.id,
                 name: data.name || data.productName,
                 unitCost: baseCost,
-                isDeleted: data.isDeleted || false, // ឆែកមើលក្រែងវាត្រូវលុបចូលធុងសម្រាម
+                isDeleted: data.isDeleted || false, 
                 retailQty: retailQty
             };
 
             tempDict[d.id] = productObj;
 
-            // សម្រាប់ Form ជ្រើសរើស (ខាងឆ្វេង) បង្ហាញតែទំនិញដែល Active ប៉ុណ្ណោះ
             if (!productObj.isDeleted) {
                 available.push(productObj);
             }
@@ -392,7 +397,6 @@ onMounted(async () => {
         allProductsDict.value = tempDict;
         availableProducts.value = available;
 
-        // 2. Fetch Combos
         const cSnap = await getDocs(collection(db, 'combos'));
         combos.value = cSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     } catch (e) {
@@ -402,16 +406,13 @@ onMounted(async () => {
     }
 });
 
-// 🔥 SMART VALIDATION: ពិនិត្យមើលស្ថានភាពទំនិញក្នុងឈុត (ខ្វះស្តុក ឬ លុបចោល)
 const checkComboItemStatus = (item) => {
     const prod = allProductsDict.value[item.productId];
 
-    // ករណីទី១: រកមិនឃើញទិន្នន័យទាល់តែសោះ (លុបជាអចិន្ត្រៃយ៍ពី Database)
     if (!prod) {
         return { isValid: false, type: 'HARD_DELETE', text: 'លុបជាអចិន្ត្រៃយ៍ (គ្មានទិន្នន័យ)' };
     }
 
-    // ករណីទី២: ត្រូវបានលុបចូលធុងសម្រាម (isDeleted: true)
     if (prod.isDeleted) {
         if (prod.retailQty > 0) {
             return { isValid: false, type: 'SOFT_DELETE_STOCK', text: `លុបបណ្ដោះអាសន្ន (សល់ ${prod.retailQty})` };
@@ -420,20 +421,17 @@ const checkComboItemStatus = (item) => {
         }
     }
 
-    // ករណីទី៣: ទំនិញសកម្មធម្មតា ប៉ុន្តែអស់ពីស្តុក
-    if (prod.retailQty <= 0) { // អាចប្ដូរទៅ `prod.retailQty < item.qty` បើចង់ឆែកចំនួនជាក់លាក់
+    if (prod.retailQty <= 0) { 
          return { isValid: false, type: 'OUT_OF_STOCK', text: 'អស់ពីស្តុក' };
     }
 
     return { isValid: true };
 };
 
-// ឆែកមើលថាឈុតទាំងមូលអាចប្រើបាន ឬអត់
 const isComboUsable = (combo) => {
     return combo.items.every(item => checkComboItemStatus(item).isValid);
 };
 
-// Image Compressor (~100KB)
 const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -503,6 +501,7 @@ const resetForm = () => {
     form.items = [];
     form.retailPrice = 0;
     form.sellerIncentive = 0;
+    form.enableWholesale = true; // 🌟 Reset Toggle to True
     form.wholesaleTiers = [{ minQty: 2, price: 0, incentive: 0 }];
     comboImage.value = null;
     productSearchTerm.value = '';
@@ -515,6 +514,7 @@ const editCombo = (combo) => {
     form.items = JSON.parse(JSON.stringify(combo.items));
     form.retailPrice = combo.retailPrice;
     form.sellerIncentive = combo.sellerIncentive || 0;
+    form.enableWholesale = combo.enableWholesale !== false; // 🌟 Load Toggle State
     form.wholesaleTiers = JSON.parse(JSON.stringify(combo.wholesaleTiers));
     comboImage.value = combo.image || null;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -531,6 +531,7 @@ const saveCombo = async () => {
             totalBaseCost: Number(totalComboBaseCost.value),
             retailPrice: Number(form.retailPrice),
             sellerIncentive: Number(form.sellerIncentive),
+            enableWholesale: form.enableWholesale, // 🌟 Save Toggle State
             wholesaleTiers: form.wholesaleTiers,
             image: comboImage.value,
             updatedAt: new Date().toISOString()
@@ -555,7 +556,6 @@ const saveCombo = async () => {
     }
 };
 
-// --- លុបឈុតទំនិញតាមរយៈ Custom Modal ---
 const openDeleteModal = (combo) => {
     comboToDelete.value = combo;
     showDeleteModal.value = true;
@@ -590,4 +590,7 @@ const executeDelete = async () => {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* 🌟 បន្ថែម CSS ធ្វើឱ្យពណ៌ស្លេកពេលបិទ Toggle 🌟 */
+.grayscale { filter: grayscale(100%); }
 </style>

@@ -1,71 +1,32 @@
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
-import { nextTick } from 'vue';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebaseConfig';
 
-// ==========================================
-// 🌟 1. HELPER FUNCTIONS 🌟
-// ==========================================
-export function fC(val) {
-    return Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+export const formatCurrency = (val, curr = "USD") => Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (curr === "USD" ? " $" : " ៛");
+export const fC = (val) => Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const fQ = (val) => Number(val || 0).toLocaleString('en-US');
 
-export function fQ(val) {
-    return Number(val || 0).toLocaleString('en-US');
-}
+export const translateUnit = (unitVal, availableUnits) => {
+  if (!unitVal) return "";
+  const found = availableUnits.find((u) => u.value === unitVal);
+  if (found) return found.label;
+  const u = String(unitVal).toLowerCase().trim();
+  if (u === "bottle" || u === "bottles") return "ដប";
+  if (u === "pack" || u === "packs") return "កញ្ចប់";
+  if (u === "case" || u === "cases") return "កេះ";
+  if (u === "set" || u === "sets" || u === "ឈុត") return "ឈុត";
+  return unitVal;
+};
 
-export function formatCurrency(val, curr = "USD") {
-    return Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (curr === "USD" ? " $" : " ៛");
-}
-
-export function translateUnit(unitVal, availableUnits) {
-    if (!unitVal) return "";
-    const safeVal = String(unitVal);
-    const found = availableUnits ? availableUnits.find((u) => u.value === safeVal) : null;
-    if (found) return found.label;
-    const u = safeVal.toLowerCase().trim();
-    if (u === "bottle" || u === "bottles") return "ដប";
-    if (u === "pack" || u === "packs") return "កញ្ចប់";
-    if (u === "case" || u === "cases") return "កេះ";
-    if (u === "set" || u === "sets" || u === "ឈុត") return "ឈុត";
-    return safeVal;
-}
-
-export function isItemCombo(item) {
+const isItemCombo = (item) => {
     if (!item) return false;
     if (item.isCombo === true || item.isCombo === "true") return true;
     if (item.type && String(item.type).includes('ឈុត')) return true;
     if (item.unit && (String(item.unit).toLowerCase() === 'set' || String(item.unit).includes('ឈុត'))) return true;
     if (item.name && String(item.name).includes('ឈុត')) return true; 
     return false;
-}
-
-export function groupItemsByName(items) {
-    if (!items || items.length === 0) return [];
-    const grouped = {};
-    
-    items.forEach(item => {
-        if (item.paymentStatus === 'CANCELED' || item.paymentStatus === 'Canceled' || item.status === 'CANCELED') return;
-
-        const name = item.name || "មិនស្គាល់ឈ្មោះ";
-        const comboFlag = isItemCombo(item);
-
-        if (!grouped[name]) {
-            grouped[name] = { name: name, qty: 0, total: 0, unit: comboFlag ? 'set' : item.unit, isCombo: comboFlag };
-        }
-        
-        grouped[name].qty += Number(item.qty || 0);
-        grouped[name].total += Number(item.total || (Number(item.price || 0) * Number(item.qty || 0)) || 0);
-        
-        if (comboFlag) {
-            grouped[name].isCombo = true;
-            grouped[name].unit = 'set';
-        }
-    });
-    
-    return Object.values(grouped);
-}
+};
 
 let cachedCombos = null;
 let cachedStocks = null;
@@ -82,9 +43,6 @@ const fetchCombosAndStocks = async () => {
     return { allCombos: cachedCombos, allStocks: cachedStocks };
 };
 
-// ==========================================
-// 🌟 2. មុខងារទាញយកទំនិញលម្អិត (ដោះស្រាយបញ្ហាគុណចំនួនទំនិញទ្វេដង) 🌟
-// ==========================================
 export function getDetailedProductsSummary(item, data, allCombos, allStocks) {
     let productsToProcess = [];
     
@@ -95,16 +53,12 @@ export function getDetailedProductsSummary(item, data, allCombos, allStocks) {
             s.paymentStatus !== 'CANCELED' && s.paymentStatus !== 'Canceled'
         );
 
-        // ✅ ដំណោះស្រាយ: ចម្រាញ់យកវិក្កយបត្រកុំឱ្យស្ទួន (Deduplicate receipts)
         const uniqueReceipts = new Map();
         validSales.forEach(sale => {
             const receiptId = sale.originalReceiptId || (sale.id ? String(sale.id).split('_')[0] : null);
-            if (receiptId) {
-                uniqueReceipts.set(receiptId, sale);
-            }
+            if (receiptId) uniqueReceipts.set(receiptId, sale);
         });
 
-        // ទាញយក items ចេញពីវិក្កយបត្រដែលមិនស្ទួន
         Array.from(uniqueReceipts.values()).forEach(sale => {
             (sale.items || []).forEach(prod => {
                 productsToProcess.push({ ...prod, saleCurrency: sale.currency });
@@ -184,9 +138,6 @@ export function getDetailedProductsSummary(item, data, allCombos, allStocks) {
     });
 }
 
-// ==========================================
-// 🌟 3. គូរតារាងវិក្កយបត្រ (Row Template) 🌟
-// ==========================================
 const renderSellerRowHTML = (item, data, allCombos, allStocks) => {
     let salesHTML = item.hasSales ? `<div style="text-align: center; color:#334155; font-size:14px; font-weight:bold;">-</div>` : `<span style="color:#94a3b8;">-</span>`;
     let revenueHTML = item.hasSales ? `<div style="text-align:right;"><span style="color:#059669; font-size:15px; font-weight:900; display:block;">${fC(item.revenueUSD)} $</span><span style="color:#2563eb; font-size:12px; font-weight:bold; display:block; margin-top:2px;">${fC(item.revenueKHR)} ៛</span></div>` : `<div style="text-align:right; color:#94a3b8;">-</div>`;
@@ -248,9 +199,6 @@ const renderSellerRowHTML = (item, data, allCombos, allStocks) => {
       </tbody>`;
 };
 
-// ==========================================
-// 🌟 4. មុខងារគូរ HTML ទំព័រសរុប
-// ==========================================
 const chunkArray = (arr, size) => {
     const chunks = [];
     for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
@@ -268,6 +216,20 @@ const buildChunkTable = (items, data) => {
         </tr>`;
     }).join('');
     return `<table style="width: 100%; border-collapse: collapse; font-size: 11px;"><thead style="background: #f8fafc; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; color: #64748b;"><tr><th style="padding: 6px 4px; text-align: left;">ឈ្មោះទំនិញសរុប</th><th style="padding: 6px 4px; text-align: center;">ចំនួន</th><th style="padding: 6px 4px; text-align: right;">សរុបទឹកប្រាក់</th></tr></thead><tbody>${rows}</tbody></table>`;
+};
+
+const groupItemsByNameForSummary = (items) => {
+    if (!items || items.length === 0) return [];
+    const grouped = {};
+    items.forEach(item => {
+        if (item.paymentStatus === 'CANCELED' || item.paymentStatus === 'Canceled' || item.status === 'CANCELED') return;
+        const name = item.name || "មិនស្គាល់ឈ្មោះ";
+        const comboFlag = isItemCombo(item);
+        if (!grouped[name]) grouped[name] = { name: name, qty: 0, total: 0, unit: comboFlag ? 'set' : item.unit, isCombo: comboFlag };
+        grouped[name].qty += Number(item.qty || 0);
+        grouped[name].total += Number(item.total || (Number(item.price || 0) * Number(item.qty || 0)) || 0);
+    });
+    return Object.values(grouped);
 };
 
 const buildTotalBlock = (dataObj, titleStr) => {
@@ -313,14 +275,17 @@ const generateSummaryPagesHTML = (data, isNativePrint = false) => {
     measureDiv.style.width = '714px'; measureDiv.style.fontFamily = "'Battambang', sans-serif"; measureDiv.style.position = 'absolute'; measureDiv.style.visibility = 'hidden'; measureDiv.style.top = '-9999px';
     document.body.appendChild(measureDiv);
 
+    // 🚨 បន្ថយកម្ពស់អតិបរមាក្នុង១ទំព័រ ដើម្បីទុកចន្លោះប្រហោង (Margin) ឱ្យធំទូលាយ 🚨
+    const MAX_SUMMARY_HEIGHT = 800; 
+
     const processRegion = (title, icon, color, regionData, totalLabel) => {
         let isFirstInRegion = true; let blocksToAdd = [];
 
         const addStatusBlocks = (statusTitle, statusIcon, statusColor, sData) => {
             if (!sData || (sData.wholesaleUSD === 0 && sData.retailUSD === 0)) return;
 
-            const groupedWholesale = groupItemsByName(sData.wholesaleItems || []);
-            const groupedRetail = groupItemsByName(sData.retailItems || []);
+            const groupedWholesale = groupItemsByNameForSummary(sData.wholesaleItems || []);
+            const groupedRetail = groupItemsByNameForSummary(sData.retailItems || []);
 
             const wsChunks = chunkArray(groupedWholesale, 16);
             const rtChunks = chunkArray(groupedRetail, 16);
@@ -347,7 +312,7 @@ const generateSummaryPagesHTML = (data, isNativePrint = false) => {
         blocksToAdd.forEach((block) => {
             if (isFirstInRegion) { currentBlocks.push(buildRegionHeader(title, icon, color)); isFirstInRegion = false; }
             measureDiv.innerHTML = currentBlocks.join('') + block;
-            if (measureDiv.clientHeight > 900) { flushPage(); currentBlocks.push(buildRegionHeader(title, icon, color)); }
+            if (measureDiv.clientHeight > MAX_SUMMARY_HEIGHT) { flushPage(); currentBlocks.push(buildRegionHeader(title, icon, color)); }
             currentBlocks.push(block);
         });
     };
@@ -433,7 +398,7 @@ export const generatePDF = async (data, printStagingEl, processingRef) => {
     let allRows = [...data.filteredSellers].map((item, idx) => ({ ...item, printIndex: idx + 1 }));
     
     const measureDiv = document.createElement('div');
-    measureDiv.style.width = '1000px'; 
+    measureDiv.style.width = '920px'; // ទុកគម្លាតឆ្វេងស្តាំ
     measureDiv.style.fontFamily = "'Battambang', sans-serif";
     measureDiv.style.position = 'absolute';
     measureDiv.style.visibility = 'hidden';
@@ -442,7 +407,9 @@ export const generatePDF = async (data, printStagingEl, processingRef) => {
 
     let tablePages = [];
     let currentRows = [];
-    const MAX_TABLE_HEIGHT = 1150; 
+    
+    // 🚨 បន្ថយកម្ពស់អតិបរមាក្នុង១ទំព័រ ដើម្បីទុកចន្លោះប្រហោង (Margin) ឱ្យកាន់តែធំទូលាយ 🚨
+    const MAX_TABLE_HEIGHT = 850; 
 
     const wrapTable = (rowsHtml) => `
         <table style="width: 100%; text-align: left; border-collapse: collapse; background-color: #ffffff;">
@@ -488,13 +455,13 @@ export const generatePDF = async (data, printStagingEl, processingRef) => {
         `;
         
         printStagingEl.innerHTML = `
-            <div class="print-page" style="width: 1000px; height: 1414px; background: white; padding: 40px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; font-family: 'Battambang', sans-serif; line-height: 1.5; position: relative; overflow: hidden;">
+            <div class="print-page" style="width: 1000px; height: 1414px; background: white; padding: 50px 40px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; font-family: 'Battambang', sans-serif; line-height: 1.5; position: relative; overflow: hidden;">
                 <div style="flex-grow: 1;">${mainTitle}${wrapTable(tablePages[i])}</div>
                 ${footerHTML}
             </div>
         `;
 
-        await nextTick(); await document.fonts.ready; await new Promise((r) => setTimeout(r, 600));
+        await new Promise((r) => setTimeout(r, 600));
         const canvas = await html2canvas(printStagingEl.querySelector(".print-page"), { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
         const imgData = canvas.toDataURL("image/jpeg", 1.0);
         
@@ -529,7 +496,7 @@ export const generatePDF = async (data, printStagingEl, processingRef) => {
 };
 
 // ==========================================
-// 🌟 6. EXCEL GENERATOR (2 Columns Grid) 🌟
+// 🌟 6. EXCEL GENERATOR 🌟
 // ==========================================
 export const generateExcel = async (data, processingRef) => {
     processingRef.value = { active: true, message: 'កំពុងរៀបចំទិន្នន័យ Excel...', progress: 30 };

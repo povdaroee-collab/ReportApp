@@ -240,24 +240,37 @@
                         </div>
 
                         <div class="xl:col-span-7 bg-amber-50/40 p-5 rounded-2xl border border-amber-100 h-full flex flex-col relative">
-                            <div class="flex items-center gap-2 mb-5 border-b border-amber-100 pb-3">
-                                <div class="w-8 h-8 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center shadow-sm">📦</div>
-                                <h4 class="text-base font-black text-amber-900">តម្លៃលក់ដុំ (Wholesale Tiers)</h4>
+                            
+                            <div class="flex items-center justify-between mb-5 border-b border-amber-100 pb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center shadow-sm">📦</div>
+                                    <h4 class="text-base font-black text-amber-900">តម្លៃលក់ដុំ (Wholesale Tiers)</h4>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer" title="បិទ ឬ បើកការលក់ដុំ">
+                                    <input type="checkbox" v-model="priceForm.enableWholesale" class="sr-only peer">
+                                    <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                                </label>
                             </div>
                             
-                            <div class="space-y-6 max-h-[550px] overflow-y-auto custom-scrollbar pr-2">
+                            <div :class="!priceForm.enableWholesale ? 'opacity-50 pointer-events-none grayscale' : ''" class="space-y-6 max-h-[550px] overflow-y-auto custom-scrollbar pr-2 transition-all duration-300">
                                 
                                 <div class="bg-white p-4 rounded-xl border border-amber-200 shadow-sm relative">
                                     <div class="flex items-center justify-between mb-4 border-b border-amber-100 pb-2">
-                                        <p class="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded">
-                                            ※ លក្ខខណ្ឌទី១៖ លក់ជា <span class="font-black text-amber-800">ខ្នាត ដប (រាយ)</span>
-                                        </p>
-                                        <button type="button" @click="addBottleTier" class="text-[10px] bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-bold hover:bg-amber-500 hover:text-white transition-colors flex items-center gap-1">
+                                        <div class="flex items-center gap-3">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" v-model="priceForm.enableBottleTiers" class="sr-only peer">
+                                                <div class="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-500"></div>
+                                            </label>
+                                            <p class="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded transition-opacity" :class="!priceForm.enableBottleTiers ? 'opacity-60' : ''">
+                                                ※ លក្ខខណ្ឌទី១៖ លក់ជា <span class="font-black text-amber-800">ខ្នាត ដប (រាយ)</span>
+                                            </p>
+                                        </div>
+                                        <button v-if="priceForm.enableBottleTiers" type="button" @click="addBottleTier" class="text-[10px] bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-bold hover:bg-amber-500 hover:text-white transition-colors flex items-center gap-1">
                                             + បន្ថែម
                                         </button>
                                     </div>
 
-                                    <div class="space-y-3">
+                                    <div :class="!priceForm.enableBottleTiers ? 'opacity-50 pointer-events-none grayscale' : ''" class="space-y-3 transition-all duration-300">
                                         <div v-for="(tier, idx) in priceForm.bottleTiers" :key="tier.id" class="grid grid-cols-12 gap-3 relative bg-slate-50/50 p-3 rounded-lg border border-slate-200 shadow-sm group hover:border-amber-300 transition-colors">
                                             
                                             <button v-if="priceForm.bottleTiers.length > 1" type="button" @click="removeBottleTier(idx)" class="absolute -top-2.5 -right-2.5 w-6 h-6 bg-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors rounded-full flex justify-center items-center shadow-sm z-10 opacity-0 group-hover:opacity-100">
@@ -288,20 +301,26 @@
 
                                 <div class="bg-white p-4 rounded-xl border border-blue-200 shadow-sm relative">
                                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b border-blue-100 pb-2">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <p class="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded">
-                                                ※ លក្ខខណ្ឌទី២៖ លក់ជា <span class="font-black text-blue-800">ខ្នាត កេះ (ដុំ)</span>
-                                            </p>
-                                            <p class="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200">
-                                                <span class="text-blue-600">១កេះ</span> = <span class="text-emerald-600">{{ selectedProduct.itemsPerCase || 1 }} ដប</span>
-                                            </p>
+                                        <div class="flex flex-wrap items-center gap-3">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" v-model="priceForm.enableCaseTiers" class="sr-only peer">
+                                                <div class="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-500"></div>
+                                            </label>
+                                            <div class="flex flex-wrap items-center gap-2 transition-opacity" :class="!priceForm.enableCaseTiers ? 'opacity-60' : ''">
+                                                <p class="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded">
+                                                    ※ លក្ខខណ្ឌទី២៖ លក់ជា <span class="font-black text-blue-800">ខ្នាត កេះ (ដុំ)</span>
+                                                </p>
+                                                <p class="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200">
+                                                    <span class="text-blue-600">១កេះ</span> = <span class="text-emerald-600">{{ selectedProduct.itemsPerCase || 1 }} ដប</span>
+                                                </p>
+                                            </div>
                                         </div>
-                                        <button type="button" @click="addCaseTier" class="text-[10px] bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 hover:text-white transition-colors flex items-center gap-1 shrink-0">
+                                        <button v-if="priceForm.enableCaseTiers" type="button" @click="addCaseTier" class="text-[10px] bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 hover:text-white transition-colors flex items-center gap-1 shrink-0">
                                             + បន្ថែម
                                         </button>
                                     </div>
 
-                                    <div class="space-y-3">
+                                    <div :class="!priceForm.enableCaseTiers ? 'opacity-50 pointer-events-none grayscale' : ''" class="space-y-3 transition-all duration-300">
                                         <div v-for="(tier, idx) in priceForm.caseTiers" :key="tier.id" class="grid grid-cols-12 gap-3 relative bg-slate-50/50 p-3 rounded-lg border border-slate-200 shadow-sm group hover:border-blue-300 transition-colors">
                                             
                                             <button v-if="priceForm.caseTiers.length > 1" type="button" @click="removeCaseTier(idx)" class="absolute -top-2.5 -right-2.5 w-6 h-6 bg-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors rounded-full flex justify-center items-center shadow-sm z-10 opacity-0 group-hover:opacity-100">
@@ -517,7 +536,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed, onUnmounted } from 'vue';
-import { db, auth } from '@/firebaseConfig'; // ✅ បន្ថែម auth នៅទីនេះ
+import { db, auth } from '@/firebaseConfig'; 
 import { collection, doc, updateDoc, setDoc, getDoc, query, where, onSnapshot, deleteField } from 'firebase/firestore';
 import Toast from '@/components/Toast.vue'; 
 import { useNotificationStore } from '@/stores/notification';
@@ -525,7 +544,7 @@ import ManageCombos from './ManageCombos.vue';
 
 const notification = useNotificationStore();
 const activeTab = ref('prices'); 
-const userRole = ref(''); // ✅ បង្កើតអញ្ញាតសម្រាប់ផ្ទុក Role
+const userRole = ref(''); 
 
 const switchTab = (tabName) => {
     activeTab.value = tabName;
@@ -546,10 +565,14 @@ const showDeleteModal = ref(false);
 
 const priceFilterStatus = ref('all'); // 'all', 'set', 'unset'
 
+// 🌟 បន្ថែម State សម្រាប់ Toggle Tiers 🌟
 const priceForm = reactive({
     retailPrice: 0,
     retailUnit: 'bottle',     
     sellerIncentive: 0, 
+    enableWholesale: true,     // 👈 Master Toggle
+    enableBottleTiers: true,   // 👈 Bottle Toggle
+    enableCaseTiers: true,     // 👈 Case Toggle
     bottleTiers: [], 
     caseTiers: [] 
 });
@@ -584,13 +607,11 @@ const fetchProducts = () => {
     }
 };
 
-// មុខងារសម្រាប់ឆែកមើលថា ទំនិញនោះត្រូវបានកំណត់តម្លៃរួចឬនៅ
 const hasPriceSet = (prod) => {
     if (!prod) return false;
     return !!prod.priceUpdatedAt || Number(prod.retailPrice) > 0 || (prod.wholesaleTiers && prod.wholesaleTiers.length > 0);
 };
 
-// មុខងារសម្រាប់លុបអក្សរក្នុងប្រអប់ស្វែងរកភ្លាមៗ
 const clearSearch = () => {
     productSearchQuery.value = '';
     showProductDropdown.value = true; 
@@ -623,6 +644,11 @@ const selectProduct = (prod) => {
     priceForm.retailUnit = 'bottle';
     priceForm.sellerIncentive = prod.sellerIncentive || 0;
     
+    // 🌟 ទាញយកតម្លៃ Toggle ពីទិន្នន័យចាស់ (បើអត់មាន ដាក់ True ជាដើម) 🌟
+    priceForm.enableWholesale = prod.enableWholesale !== false;
+    priceForm.enableBottleTiers = prod.enableBottleTiers !== false;
+    priceForm.enableCaseTiers = prod.enableCaseTiers !== false;
+
     priceForm.bottleTiers = [];
     priceForm.caseTiers = [];
 
@@ -646,7 +672,11 @@ const removeCaseTier = (index) => { priceForm.caseTiers.splice(index, 1); };
 
 const cancelPriceEdit = () => {
     selectedProduct.value = null; productSearchQuery.value = '';
-    Object.assign(priceForm, { retailPrice: 0, sellerIncentive: 0, retailUnit: 'bottle', bottleTiers: [], caseTiers: [] });
+    Object.assign(priceForm, { 
+        retailPrice: 0, sellerIncentive: 0, retailUnit: 'bottle', 
+        enableWholesale: true, enableBottleTiers: true, enableCaseTiers: true, // 👈 Reset Toggles
+        bottleTiers: [], caseTiers: [] 
+    });
 };
 
 const savePrices = async () => {
@@ -658,10 +688,14 @@ const savePrices = async () => {
             ...priceForm.caseTiers.map(t => ({ ...t, unit: 'case' }))
         ];
 
+        // 🌟 រក្សាទុកតម្លៃ Toggle ចូលទៅក្នុង Database 🌟
         const updates = {
             retailPrice: Number(priceForm.retailPrice), 
             retailUnit: 'bottle', 
             sellerIncentive: Number(priceForm.sellerIncentive), 
+            enableWholesale: priceForm.enableWholesale,
+            enableBottleTiers: priceForm.enableBottleTiers,
+            enableCaseTiers: priceForm.enableCaseTiers,
             wholesaleTiers: combinedTiers, 
             priceUpdatedAt: new Date().toISOString()
         };
@@ -673,7 +707,6 @@ const savePrices = async () => {
     finally { isSavingPrice.value = false; }
 };
 
-// មុខងារប្រតិបត្តិការលុបការកំណត់តម្លៃ (ហៅចេញពី Custom Modal)
 const executeDeletePrice = async () => {
     if (!selectedProduct.value) return;
     
@@ -683,13 +716,16 @@ const executeDeletePrice = async () => {
             retailPrice: 0, 
             retailUnit: 'bottle', 
             sellerIncentive: 0, 
+            enableWholesale: deleteField(), // 👈 លុប Toggles ចោលដែរ
+            enableBottleTiers: deleteField(),
+            enableCaseTiers: deleteField(),
             wholesaleTiers: [], 
             priceUpdatedAt: deleteField() 
         };
         await updateDoc(doc(db, 'stocks', selectedProduct.value.id), updates);
         
         notification.success('បានលុបតម្លៃចេញដោយជោគជ័យ!');
-        showDeleteModal.value = false; // បិទ Modal ក្រោយជោគជ័យ
+        showDeleteModal.value = false; 
         cancelPriceEdit(); 
     } catch (error) { 
         console.error(error);
@@ -743,17 +779,15 @@ const formatQty = (val) => {
 const closeDropdown = (e) => { if (!e.target.closest('.relative')) showProductDropdown.value = false; };
 
 onMounted(async () => { 
-    // ✅ ទាញយក Role របស់អ្នកប្រើប្រាស់
     if (auth.currentUser) {
         try {
             const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
             if (snap.exists()) {
                 userRole.value = snap.data().role;
                 
-                // ✅ បន្ថែមលក្ខខណ្ឌនៅទីនេះ៖ បើជា Owner ធម្មតា ឱ្យបើក Tab ដឹកជញ្ជូនមុនគេ
                 if (userRole.value !== 'superadmin') {
                     activeTab.value = 'delivery'; 
-                    fetchDeliverySettings(); // ទាញយកទិន្នន័យដឹកជញ្ជូនមកបង្ហាញ
+                    fetchDeliverySettings(); 
                 }
             }
         } catch (error) {
@@ -790,4 +824,7 @@ const formatPrice = (val) => {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .animate-slide-down { animation: slideDown 0.3s ease-out forwards; transform-origin: top; }
 @keyframes slideDown { from { opacity: 0; transform: scaleY(0.9); } to { opacity: 1; transform: scaleY(1); } }
+
+/* បន្ថែម CSS ធ្វើឱ្យពណ៌ស្លេកពេលបិទ Toggle */
+.grayscale { filter: grayscale(100%); }
 </style>

@@ -79,10 +79,11 @@
                     :displayedData="displayedData"
                     :isLoading="isLoading"
                     :unitSettings="unitSettings"
-                    v-model:activeCategory="activeCategory"
+                    :currentUserRole="currentUserRole" v-model:activeCategory="activeCategory"
                     v-model:activityFilter="activityFilter"
                     :showMobileFilters="showMobileFilters"
                     @toggleMobileFilters="showMobileFilters = !showMobileFilters"
+                    @preview="showPreviewModal = true" 
                     @print="openPrintModal('print')"
                     @pdf="openPrintModal('pdf')"
                     @excel="openPrintModal('excel')"
@@ -169,6 +170,15 @@
         @close="showExpenseSlide = false" 
     />
 
+    <PreviewReportModal 
+        :show="showPreviewModal"
+        :stats="advancedPrintStats"
+        :dateLabel="reportDateLabel"
+        :adminLabel="reportAdminLabel"
+        :unitSettings="unitSettings"
+        @close="showPreviewModal = false"
+    />
+
     <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
         <div v-if="processing.active" class="fixed inset-0 z-[999999] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md font-khmer">
             <div class="w-full max-w-sm bg-[#18181b] border border-white/10 rounded-3xl p-10 shadow-2xl relative flex flex-col items-center text-center animate-fade-in-up">
@@ -200,20 +210,23 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch, nextTick, reactive } from 'vue';
 import { db, auth } from '@/firebaseConfig';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+//import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 
+// 🌟 Import Components 🌟
 import OwnerReportHeader from './report/OwnerReportHeader.vue';
 import OwnerReportSummaryCards from './report/OwnerReportSummaryCards.vue';
 import OwnerReportAdminList from './report/OwnerReportAdminList.vue';
 import OwnerReportBottomSummary from './report/OwnerReportBottomSummary.vue';
 import CustomAlert from '@/components/shared/CustomAlert.vue'; 
 import OwnerExpenseSlide from './report/OwnerExpenseSlide.vue'; 
+import PreviewReportModal from './report/PreviewReportModal.vue'; 
+import { executeNativePrint, generatePDF, generateExcel } from './report/exportReportLogic.js';
+import { doc, getDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 
 const isLoading = ref(true);
 const adminName = ref('Owner');
+const currentUserRole = ref(''); // 🌟 បន្ថែមបន្ទាត់នេះ 🌟
 const adminsList = ref([]);
 const allSales = ref([]); 
 const allSellers = ref([]); 
@@ -232,6 +245,7 @@ let unsubscribeStocks = null;
 const showMobileFilters = ref(false);
 const showSummaryCards = ref(false); 
 const showExpenseSlide = ref(false); 
+const showPreviewModal = ref(false); 
 
 const printModal = reactive({ 
     show: false, 
@@ -256,7 +270,6 @@ const customEnd = ref(todayStr);
 const printStaging = ref(null);
 const processing = ref({ active: false, message: '', progress: 0 });
 
-// 🌟 មុខងាររាប់វិនាទីអណ្តែតពីលើ (Smart Floating Timer) 🌟
 const fetchTimer = reactive({ show: false, seconds: 0, interval: null });
 
 const startFetchTimer = () => {
@@ -319,7 +332,6 @@ const getDateRangeISO = () => {
     }
 };
 
-// 🌟 Tracking ID សម្រាប់ការពារកុំឱ្យការទាញទិន្នន័យចាស់ មកបិទនាឡិកាថ្មី
 let currentFetchId = 0; 
 let safetyTimer = null;
 
@@ -349,7 +361,6 @@ const fetchDynamicData = () => {
     let isSalesSynced = false;
     let isExpensesSynced = false;
 
-    // មុខងារឆែកមើលថា តើទិន្នន័យទាំងពីរ (Sales + Expenses) បានមកដល់ពី Server ពិតប្រាកដឬនៅ?
     const checkCompletion = () => {
         if (thisFetchId === currentFetchId && isSalesSynced && isExpensesSynced) {
             stopFetchTimer();
@@ -358,7 +369,7 @@ const fetchDynamicData = () => {
     };
 
     unsubscribeSales = onSnapshot(salesQ, { includeMetadataChanges: true }, (snapshot) => {
-        if (thisFetchId !== currentFetchId) return; // មិនខ្វល់ពីទិន្នន័យចាស់ បើមានការដូរ ID ថ្មី
+        if (thisFetchId !== currentFetchId) return;
         
         allSales.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         isLoading.value = false; 
@@ -393,7 +404,6 @@ const fetchDynamicData = () => {
         }
     });
 
-    // Safety Fallback: បើអ៊ីនធឺណិតយឺតខ្លាំង ឬមិនមានការផ្លាស់ប្តូរពី Server ឱ្យវាឈប់រាប់នៅ 30 វិនាទី ដើម្បីកុំឱ្យវិលរហូត
     if (safetyTimer) clearTimeout(safetyTimer);
     safetyTimer = setTimeout(() => {
         if (thisFetchId === currentFetchId) {
@@ -405,10 +415,16 @@ const fetchDynamicData = () => {
 };
 
 onMounted(() => {
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => { // 🌟 បន្ថែមពាក្យ async នៅទីនេះ
     if (user) {
        adminName.value = user.displayName || 'Owner';
        try {
+          // 🌟 ទាញយក Role របស់អ្នកដែលកំពុង Login 🌟
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+              currentUserRole.value = userDoc.data().role;
+          }
+
           const adminQ = query(collection(db, 'users'), where('role', '==', 'admin'));
           unsubscribeAdmins = onSnapshot(adminQ, (snapshot) => {
               adminsList.value = snapshot.docs
@@ -453,22 +469,14 @@ onUnmounted(() => {
     if (safetyTimer) clearTimeout(safetyTimer);
 });
 
-// 🌟 ដំណោះស្រាយការពន្យារពេល (Debounce) 🌟
 let debounceTimeout = null;
 
 watch([dateFilterType, selectedDate, selectedMonth, selectedYear, customStart, customEnd], () => {
-    
-    // ១. បង្ហាញនាឡិកាភ្លាមៗ ពេលចុចដូរ Filter 
     startFetchTimer();
-    
-    // ២. បើកំពុងតែរង់ចាំ ហើយ Admin ចុចទៀត លុបការរង់ចាំចាស់ចោល
     if (debounceTimeout) clearTimeout(debounceTimeout);
-    
-    // ៣. រង់ចាំ 0.6 វិនាទី បន្ទាប់ពីឈប់ចុច ទើបចាប់ផ្តើមបញ្ជាឱ្យ Firebase ទាញទិន្នន័យ (សន្សំ Read)
     debounceTimeout = setTimeout(() => {
         fetchDynamicData();
     }, 600); 
-
 }, { deep: true });
 
 const baseCalculatedData = computed(() => {
@@ -646,8 +654,8 @@ const toggleSelectAllAdmins = () => {
 const checkSelectAllStatus = () => {
     printModal.selectAll = printModal.selectedAdmins.length === displayedData.value.length;
 };
-import { executeNativePrint, generatePDF, generateExcel } from './report/exportReportLogic.js';
 
+// 🌟 Execute Export 🌟
 const confirmPrintAction = async () => {
     printModal.show = false;
     
@@ -656,12 +664,13 @@ const confirmPrintAction = async () => {
             executeNativePrint(rowsToPrint.value, allSales.value, advancedPrintStats.value, reportDateLabel.value, reportAdminLabel.value, unitSettings.value);
         } else if (printModal.type === 'excel') {
             generateExcel(rowsToPrint.value, allSales.value, advancedPrintStats.value, reportDateLabel.value, reportAdminLabel.value, adminName.value, unitSettings.value, processing.value);
-            notification.success('ទាញយក Excel បានជោគជ័យ!');
+            triggerAlert('success', 'ជោគជ័យ', 'ទាញយក Excel បានជោគជ័យ!');
         } else {
             await generatePDF(rowsToPrint.value, allSales.value, advancedPrintStats.value, reportDateLabel.value, reportAdminLabel.value, adminName.value, unitSettings.value, processing.value, printStaging.value);
-            notification.success('ទាញយក PDF បានជោគជ័យ!');
+            triggerAlert('success', 'ជោគជ័យ', 'ទាញយក PDF បានជោគជ័យ!');
         }
     } catch (e) {
+        console.error(e);
         triggerAlert('error', 'បរាជ័យ', 'មិនអាចបង្កើតរបាយការណ៍បានទេ');
     }
 };
@@ -863,247 +872,23 @@ const reportAdminLabel = computed(() => {
     return `អ្នកគ្រប់គ្រង ${printModal.selectedAdmins.length} នាក់`;
 });
 
-const translateUnit = (unitVal) => {
-    if (!unitVal) return '';
-    const safeVal = String(unitVal);
-    const found = unitSettings.value.find(u => String(u.value) === safeVal);
-    if (found) return found.label;
-    const u = safeVal.toLowerCase().trim();
-    if (u === 'bottle' || u === 'bottles') return 'ដប';
-    if (u === 'pack' || u === 'packs') return 'កញ្ចប់';
-    if (u === 'case' || u === 'cases') return 'កេះ';
-    if (u === 'set' || u === 'sets') return 'ឈុត';
-    return safeVal; 
-};
-
-const fC = (val) => Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fQ = (val) => Number(val).toLocaleString('en-US');
-
-
-const renderProductGrid = (productsArray) => {
-    if (!productsArray || productsArray.length === 0) {
-        return `<div style="width: 100%; text-align: center; padding: 15px; color: #94a3b8; font-size: 13px; font-weight: bold; border: 1px dashed #cbd5e1; border-radius: 8px;">គ្មានទិន្នន័យ</div>`;
-    }
-    
-    const cards = productsArray.map((p, index) => {
-        const unitPrice = p.qty > 0 ? (p.usd / p.qty) : 0;
-        const isEven = index % 2 === 0;
-        
-        return `
-        <div style="width: calc(50% - 6px); border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #fff; box-sizing: border-box; margin-bottom: 12px; float: left; margin-right: ${isEven ? '12px' : '0'};">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                <span style="font-weight: 700; color: #1e293b; font-size: 13px; line-height: 1.4; padding-right: 10px; flex: 1;">📦 ${p.name}</span>
-                <span style="font-weight: 900; color: #0f172a; font-size: 14px;">${fC(p.usd)} $</span>
-            </div>
-            <div style="font-size: 12px; color: #475569; display: flex; justify-content: space-between; border-top: 1px dashed #e2e8f0; padding-top: 6px;">
-                <span>អតិថិជន: <span style="font-weight:700; color:#334155;">${fQ(p.clients)}</span> នាក់</span>
-                <span>បរិមាណ: <span style="font-weight:900; color:#0ea5e9; font-size:13px;">${fQ(p.qty)} ${translateUnit(p.unit)}</span> <span style="color:#94a3b8; font-weight:bold;">(${fC(unitPrice)}$)</span></span>
-            </div>
-        </div>
-        `;
-    }).join('');
-
-    return `<div style="overflow: hidden; width: 100%;">${cards}</div>`;
-};
-
-const renderCategoryBlock = (title, dataObj, accentColor) => {
-    if (dataObj.products.length === 0) return '';
-    return `
-        <div style="margin-bottom: 15px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #f1f5f9;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-left: 4px solid ${accentColor}; padding: 0 0 0 10px; margin-bottom: 12px;">
-                <span style="font-weight: 900; color: ${accentColor}; font-size: 15px;">${title} <span style="font-size:12px; color:#64748b; margin-left: 8px; font-weight: bold;">(អតិថិជនសរុប: ${fQ(dataObj.clients)} នាក់)</span></span>
-                <span style="font-weight: 900; color: #0f172a; font-size: 14px;">សរុបតម្លៃទំនិញសុទ្ធ: <span style="color: ${accentColor};">${fC(dataObj.itemPriceTotalUSD)} $</span></span>
-            </div>
-            ${renderProductGrid(dataObj.products)}
-        </div>
-    `;
-};
-
-const generateAccountingSectionHTML = (title, data, isGrandTotal = false, expensesList = []) => {
-    
-    let expensesHTML = '';
-    let footerSummaryHTML = '';
-
-    if (isGrandTotal) {
-        if (expensesList.length > 0) {
-            const expRows = expensesList.map((exp, idx) => {
-                let expUSD = Number(exp.amount || 0);
-                if (exp.currency === 'KHR') expUSD = expUSD / 4000;
-                return `
-                    <tr>
-                        <td style="padding: 8px 10px; border-bottom: 1px solid #fecdd3; font-weight: bold; color: #881337;">${idx + 1}. ${exp.reason}</td>
-                        <td style="padding: 8px 10px; border-bottom: 1px solid #fecdd3; text-align: center; color: #9f1239;">${exp.requester}</td>
-                        <td style="padding: 8px 10px; border-bottom: 1px solid #fecdd3; text-align: right; font-weight: 900; color: #be123c;">${fC(expUSD)} $</td>
-                    </tr>
-                `;
-            }).join('');
-
-            expensesHTML = `
-                <div style="padding: 20px; border-bottom: 2px solid #e2e8f0; background: #fff1f2;">
-                    <h4 style="color: #be123c; margin: 0 0 12px 0; font-size: 16px; font-weight: 900;">💸 ការចំណាយទូទៅ (EXPENSES)</h4>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid #fecdd3;">
-                                <th style="padding: 10px; text-align: left; color: #9f1239;">បរិយាយការចំណាយ</th>
-                                <th style="padding: 10px; text-align: center; color: #9f1239;">អ្នកស្នើ</th>
-                                <th style="padding: 10px; text-align: right; color: #9f1239;">តម្លៃ (USD)</th>
-                            </tr>
-                        </thead>
-                        <tbody>${expRows}</tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        const profitColor = data.summary.netProfit >= 0 ? '#059669' : '#e11d48';
-        
-        footerSummaryHTML = `
-            <div style="background: #f8fafc; padding: 25px 30px; display: flex; flex-direction: column; align-items: flex-end; page-break-inside: avoid;">
-                <div style="width: 480px; font-size: 14px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #334155;">
-                        <span>ចំណូលសរុប (ទំនិញ PAID):</span>
-                        <span style="font-weight: 700;">${fC(data.summary.paidItemsTotal)} $</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #334155;">
-                        <span>ចំណូលសរុប (ថ្លៃដឹក PAID):</span>
-                        <span style="font-weight: 700;">${fC(data.summary.paidDeliveryTotal)} $</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px; color: #059669; font-weight: bold; border-bottom: 1px dashed #cbd5e1; padding-bottom: 12px;">
-                        <span>ចំណូលសរុប (ទំនិញ + ថ្លៃដឹក):</span>
-                        <span style="font-size: 16px; font-weight: 900;">${fC(data.summary.paidTotal)} $</span>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #d97706; font-weight: bold;">
-                        <span>មិនទាន់ទូទាត់សរុប (ទំនិញ+ថ្លៃដឹក PENDING):</span>
-                        <span style="font-size: 15px; font-weight: 900;">- ${fC(data.summary.unpaidTotal)} $</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #be123c; font-weight: bold;">
-                        <span>ចំណាយសរុប (Expenses):</span>
-                        <span style="font-size: 15px; font-weight: 900;">- ${fC(data.summary.totalExpensesUSD)} $</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; color: #64748b; font-weight: bold; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">
-                        <span>សរុបតម្លៃដើម (Total Cost of Goods Sold):</span>
-                        <span style="font-size: 15px; font-weight: 900; color: #475569;">- ${fC(data.summary.totalPaidCostUSD)} $</span>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center; color: #0f172a;">
-                        <span style="font-weight: 900; text-transform: uppercase;">ប្រាក់ចំណេញសុទ្ធ (NET PROFIT):</span>
-                        <span style="font-size: 24px; font-weight: 900; background: #e2e8f0; padding: 4px 12px; border-radius: 8px; color: ${profitColor};">${fC(data.summary.netProfit)} $</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else {
-        footerSummaryHTML = `
-            <div style="padding: 20px; background: #f8fafc; text-align: right; display: flex; justify-content: flex-end; align-items: center; page-break-inside: avoid; border-top: 1px solid #e2e8f0;">
-                <div style="width: 350px; font-size: 13px; text-align: left;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #334155;">
-                        <span>ចំណូលទំនិញ (PAID):</span>
-                        <span style="font-weight: 700;">${fC(data.summary.paidItemsTotal)} $</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #334155;">
-                        <span>ចំណូលថ្លៃដឹក (PAID):</span>
-                        <span style="font-weight: 700;">${fC(data.summary.paidDeliveryTotal)} $</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 6px; color: #059669; font-weight: bold; border-top: 1px dashed #cbd5e1; padding-top: 6px;">
-                        <span>ចំណូលសរុប (ទូទាត់រួច):</span>
-                        <span style="font-size: 16px; font-weight: 900;">${fC(data.summary.paidTotal)} $</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 6px; color: #64748b; font-weight: bold; border-top: 1px dashed #cbd5e1; padding-top: 6px;">
-                        <span>តម្លៃដើមសរុប (Cost of Goods Sold):</span>
-                        <span style="font-size: 15px; font-weight: 900;">${fC(data.summary.totalPaidCostUSD)} $</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    return `
-        <div style="margin-bottom: 30px; border: 1px solid #cbd5e1; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); font-family: 'Kantumruy Pro', 'Battambang', sans-serif;">
-            
-            <div style="background: #1e293b; color: white; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 16px; font-weight: 900;">${title}</span>
-                <span style="font-size: 13px; font-weight: bold; background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 20px;">អតិថិជនសរុប: ${fQ(data.totalClients)} នាក់</span>
-            </div>
-
-            <div style="padding: 20px; border-bottom: 2px dashed #e2e8f0; page-break-inside: auto;">
-                <h4 style="color: #059669; margin: 0 0 15px 0; font-size: 16px; font-weight: 900;">✅ ទំនិញបានទូទាត់រួច (PAID)</h4>
-                
-                ${renderCategoryBlock('📦 លក់បោះដុំ (WHOLESALE)', data.paid.wholesale, '#7e22ce')}
-                ${renderCategoryBlock('🛍️ លក់រាយ (RETAIL)', data.paid.retail, '#0ea5e9')}
-                
-                <div style="text-align: right; font-size: 14px; color: #475569; background: #ecfdf5; padding: 10px 16px; border-radius: 8px; display: inline-block; float: right; border: 1px solid #a7f3d0; margin-top: 5px;">
-                    ថ្លៃដឹកជញ្ជូនសរុប (Delivery Paid): <span style="color: #059669; font-weight: 900; margin-left: 8px; font-size: 15px;">${fC(data.summary.paidDeliveryTotal)} $</span>
-                </div>
-                <div style="clear: both;"></div>
-            </div>
-
-            <div style="padding: 20px; border-bottom: 2px solid #e2e8f0; background: #fffcf2; page-break-inside: auto;">
-                <h4 style="color: #d97706; margin: 0 0 15px 0; font-size: 16px; font-weight: 900;">⏳ មិនទាន់បានទូទាត់ (PENDING)</h4>
-                
-                ${renderCategoryBlock('📦 លក់បោះដុំ (WHOLESALE)', data.unpaid.wholesale, '#b45309')}
-                ${renderCategoryBlock('🛍️ លក់រាយ (RETAIL)', data.unpaid.retail, '#ea580c')}
-
-                <div style="text-align: right; font-size: 14px; color: #92400e; background: #fef3c7; padding: 10px 16px; border-radius: 8px; display: inline-block; float: right; border: 1px solid #fde68a; margin-top: 5px;">
-                    ថ្លៃដឹកជញ្ជូនសរុប (Delivery Pending): <span style="color: #d97706; font-weight: 900; margin-left: 8px; font-size: 15px;">${fC(data.summary.unpaidDeliveryTotal)} $</span>
-                </div>
-                <div style="clear: both;"></div>
-            </div>
-
-            ${expensesHTML}
-            ${footerSummaryHTML}
-        </div>
-    `;
-};
-
-
-
-
-const triggerPrint = (htmlContent, title) => {
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(`
-        <html>
-        <head>
-            <title>${title}</title>
-            <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&family=Battambang:wght@400;700;900&display=swap" rel="stylesheet">
-            <style>
-                @page { size: A4 portrait; margin: 10mm; }
-                body { 
-                    font-family: 'Kantumruy Pro', 'Battambang', sans-serif; 
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                    margin: 0; padding: 0;
-                    background-color: white;
-                }
-            </style>
-        </head>
-        <body>
-            <div style="text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0; font-family: 'Kantumruy Pro', sans-serif;">
-                <h1 style="font-size: 22px; font-weight: 900; margin: 0; color: #0f172a;">របាយការណ៍គណនេយ្យលម្អិត</h1>
-                <p style="font-size: 13px; color: #64748b; margin: 6px 0 0 0; font-weight: bold;">កាលបរិច្ឆេទ: <span style="color: #334155; font-weight: 900;">${reportDateLabel.value}</span> &nbsp;|&nbsp; សម្រាប់: <span style="color: #334155; font-weight: 900;">${reportAdminLabel.value}</span></p>
-            </div>
-            ${htmlContent}
-        </body>
-        </html>
-    `);
-    doc.close();
-
-    iframe.contentWindow.document.fonts.ready.then(() => {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        setTimeout(() => { document.body.removeChild(iframe); }, 1000);
-    });
-};
-
-
-
-
 </script>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700;900&family=Kantumruy+Pro:wght@400;700&display=swap');
+.font-khmer { font-family: 'Battambang', 'Kantumruy Pro', sans-serif; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+.custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94A3B8; }
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+.animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+@media print { .print\:hidden { display: none !important; } }
+</style>
