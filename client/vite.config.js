@@ -12,13 +12,16 @@ export default defineConfig(({ mode }) => {
       vueDevTools(),
 
       VitePWA({
-        registerType: "prompt", 
+        // 🌟 ១. ប្តូរមក autoUpdate វិញ
+        registerType: "autoUpdate", 
         injectRegister: "auto",
         workbox: {
           cleanupOutdatedCaches: true,
           globPatterns: ["**/*.{js,css,html,ico,png,svg,json,vue,woff2}"],
           maximumFileSizeToCacheInBytes: 5000000,
-          // ❌ លុប skipWaiting និង clientsClaim ចេញ ដើម្បីឱ្យវាទប់កូដថ្មីសិន រង់ចាំ User ចុច Update
+          // 🌟 ត្រូវដាក់ ២ ជួរនេះ ដើម្បីបង្ខំឱ្យវាលុបកូដចាស់ និងបញ្ចេញកូដថ្មីភ្លាមៗ 🌟
+          skipWaiting: true,
+          clientsClaim: true,
         },
         manifest: {
           name: "ប្រព័ន្ធគ្រប់គ្រងការលក់",
