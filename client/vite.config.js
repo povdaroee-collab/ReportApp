@@ -11,11 +11,20 @@ export default defineConfig(({ mode }) => {
       vueDevTools(),
 
       VitePWA({
-        registerType: "prompt",
+        // 🌟 ទី១៖ ប្តូរមកជា 'prompt' វិញ ដើម្បីឱ្យ Popup ក្នុង App.vue ដំណើរការ
+        registerType: "prompt", 
+        
+        // 🌟 ទី២៖ បន្ថែមការកំណត់នេះ ដើម្បីឱ្យ Service Worker ដើរបានត្រឹមត្រូវ
+        injectRegister: 'auto',
+        workbox: {
+          cleanupOutdatedCaches: true,
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,json,vue}"],
+          maximumFileSizeToCacheInBytes: 5000000,
+        },
+        
         devOptions: {
           enabled: true,
         },
-        // 🌟 បន្ថែម manifest នៅទីនេះ 🌟
         manifest: {
           name: "ប្រព័ន្ធគ្រប់គ្រងការលក់",
           short_name: "SaleSystem",
@@ -23,12 +32,6 @@ export default defineConfig(({ mode }) => {
           theme_color: "#4F46E5",
           background_color: "#F4F7FE",
           display: "standalone",
-        },
-        workbox: {
-          cleanupOutdatedCaches: true,
-          globPatterns: ["**/*.{js,css,html,ico,png,svg,json,vue}"],
-          // 🌟 ការពារកុំឱ្យវា Cache ទំហំធំពេកដែលធ្វើឱ្យគាំងលើ GitHub
-          maximumFileSizeToCacheInBytes: 5000000,
         },
       }),
     ],

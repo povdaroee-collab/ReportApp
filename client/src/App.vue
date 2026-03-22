@@ -6,8 +6,19 @@ import { useRegisterSW } from 'virtual:pwa-register/vue'
 const {
   needRefresh,
   updateServiceWorker,
-} = useRegisterSW()
+} = useRegisterSW({
+  onRegistered(r) {
+    // ឆែករក Update ថ្មីរៀងរាល់ ១ ម៉ោងម្តង (Optional)
+    r && setInterval(() => {
+      r.update()
+    }, 60 * 60 * 1000)
+  },
+})
 
+// ពេលចុច Update
+const handleUpdate = async () => {
+  await updateServiceWorker(true);
+}
 
 const closeUpdate = () => {
   needRefresh.value = false
@@ -52,22 +63,11 @@ const closeUpdate = () => {
               <svg class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
               <span>កែសម្រួលការលក់ បន្ថែមមុខងារថ្មីបង្កើតឈុតភ្លាមបន់បែន</span>
             </li>
-            <!-- <li class="flex items-start gap-2.5">
-              <svg class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-              <span>បន្ថែមប្រព័ន្ធគណនាតម្លៃវៃឆ្លាតក្នុង ការកាត់ស្តុក-PD។</span>
-            </li>
-            <li class="flex items-start gap-2.5">
-              <svg class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-              <span>ដោះស្រាយបញ្ហាមួយចំនួន (Bug fixes)។</span>
-            </li> -->
           </ul>
         </div>
 
         <div class="flex gap-3">
-          <!-- <button @click="closeUpdate" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-500 font-black py-3.5 rounded-xl transition-all active:scale-95 text-sm">
-            រំលងសិន
-          </button> -->
-          <button @click="updateServiceWorker()" class="flex-[1.5] bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex justify-center items-center gap-2 active:scale-95 text-sm">
+          <button @click="handleUpdate" class="flex-[1.5] bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex justify-center items-center gap-2 active:scale-95 text-sm">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             អាប់ដេតឥឡូវនេះ
           </button>
@@ -79,7 +79,6 @@ const closeUpdate = () => {
 </template>
 
 <style>
-/* CSS បន្ថែមបើ App.vue បងមិនទាន់មាន */
 @import url('https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&family=Kantumruy+Pro:wght@400;700;900&display=swap');
 .font-khmer { font-family: 'Kantumruy Pro', 'Battambong', sans-serif; }
 .animate-fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
