@@ -6,32 +6,20 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => {
   return {
-    // កំណត់ Base URL ឱ្យត្រូវ។ បើអ្នកប្រើ Custom Domain (sellerorder.fyi) ទុក '/' គឺត្រឹមត្រូវហើយ។
-    // តែបើមិនប្រើ Custom Domain ទេ ត្រូវដាក់ '/ReportApp/'
-    base: "/", 
-
+    base: "/",
     plugins: [
       vue(),
       vueDevTools(),
 
       VitePWA({
-        registerType: "prompt",
-        injectRegister: 'auto',
-        
+        registerType: "prompt", 
+        injectRegister: "auto",
         workbox: {
           cleanupOutdatedCaches: true,
-          globPatterns: ["**/*.{js,css,html,ico,png,svg,json,vue,txt,woff2}"], // បន្ថែម woff2 បើមានប្រើ Font
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,json,vue,woff2}"],
           maximumFileSizeToCacheInBytes: 5000000,
-          // 🌟 ត្រូវប្រាកដថា Service Worker មិនរង់ចាំ (Skip Waiting) ទើបវាអាច Activate Update ថ្មីបាន 🌟
-          skipWaiting: true,
-          clientsClaim: true,
+          // ❌ លុប skipWaiting និង clientsClaim ចេញ ដើម្បីឱ្យវាទប់កូដថ្មីសិន រង់ចាំ User ចុច Update
         },
-        
-        devOptions: {
-          enabled: true,
-          type: 'module',
-        },
-        
         manifest: {
           name: "ប្រព័ន្ធគ្រប់គ្រងការលក់",
           short_name: "SaleSystem",
@@ -39,7 +27,6 @@ export default defineConfig(({ mode }) => {
           theme_color: "#4F46E5",
           background_color: "#F4F7FE",
           display: "standalone",
-          start_url: "/", // 🌟 កំណត់ Start URL ឱ្យច្បាស់លាស់
         },
       }),
     ],

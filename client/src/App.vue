@@ -1,5 +1,4 @@
 <script setup>
-// បើបងមានកូដ import ចាស់ៗក្នុង App.vue សូមរក្សាវាទុកនៅទីនេះដដែល
 import { useRegisterSW } from 'virtual:pwa-register/vue'
 
 // 🌟 មុខងារចាប់យក Update ថ្មីពី PWA 🌟
@@ -10,10 +9,12 @@ const {
   // 🌟 បញ្ជាក់ផ្លូវទៅកាន់ sw.js ឱ្យប្រាកដ 🌟
   immediate: true,
   onRegistered(r) {
-    // ឆែករក Update ថ្មីរៀងរាល់ ១ ម៉ោងម្តង
-    r && setInterval(() => {
-      r.update()
-    }, 60 * 60 * 1000)
+    if (r) {
+      // ឆែករក Update ថ្មីរៀងរាល់ ១ ម៉ោងម្តង
+      setInterval(() => {
+        r.update()
+      }, 60 * 60 * 1000)
+    }
   },
   onRegisterError(error) {
     console.error('PWA registration error:', error); // ជួយប្រាប់ Error ក្នុង Console បើវា Fail
