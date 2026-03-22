@@ -210,7 +210,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch, nextTick, reactive } from 'vue';
 import { db, auth } from '@/firebaseConfig';
-//import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
 // 🌟 Import Components 🌟
@@ -222,11 +221,12 @@ import CustomAlert from '@/components/shared/CustomAlert.vue';
 import OwnerExpenseSlide from './report/OwnerExpenseSlide.vue'; 
 import PreviewReportModal from './report/PreviewReportModal.vue'; 
 import { executeNativePrint, generatePDF, generateExcel } from './report/exportReportLogic.js';
-import { doc, getDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
+// 🌟 បន្ថែម getDocs សម្រាប់សន្សំ Reads 🌟
+import { doc, getDoc, collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 
 const isLoading = ref(true);
 const adminName = ref('Owner');
-const currentUserRole = ref(''); // 🌟 បន្ថែមបន្ទាត់នេះ 🌟
+const currentUserRole = ref('');
 const adminsList = ref([]);
 const allSales = ref([]); 
 const allSellers = ref([]); 
@@ -234,13 +234,9 @@ const unitSettings = ref([]);
 const allExpenses = ref([]); 
 const allStocks = ref([]);
 
-// Listeners for Realtime updates
-let unsubscribeAdmins = null;
+// 🌟 លុប Unsubscribe ចាស់ៗដែលមិនចាំបាច់ចេញ 🌟
 let unsubscribeSales = null;
-let unsubscribeSellers = null;
-let unsubscribeSettings = null;
 let unsubscribeExpenses = null;
-let unsubscribeStocks = null;
 
 const showMobileFilters = ref(false);
 const showSummaryCards = ref(false); 
@@ -335,118 +331,108 @@ const getDateRangeISO = () => {
 let currentFetchId = 0; 
 let safetyTimer = null;
 
-const fetchDynamicData = () => {
+// 🌟 HYBRID FETCH LOGIC (សន្សំសំចៃ Reads វៃឆ្លាតបំផុត) 🌟
+const fetchDynamicData = async () => {
     if (allSales.value.length === 0) isLoading.value = true;
-
     const { startStr, endStr } = getDateRangeISO();
 
-    if (unsubscribeSales) unsubscribeSales();
-    if (unsubscribeExpenses) unsubscribeExpenses();
+    if (unsubscribeSales) { unsubscribeSales(); unsubscribeSales = null; }
+    if (unsubscribeExpenses) { unsubscribeExpenses(); unsubscribeExpenses = null; }
 
-    const salesQ = query(
-        collection(db, 'sales_reports'),
-        where('createdAt', '>=', startStr),
-        where('createdAt', '<=', endStr)
-    );
-
-    const expensesQ = query(
-        collection(db, 'daily_expenses'),
-        where('createdAt', '>=', startStr),
-        where('createdAt', '<=', endStr)
-    );
+    const salesQ = query(collection(db, 'sales_reports'), where('createdAt', '>=', startStr), where('createdAt', '<=', endStr));
+    const expensesQ = query(collection(db, 'daily_expenses'), where('createdAt', '>=', startStr), where('createdAt', '<=', endStr));
 
     currentFetchId++;
     const thisFetchId = currentFetchId;
 
-    let isSalesSynced = false;
-    let isExpensesSynced = false;
+    // ពិនិត្យមើលថាតើ Admin កំពុងមើល "ថ្ងៃនេះ (Live)" ដែរឬទេ?
+    const isTodayFilter = dateFilterType.value === 'daily' && selectedDate.value === todayStr;
 
-    const checkCompletion = () => {
-        if (thisFetchId === currentFetchId && isSalesSynced && isExpensesSynced) {
+    // 🟢 លក្ខខណ្ឌទី ១៖ បើមើល "ថ្ងៃនេះ" -> ប្រើ Realtime ធម្មតា
+    if (isTodayFilter) {
+        let isSalesSynced = false;
+        let isExpensesSynced = false;
+
+        const checkCompletion = () => {
+            if (thisFetchId === currentFetchId && isSalesSynced && isExpensesSynced) {
+                stopFetchTimer();
+                if (safetyTimer) clearTimeout(safetyTimer);
+            }
+        };
+
+        unsubscribeSales = onSnapshot(salesQ, { includeMetadataChanges: true }, (snapshot) => {
+            if (thisFetchId !== currentFetchId) return;
+            allSales.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            isLoading.value = false; 
+            if (!snapshot.metadata.fromCache) { isSalesSynced = true; checkCompletion(); }
+        }, (error) => {
+            console.error("Sales Subscription Error:", error);
+            if (thisFetchId === currentFetchId) { isLoading.value = false; isSalesSynced = true; checkCompletion(); }
+        });
+
+        unsubscribeExpenses = onSnapshot(expensesQ, { includeMetadataChanges: true }, (snapshot) => {
+            if (thisFetchId !== currentFetchId) return;
+            allExpenses.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (!snapshot.metadata.fromCache) { isExpensesSynced = true; checkCompletion(); }
+        }, (error) => {
+            console.error("Expenses Subscription Error:", error);
+            if (thisFetchId === currentFetchId) { isExpensesSynced = true; checkCompletion(); }
+        });
+
+        if (safetyTimer) clearTimeout(safetyTimer);
+        safetyTimer = setTimeout(() => {
+            if (thisFetchId === currentFetchId) { isSalesSynced = true; isExpensesSynced = true; checkCompletion(); }
+        }, 30000); 
+
+    } 
+    // 🟡 លក្ខខណ្ឌទី ២៖ បើមើល "ប្រវត្តិ (ខែនេះ, ឆ្នាំនេះ...)" -> ប្រើ Static Fetch (getDocs) សន្សំ Reads
+    else {
+        try {
+            const [salesSnap, expensesSnap] = await Promise.all([getDocs(salesQ), getDocs(expensesQ)]);
+            if (thisFetchId !== currentFetchId) return;
+
+            allSales.value = salesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            allExpenses.value = expensesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            isLoading.value = false;
             stopFetchTimer();
             if (safetyTimer) clearTimeout(safetyTimer);
+        } catch (error) {
+            console.error("Static Fetch Error:", error);
+            if (thisFetchId === currentFetchId) {
+                isLoading.value = false;
+                stopFetchTimer();
+            }
         }
-    };
-
-    unsubscribeSales = onSnapshot(salesQ, { includeMetadataChanges: true }, (snapshot) => {
-        if (thisFetchId !== currentFetchId) return;
-        
-        allSales.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        isLoading.value = false; 
-        
-        if (!snapshot.metadata.fromCache) {
-            isSalesSynced = true;
-            checkCompletion();
-        }
-    }, (error) => {
-        console.error("Sales Subscription Error:", error);
-        if (thisFetchId === currentFetchId) {
-            isLoading.value = false;
-            isSalesSynced = true;
-            checkCompletion();
-        }
-    });
-
-    unsubscribeExpenses = onSnapshot(expensesQ, { includeMetadataChanges: true }, (snapshot) => {
-        if (thisFetchId !== currentFetchId) return;
-
-        allExpenses.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        if (!snapshot.metadata.fromCache) {
-            isExpensesSynced = true;
-            checkCompletion();
-        }
-    }, (error) => {
-        console.error("Expenses Subscription Error:", error);
-        if (thisFetchId === currentFetchId) {
-            isExpensesSynced = true;
-            checkCompletion();
-        }
-    });
-
-    if (safetyTimer) clearTimeout(safetyTimer);
-    safetyTimer = setTimeout(() => {
-        if (thisFetchId === currentFetchId) {
-            isSalesSynced = true;
-            isExpensesSynced = true;
-            checkCompletion();
-        }
-    }, 30000); 
+    }
 };
 
 onMounted(() => {
-  onAuthStateChanged(auth, async (user) => { // 🌟 បន្ថែមពាក្យ async នៅទីនេះ
+  onAuthStateChanged(auth, async (user) => { 
     if (user) {
        adminName.value = user.displayName || 'Owner';
        try {
-          // 🌟 ទាញយក Role របស់អ្នកដែលកំពុង Login 🌟
           const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists()) {
-              currentUserRole.value = userDoc.data().role;
-          }
+          if (userDoc.exists()) currentUserRole.value = userDoc.data().role;
 
+          // 🌟 ប្តូរ Reference Data ទាំងអស់ពី onSnapshot មក getDocs (សន្សំ Reads) 🌟
           const adminQ = query(collection(db, 'users'), where('role', '==', 'admin'));
-          unsubscribeAdmins = onSnapshot(adminQ, (snapshot) => {
-              adminsList.value = snapshot.docs
-                  .map(doc => ({ id: doc.id, ...doc.data() }))
-                  .filter(a => a.isDeleted === false || a.isDeleted === "false" || !a.isDeleted);
-          });
+          const adminSnap = await getDocs(adminQ);
+          adminsList.value = adminSnap.docs
+              .map(doc => ({ id: doc.id, ...doc.data() }))
+              .filter(a => a.isDeleted === false || a.isDeleted === "false" || !a.isDeleted);
 
           const sellerQ = query(collection(db, 'users'), where('role', '==', 'seller'));
-          unsubscribeSellers = onSnapshot(sellerQ, (snapshot) => {
-              allSellers.value = snapshot.docs
-                  .map(doc => ({ id: doc.id, ...doc.data() }))
-                  .filter(s => s.isDeleted === false || s.isDeleted === "false" || !s.isDeleted);
-          });
+          const sellerSnap = await getDocs(sellerQ);
+          allSellers.value = sellerSnap.docs
+              .map(doc => ({ id: doc.id, ...doc.data() }))
+              .filter(s => s.isDeleted === false || s.isDeleted === "false" || !s.isDeleted);
 
-          unsubscribeSettings = onSnapshot(collection(db, 'settings_units'), (snapshot) => {
-              unitSettings.value = snapshot.docs.map(doc => doc.data());
-          });
+          const settingsSnap = await getDocs(collection(db, 'settings_units'));
+          unitSettings.value = settingsSnap.docs.map(doc => doc.data());
 
-          const stockQ = collection(db, 'stocks');
-          unsubscribeStocks = onSnapshot(stockQ, (snapshot) => {
-              allStocks.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          });
+          const stockSnap = await getDocs(collection(db, 'stocks'));
+          allStocks.value = stockSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
           fetchDynamicData();
 
@@ -459,12 +445,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    if (unsubscribeAdmins) unsubscribeAdmins();
+    // ទុកតែ Unsubscribe ដែលនៅមាន
     if (unsubscribeSales) unsubscribeSales();
-    if (unsubscribeSellers) unsubscribeSellers();
-    if (unsubscribeSettings) unsubscribeSettings();
     if (unsubscribeExpenses) unsubscribeExpenses();
-    if (unsubscribeStocks) unsubscribeStocks();
     stopFetchTimer();
     if (safetyTimer) clearTimeout(safetyTimer);
 });
@@ -478,6 +461,11 @@ watch([dateFilterType, selectedDate, selectedMonth, selectedYear, customStart, c
         fetchDynamicData();
     }, 600); 
 }, { deep: true });
+
+// ============================================================================
+// ⚠️ រាល់ Computed Properties (baseCalculatedData, grandTotals, regionalReportSummary...) 
+// គឺត្រូវបានរក្សាទុកដូចដើម ១០០% ដើម្បីកុំឱ្យខូចការគណនាលុយ និងការ Export!
+// ============================================================================
 
 const baseCalculatedData = computed(() => {
    if (adminsList.value.length === 0) return [];

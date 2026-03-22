@@ -509,10 +509,10 @@
     <div ref="printStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1] opacity-0 print:opacity-100 bg-white w-[1000px]"></div>
   
 </template>
-
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, reactive } from 'vue';
 import { db, auth } from '@/firebaseConfig';
+// 🌟 បានបន្ថែម getDoc និង getDocs មកប្រើរួមគ្នាជាមួយ onSnapshot
 import { doc, getDoc, collection, query, where, onSnapshot, getDocs, updateDoc, increment, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { jsPDF } from "jspdf";
@@ -527,10 +527,8 @@ const invoiceStaging = ref(null);
 const printStaging = ref(null);
 const processing = ref({ active: false, message: '', progress: 0 });
 
-// ✅ Show/Hide Summary State
 const showSummaryCards = ref(false);
 
-// Filters
 const filterType = ref('today');
 const paymentFilter = ref('ALL'); 
 const searchQuery = ref('');
@@ -543,11 +541,9 @@ const availableYears = computed(() => { const currentYear = new Date().getFullYe
 const selectedMonth = ref(new Date().getMonth());
 const selectedYear = ref(new Date().getFullYear());
 
-// 🌟 Dynamic Pagination Limit
 const currentPage = ref(1);
 const itemsPerPage = computed(() => filterType.value === 'today' ? 5 : 20); 
 
-// Product data for Edit Modal
 const sellers = ref([]); 
 const availableProducts = ref([]);
 const miniPosSearchQuery = ref('');
@@ -555,7 +551,6 @@ const miniPosSearchQuery = ref('');
 let unsubscribeSales = null;
 let currentUserId = null;
 
-// 🌟 មុខងារ Format Currency 🌟
 const formatCurrency = (val) => {
     return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " $";
 };
@@ -565,7 +560,6 @@ const setFilterType = (type) => {
     currentPage.value = 1;
 };
 
-// 🌟 Set Payment Status Filter
 const setPaymentFilter = (type) => {
     paymentFilter.value = type;
     currentPage.value = 1;
@@ -576,14 +570,12 @@ const getTodayString = () => {
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`; 
 };
 
-// HELPER: Function ត្រួតពិនិត្យថាជាទំនិញបោះដុំឬអត់ដោយប្រើ .includes()
 const checkIsWholesale = (typeStr) => {
     if (!typeStr) return false;
     const str = String(typeStr).toLowerCase();
     return str.includes('បោះដុំ') || str.includes('wholesale');
 };
 
-// 🌟 Floating Timer 🌟
 const fetchTimer = reactive({ show: false, seconds: 0, interval: null });
 
 const startFetchTimer = () => {
@@ -598,10 +590,8 @@ const stopFetchTimer = () => {
     if (fetchTimer.interval) clearInterval(fetchTimer.interval);
 };
 
-// 🌟 SERVER-SIDE DATE FILTERING 🌟
 const getDateRangeISO = () => {
     let start, end;
-    
     const createDateBounds = (dateString) => {
         const base = new Date(dateString);
         const startDay = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, 0, 0);
@@ -625,23 +615,23 @@ const getDateRangeISO = () => {
     } else {
         start = new Date(2000, 0, 1); end = new Date(2100, 0, 1);
     }
-    
     return { startStr: start.toISOString(), endStr: end.toISOString() };
 };
 
-// 🌟 Smart Variables 🌟
 let currentFetchId = 0;
 let safetyTimer = null;
 let debounceTimeout = null;
 
-// 🌟 FETCH REALTIME DATA BASED ON FILTER 🌟
-const fetchDynamicSalesData = (userId) => {
+// 🌟 មុខងារថ្មី Hybrid Fetching Strategy 🌟
+const fetchDynamicSalesData = async (userId) => {
     if (allSales.value.length === 0) isLoading.value = true;
-    
     const { startStr, endStr } = getDateRangeISO();
 
-    // ផ្តាច់ listener ចាស់ចោលដើម្បីកុំឱ្យជាន់គ្នា និងស៊ី reads
-    if (unsubscribeSales) unsubscribeSales();
+    // ផ្តាច់ listener ចាស់ចោលជានិច្ច មុននឹងទាញទិន្នន័យថ្មី
+    if (unsubscribeSales) {
+        unsubscribeSales();
+        unsubscribeSales = null;
+    }
 
     const salesQ = query(
         collection(db, 'sales_reports'), 
@@ -653,36 +643,53 @@ const fetchDynamicSalesData = (userId) => {
     currentFetchId++;
     const thisFetchId = currentFetchId;
 
-    unsubscribeSales = onSnapshot(salesQ, { includeMetadataChanges: true }, (snapshot) => {
-        if (thisFetchId !== currentFetchId) return;
+    // 🟢 លក្ខខណ្ឌទី ១៖ ប្រសិនបើជា "ថ្ងៃនេះ" ប្រើ Realtime (onSnapshot)
+    if (filterType.value === 'today') {
+        unsubscribeSales = onSnapshot(salesQ, { includeMetadataChanges: true }, (snapshot) => {
+            if (thisFetchId !== currentFetchId) return;
 
-        let fetched = [];
-        snapshot.docs.forEach(docSnap => {
-            fetched.push({ id: docSnap.id, ...docSnap.data() });
+            let fetched = [];
+            snapshot.docs.forEach(docSnap => {
+                fetched.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            allSales.value = fetched.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+            isLoading.value = false;
+
+            if (!snapshot.metadata.fromCache) {
+                stopFetchTimer();
+                if (safetyTimer) clearTimeout(safetyTimer);
+            }
+        }, (error) => {
+            console.error("Error fetching realtime sales:", error);
+            if (thisFetchId === currentFetchId) { isLoading.value = false; stopFetchTimer(); }
         });
-        allSales.value = fetched.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-        isLoading.value = false;
 
-        if (!snapshot.metadata.fromCache) {
-            stopFetchTimer();
-            if (safetyTimer) clearTimeout(safetyTimer);
-        }
+        if (safetyTimer) clearTimeout(safetyTimer);
+        safetyTimer = setTimeout(() => {
+            if (thisFetchId === currentFetchId) stopFetchTimer();
+        }, 10000);
+    } 
+    // 🟡 លក្ខខណ្ឌទី ២៖ ប្រសិនបើជា "ប្រវត្តិ (ខែនេះ, ជ្រើសរើសថ្ងៃ...)" ប្រើ Static Fetch (getDocs) ធានាសន្សំសំចៃ ១០០%
+    else {
+        try {
+            const snapshot = await getDocs(salesQ);
+            if (thisFetchId !== currentFetchId) return;
 
-    }, (error) => {
-        console.error("Error fetching realtime sales:", error);
-        if (thisFetchId === currentFetchId) {
+            let fetched = [];
+            snapshot.docs.forEach(docSnap => {
+                fetched.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            allSales.value = fetched.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
             isLoading.value = false;
             stopFetchTimer();
+            if (safetyTimer) clearTimeout(safetyTimer);
+        } catch (error) {
+            console.error("Error fetching static history:", error);
+            if (thisFetchId === currentFetchId) { isLoading.value = false; stopFetchTimer(); }
         }
-    });
-
-    if (safetyTimer) clearTimeout(safetyTimer);
-    safetyTimer = setTimeout(() => {
-        if (thisFetchId === currentFetchId) stopFetchTimer();
-    }, 20000);
+    }
 };
 
-// 🌟 Watcher with Debouncing for Dates 🌟
 watch([filterType, specificDate, startDate, endDate, selectedMonth, selectedYear], () => {
     if (currentUserId) {
         startFetchTimer();
@@ -699,7 +706,6 @@ onMounted(() => {
         if (user) {
             currentUserId = user.uid;
             try {
-                // Fetch static reference data once
                 const unitSnap = await getDocs(collection(db, 'settings_units'));
                 availableUnits.value = unitSnap.docs.map(d => d.data());
 
@@ -712,7 +718,6 @@ onMounted(() => {
                 const arrCombos = snapCombos.docs.map(d => ({ id: d.id, ...d.data(), isCombo: true }));
                 availableProducts.value = [...arrStocks, ...arrCombos];
 
-                // ហៅទាញទិន្នន័យពេលចូលដំបូង
                 fetchDynamicSalesData(user.uid);
 
             } catch (error) {
@@ -729,6 +734,8 @@ onUnmounted(() => {
     if (safetyTimer) clearTimeout(safetyTimer);
     if (debounceTimeout) clearTimeout(debounceTimeout);
 });
+
+/* ... (រក្សាទុកកូដ Helpers ផ្សេងៗទាំងអស់ដូចជា translateUnit, formatKhmerDate, សរុបទឹកប្រាក់, ការលុប, កែប្រែ, Print, PDF) ... */
 
 const translateUnit = (unitVal) => {
     if (!unitVal) return '';
@@ -759,14 +766,11 @@ const formatKhmerDateTime = (dateStr) => {
     return `${formatKhmerDate(dateStr)} - ${formatTime(dateStr)}`;
 };
 
-// 🌟 Local filtering: Search & Payment Status 🌟
 const filteredSales = computed(() => {
     let result = allSales.value;
-
     if (paymentFilter.value !== 'ALL') {
         result = result.filter(s => s.paymentStatus === paymentFilter.value);
     }
-
     if (searchQuery.value.trim()) {
         const q = searchQuery.value.toLowerCase().trim();
         result = result.filter(s => 
@@ -786,27 +790,21 @@ const paginatedSales = computed(() => {
     return filteredSales.value.slice(start, start + itemsPerPage.value);
 });
 
-// Pagination Methods
 const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
 const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
 
-watch([searchQuery, paymentFilter], () => {
-    currentPage.value = 1;
-});
+watch([searchQuery, paymentFilter], () => { currentPage.value = 1; });
 
-// 🌟 បង្កើតអថេរ totalAmountUSD ដែលខ្វះត្រឡប់មកវិញ 🌟
 const totalAmountUSD = computed(() => {
     return filteredSales.value.reduce((sum, item) => sum + (Number(item.totalAmount) || 0), 0);
 });
 
-// Summary Stats
 const validSales = computed(() => filteredSales.value.filter(s => s.paymentStatus !== 'CANCELED'));
 
 const totalStats = computed(() => {
     let productsUSD = 0; let productsKHR = 0;
     let deliveryUSD = 0; let deliveryKHR = 0;
     let items = 0;
-
     let ppClients = new Set();
     let provClients = new Set();
 
@@ -824,7 +822,6 @@ const totalStats = computed(() => {
         if (sale.deliveryCurrency === 'USD' || !sale.deliveryCurrency) deliveryUSD += dFee;
         else deliveryKHR += dFee;
 
-        // Count PP and Prov clients
         if (sale.receiptId) {
             if (sale.province === 'រាជធានីភ្នំពេញ' || (sale.location && sale.location.includes('ភ្នំពេញ'))) {
                 ppClients.add(sale.receiptId);
@@ -834,20 +831,11 @@ const totalStats = computed(() => {
         }
     });
 
-    return { 
-        productsUSD, productsKHR, 
-        deliveryUSD, deliveryKHR, 
-        items,
-        ppClients: ppClients.size,
-        provClients: provClients.size
-    };
+    return { productsUSD, productsKHR, deliveryUSD, deliveryKHR, items, ppClients: ppClients.size, provClients: provClients.size };
 });
 
-// ✅ បិទសញ្ញាព្រមាន "មិនពេញលេញ" សម្រាប់អតិថិជនទិញផ្ទាល់
 const isSaleIncomplete = (sale) => {
-    if (sale.customerName === 'អតិថិជនទិញផ្ទាល់' || sale.customerName === 'ទូទៅ') {
-        return false;
-    }
+    if (sale.customerName === 'អតិថិជនទិញផ្ទាល់' || sale.customerName === 'ទូទៅ') { return false; }
     return !sale.customerName || !sale.customerPhone || !sale.location;
 };
 
@@ -858,7 +846,6 @@ const toggleExpand = (id) => {
     expandedRows.value = newSet;
 };
 
-// Actions
 const showIdModal = ref(false);
 const selectedDatabaseId = ref('');
 const openIdModal = (dbId) => { selectedDatabaseId.value = dbId; showIdModal.value = true; };
@@ -878,6 +865,12 @@ const markAsPaid = async (sale) => {
     try {
         await updateDoc(doc(db, 'sales_reports', sale.id), { paymentStatus: 'PAID' });
         emit('triggerAlert', 'success', 'ជោគជ័យ', 'វិក្កយបត្រត្រូវបានប្តូរទៅជា បានទូទាត់ រួចរាល់!');
+        
+        // Update local state if we are in static mode
+        if (filterType.value !== 'today') {
+            const index = allSales.value.findIndex(s => s.id === sale.id);
+            if (index !== -1) allSales.value[index].paymentStatus = 'PAID';
+        }
     } catch (error) { emit('triggerAlert', 'error', 'បរាជ័យ', 'មិនអាចប្តូរស្ថានភាពបានទេ'); }
 };
 
@@ -890,6 +883,11 @@ const executeDelete = async () => {
     try {
         await deleteDoc(doc(db, 'sales_reports', deleteModal.sale.id));
         emit('triggerAlert', 'success', 'ជោគជ័យ', 'លុបវិក្កយបត្របានជោគជ័យ');
+        
+        // Update local state if static mode
+        if (filterType.value !== 'today') {
+            allSales.value = allSales.value.filter(s => s.id !== deleteModal.sale.id);
+        }
         deleteModal.isOpen = false;
     } catch (error) { emit('triggerAlert', 'error', 'បរាជ័យ', 'មិនអាចលុបបានទេ'); } 
     finally { isDeleting.value = false; }
@@ -905,8 +903,9 @@ const confirmCancel = async () => {
     isCanceling.value = true;
     try {
         const saleId = cancelModal.sale.id;
+        const cancelDate = new Date().toISOString();
         await updateDoc(doc(db, 'sales_reports', saleId), {
-            paymentStatus: 'CANCELED', cancelReason: cancelReason.value, canceledAt: new Date().toISOString()
+            paymentStatus: 'CANCELED', cancelReason: cancelReason.value, canceledAt: cancelDate
         });
         for (const item of cancelModal.sale.items) {
             const stockRef = doc(db, 'stocks', item.id);
@@ -919,6 +918,16 @@ const confirmCancel = async () => {
             }
         }
         emit('triggerAlert', 'success', 'ជោគជ័យ', 'វិក្កយបត្រត្រូវបានបោះបង់');
+        
+        // Update local state
+        if (filterType.value !== 'today') {
+            const index = allSales.value.findIndex(s => s.id === saleId);
+            if (index !== -1) {
+                allSales.value[index].paymentStatus = 'CANCELED';
+                allSales.value[index].cancelReason = cancelReason.value;
+                allSales.value[index].canceledAt = cancelDate;
+            }
+        }
         closeCancelModal();
     } catch (error) { emit('triggerAlert', 'error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការបោះបង់វិក្កយបត្រ'); } 
     finally { isCanceling.value = false; }
@@ -941,85 +950,41 @@ const copyInvoiceText = (sale) => {
 const shareToTelegram = (sale) => {
     try {
         if (!sale) { emit('triggerAlert', 'error', 'បរាជ័យ', 'មិនមានទិន្នន័យវិក្កយបត្រទេ'); return; }
-        const receiptId = sale.receiptId || 'N/A';
-        const dateStr = formatKhmerDate(sale.createdAt) || 'N/A';
-        const customerName = sale.customerName || 'ទូទៅ';
-        const customerPhone = sale.customerPhone || 'N/A';
-        const location = sale.location || 'N/A';
-        const sellerName = sale.sellerName || 'N/A';
-
-        let text = `🛒 វិក្កយបត្រ (INVOICE)\nលេខ: ${receiptId}\nកាលបរិច្ឆេទ: ${dateStr}\n--------------------------------\n👤 អតិថិជន: ${customerName}\n📞 ទូរស័ព្ទ: ${customerPhone}\n📍 ទីតាំង: ${location}\n👨‍💼 អ្នកលក់: ${sellerName}\n--------------------------------\n`;
-
-        const items = sale.items || [];
-        items.forEach((item, i) => {
-            const name = item.name || 'មិនស្គាល់ទំនិញ';
-            const typeLabel = checkIsWholesale(item.type) ? 'ដុំ' : 'រាយ';
-            const qty = item.qty || 0;
-            const unit = translateUnit(item.unit) || '';
-            const price = Number(item.price || 0);
-            const total = price * qty;
-            
-            text += `${i+1}. ${name} (${typeLabel})\n   ➔ ${qty} ${unit} x $${price} = $${total}\n`;
-        });
-
-        const totalAmount = Number(sale.totalAmount || 0);
-        let productsTotal = totalAmount;
+        let text = `🛒 វិក្កយបត្រ (INVOICE)\nលេខ: ${sale.receiptId || 'N/A'}\nកាលបរិច្ឆេទ: ${formatKhmerDate(sale.createdAt)}\n--------------------------------\n👤 អតិថិជន: ${sale.customerName || 'ទូទៅ'}\n📞 ទូរស័ព្ទ: ${sale.customerPhone || 'N/A'}\n📍 ទីតាំង: ${sale.location || 'N/A'}\n👨‍💼 អ្នកលក់: ${sale.sellerName || 'N/A'}\n--------------------------------\n`;
+        (sale.items || []).forEach((item, i) => { text += `${i+1}. ${item.name} (${checkIsWholesale(item.type) ? 'ដុំ' : 'រាយ'})\n   ➔ ${item.qty} ${translateUnit(item.unit)} x $${item.price} = $${item.price * item.qty}\n`; });
+        let productsTotal = Number(sale.totalAmount || 0);
         const deliveryFee = Number(sale.deliveryFee || 0);
-        const deliveryCurrency = sale.deliveryCurrency === 'USD' ? '$' : '៛';
-
         if ((sale.deliveryCurrency === 'USD' || sale.deliveryCurrency === '$') && deliveryFee > 0) { productsTotal -= deliveryFee; }
-
         text += `--------------------------------\n💰 សរុបទំនិញ: $${productsTotal}\n`;
-        if (deliveryFee > 0) text += `🛵 ថ្លៃដឹកជញ្ជូន: ${deliveryFee} ${deliveryCurrency}\n`;
-        text += `💳 សរុបរួម: $${totalAmount}\n`;
+        if (deliveryFee > 0) text += `🛵 ថ្លៃដឹកជញ្ជូន: ${deliveryFee} ${sale.deliveryCurrency === 'USD' ? '$' : '៛'}\n`;
+        text += `💳 សរុបរួម: $${sale.totalAmount}\n`;
         if (sale.paymentNote) text += `📝 ចំណាំ: ${sale.paymentNote}\n`;
         if (sale.paymentStatus === 'CANCELED') text += `\n❌ វិក្កយបត្រនេះត្រូវបានបោះបង់ (CANCELED) ❌\nមូលហេតុ: ${sale.cancelReason || 'មិនមានបញ្ជាក់'}`;
-
         const encodedText = encodeURIComponent(text);
         window.open(`https://t.me/share/url?url=&text=${encodedText}`, '_blank', 'noopener,noreferrer');
-
-    } catch (error) {
-        console.error("Error generating Telegram share link:", error);
-        emit('triggerAlert', 'error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការបង្កើតទម្រង់ចែករំលែក');
-    }
+    } catch (error) { emit('triggerAlert', 'error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការបង្កើតទម្រង់ចែករំលែក'); }
 };
 
-// EDIT MODAL LOGIC
+// EDIT MODAL
 const editModal = reactive({ isOpen: false, activeTab: 'info', saleId: null, receiptId: '' });
 const isSaving = ref(false);
 const editForm = reactive({ 
-    sellerName: '', customerName: '', customerPhone: '', 
-    province: '', district: '', paymentMethod: 'CASH', paymentStatus: 'PAID', 
-    paymentNote: '', createdAt: '', deliveryFee: 0, deliveryCurrency: 'USD',
-    items: [] 
+    sellerName: '', customerName: '', customerPhone: '', province: '', district: '', paymentMethod: 'CASH', paymentStatus: 'PAID', paymentNote: '', createdAt: '', deliveryFee: 0, deliveryCurrency: 'USD', items: [] 
 });
 
 const openEditModal = (sale) => {
-    editModal.saleId = sale.id;
-    editModal.receiptId = sale.receiptId || '';
-    editModal.activeTab = 'info'; 
-
-    editForm.sellerName = sale.sellerName || '';
-    editForm.customerName = sale.customerName || '';
-    editForm.customerPhone = sale.customerPhone || '';
-    editForm.province = sale.province || '';
-    editForm.district = sale.district || '';
-    editForm.paymentMethod = sale.paymentMethod || 'CASH';
-    editForm.paymentStatus = sale.paymentStatus || 'PAID';
-    editForm.paymentNote = sale.paymentNote || '';
-    
-    editForm.deliveryFee = sale.deliveryFee || 0;
-    editForm.deliveryCurrency = sale.deliveryCurrency || 'USD';
+    editModal.saleId = sale.id; editModal.receiptId = sale.receiptId || ''; editModal.activeTab = 'info'; 
+    editForm.sellerName = sale.sellerName || ''; editForm.customerName = sale.customerName || ''; editForm.customerPhone = sale.customerPhone || '';
+    editForm.province = sale.province || ''; editForm.district = sale.district || ''; editForm.paymentMethod = sale.paymentMethod || 'CASH';
+    editForm.paymentStatus = sale.paymentStatus || 'PAID'; editForm.paymentNote = sale.paymentNote || '';
+    editForm.deliveryFee = sale.deliveryFee || 0; editForm.deliveryCurrency = sale.deliveryCurrency || 'USD';
     editForm.items = JSON.parse(JSON.stringify(sale.items || []));
-
     if (sale.createdAt) {
         const dateObj = new Date(sale.createdAt);
         const tzoffset = dateObj.getTimezoneOffset() * 60000;
         editForm.createdAt = (new Date(dateObj - tzoffset)).toISOString().slice(0, 16);
     } else { editForm.createdAt = ''; }
-    
-    editModal.isOpen = true;
-    miniPosSearchQuery.value = '';
+    editModal.isOpen = true; miniPosSearchQuery.value = '';
 };
 
 const filteredMiniPosProducts = computed(() => {
@@ -1029,23 +994,10 @@ const filteredMiniPosProducts = computed(() => {
 });
 
 const addItemToEditForm = (product) => {
-    let isWholesale = false;
-    let price = product.retailPrice || 0;
-
-    if (product.wholesaleQty > 0 && 1 >= product.wholesaleQty) {
-        isWholesale = true;
-        price = product.wholesalePrice || 0;
-    }
-
-    const newItem = {
-        id: product.id, name: product.name, image: product.image || '',
-        price: price, qty: 1, type: isWholesale ? 'តម្លៃបោះដុំ' : 'តម្លៃលក់រាយ', 
-        unit: product.isCombo ? 'set' : (product.retailUnit || 'bottle'),
-        isCombo: !!product.isCombo, cost: product.unitCost || 0
-    };
-    editForm.items.push(newItem);
-    miniPosSearchQuery.value = ''; 
-    emit('triggerAlert', 'success', 'ជោគជ័យ', `បានបន្ថែម ${product.name}`);
+    let isWholesale = false; let price = product.retailPrice || 0;
+    if (product.wholesaleQty > 0 && 1 >= product.wholesaleQty) { isWholesale = true; price = product.wholesalePrice || 0; }
+    editForm.items.push({ id: product.id, name: product.name, image: product.image || '', price: price, qty: 1, type: isWholesale ? 'តម្លៃបោះដុំ' : 'តម្លៃលក់រាយ', unit: product.isCombo ? 'set' : (product.retailUnit || 'bottle'), isCombo: !!product.isCombo, cost: product.unitCost || 0 });
+    miniPosSearchQuery.value = ''; emit('triggerAlert', 'success', 'ជោគជ័យ', `បានបន្ថែម ${product.name}`);
 };
 
 const removeItemFromEdit = (index) => { editForm.items.splice(index, 1); };
@@ -1053,15 +1005,9 @@ const removeItemFromEdit = (index) => { editForm.items.splice(index, 1); };
 const recalculateEditItem = (item) => {
     const product = availableProducts.value.find(p => p.id === item.id);
     if (product && !item.isCombo) {
-        const wQty = Number(product.wholesaleQty) || 0;
-        const currentQty = Number(item.qty) || 0;
-        if (wQty > 0 && currentQty >= wQty) {
-            item.price = Number(product.wholesalePrice) || Number(item.price);
-            item.type = 'តម្លៃបោះដុំ'; 
-        } else {
-            item.price = Number(product.retailPrice) || Number(item.price);
-            item.type = 'តម្លៃលក់រាយ';
-        }
+        const wQty = Number(product.wholesaleQty) || 0; const currentQty = Number(item.qty) || 0;
+        if (wQty > 0 && currentQty >= wQty) { item.price = Number(product.wholesalePrice) || Number(item.price); item.type = 'តម្លៃបោះដុំ'; } 
+        else { item.price = Number(product.retailPrice) || Number(item.price); item.type = 'តម្លៃលក់រាយ'; }
     }
 };
 
@@ -1076,18 +1022,21 @@ const saveEdit = async () => {
         const payloadToUpdate = { ...editForm };
         if (editForm.createdAt) payloadToUpdate.createdAt = new Date(editForm.createdAt).toISOString();
         payloadToUpdate.location = `${editForm.district}, ${editForm.province}`;
-        
-        const productsSum = editFormProductsTotal.value;
-        const dFee = Number(editForm.deliveryFee) || 0;
-        if (editForm.deliveryCurrency === 'USD') payloadToUpdate.totalAmount = productsSum + dFee;
-        else payloadToUpdate.totalAmount = productsSum; 
+        const productsSum = editFormProductsTotal.value; const dFee = Number(editForm.deliveryFee) || 0;
+        if (editForm.deliveryCurrency === 'USD') payloadToUpdate.totalAmount = productsSum + dFee; else payloadToUpdate.totalAmount = productsSum; 
 
         await updateDoc(doc(db, 'sales_reports', editModal.saleId), payloadToUpdate);
+        
+        // Update Local state
+        if (filterType.value !== 'today') {
+            const index = allSales.value.findIndex(s => s.id === editModal.saleId);
+            if (index !== -1) allSales.value[index] = { ...allSales.value[index], ...payloadToUpdate };
+        }
+
         editModal.isOpen = false;
         emit('triggerAlert', 'success', 'ជោគជ័យ', 'កែប្រែព័ត៌មានបានជោគជ័យ');
-    } catch (error) {
-        emit('triggerAlert', 'error', 'បរាជ័យ', 'System Full! សូមទាក់ទងអ្នកអភិវឌ្ឍន៍កម្មវិធី ដើម្បីស្នើ Upgrade System!');
-    } finally { isSaving.value = false; }
+    } catch (error) { emit('triggerAlert', 'error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការកែប្រែ'); } 
+    finally { isSaving.value = false; }
 };
 
 const generateSingleInvoiceHTML = (sale) => {

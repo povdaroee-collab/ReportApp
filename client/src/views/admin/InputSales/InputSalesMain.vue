@@ -119,7 +119,8 @@
 import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { db, auth } from '@/firebaseConfig';
-import { collection, addDoc, query, where, onSnapshot, doc, updateDoc, increment, setDoc, deleteDoc } from 'firebase/firestore'; 
+// 🌟 បានបន្ថែម getDocs, orderBy និង limit នៅទីនេះ
+import { collection, addDoc, query, where, onSnapshot, doc, updateDoc, increment, setDoc, deleteDoc, getDocs, orderBy, limit } from 'firebase/firestore'; 
 import { onAuthStateChanged } from 'firebase/auth';
 import Toast from '@/components/Toast.vue';
 import { useNotificationStore } from '@/stores/notification';
@@ -138,7 +139,7 @@ const notification = useNotificationStore();
 const mainTab = ref('pos'); 
 const showMobileCart = ref(false); 
 const showFloatingReceipt = ref(false); 
-const autoOpenReceipt = ref(true); // 🌟 STATE គ្រប់គ្រងការបើកវិក្កយបត្រស្វ័យប្រវត្តិ
+const autoOpenReceipt = ref(true); 
 
 const mixedProducts = ref([]); 
 const originalStocks = ref([]); 
@@ -168,8 +169,6 @@ const printStaging = ref(null);
 
 let unsubscribeProducts = null; 
 let unsubscribeCombos = null;
-let unsubscribeSellers = null; 
-let unsubscribeSales = null; 
 
 const timeLeft = ref("");
 const reservationTimer = ref(null);
@@ -199,9 +198,8 @@ onMounted(() => {
             try {
                 if (unsubscribeProducts) unsubscribeProducts();
                 if (unsubscribeCombos) unsubscribeCombos();
-                if (unsubscribeSellers) unsubscribeSellers();
-                if (unsubscribeSales) unsubscribeSales();
 
+                // 1. រក្សាទុក onSnapshot សម្រាប់ស្តុកដើម្បីការពារការលក់ជាន់គ្នា
                 unsubscribeProducts = onSnapshot(collection(db, 'stocks'), (snapshot) => {
                     originalStocks.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isCombo: false })).filter(i => !i.isDeleted);
                     combineProductsAndCombos();
@@ -212,22 +210,28 @@ onMounted(() => {
                     combineProductsAndCombos();
                 });
 
+                // 2. អាប់ដេតមុខងារទាញយក "អ្នកលក់" ដោយប្រើត្រឹម getDocs (សន្សំសំចៃ Read) 🌟
                 const qSellers = query(collection(db, "users"), where("role", "in", ["seller", "dealer"]), where("createdBy", "==", user.uid));
-                unsubscribeSellers = onSnapshot(qSellers, (snapshot) => { 
-                    sellers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
-                });
+                const sellerSnap = await getDocs(qSellers);
+                sellers.value = sellerSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 
-                const qSales = query(collection(db, 'sales_reports'), where('createdBy', '==', user.uid));
-                unsubscribeSales = onSnapshot(qSales, (snapshot) => {
-                    const uniqueCustomers = {};
-                    snapshot.docs.forEach(doc => {
-                        const data = doc.data();
-                        if (data.customerName && !uniqueCustomers[data.customerName]) {
-                            uniqueCustomers[data.customerName] = { name: data.customerName, phone: data.customerPhone || '', province: data.province || '', district: data.district || '' };
-                        }
-                    });
-                    savedCustomers.value = Object.values(uniqueCustomers);
+                // 3. អាប់ដេតមុខងារទាញយក "ឈ្មោះអតិថិជន" ដោយប្រើ getDocs, orderBy និងកំណត់ Limit ត្រឹម 50 🌟
+                const qSales = query(
+                    collection(db, 'sales_reports'), 
+                    where('createdBy', '==', user.uid),
+                    orderBy('createdAt', 'desc'),
+                    limit(50)
+                );
+                const salesSnap = await getDocs(qSales);
+                const uniqueCustomers = {};
+                salesSnap.docs.forEach(doc => {
+                    const data = doc.data();
+                    if (data.customerName && !uniqueCustomers[data.customerName]) {
+                        uniqueCustomers[data.customerName] = { name: data.customerName, phone: data.customerPhone || '', province: data.province || '', district: data.district || '' };
+                    }
                 });
+                savedCustomers.value = Object.values(uniqueCustomers);
+
             } catch (error) { console.error("Setup Error:", error); }
         } else {
             router.push('/');
@@ -238,8 +242,6 @@ onMounted(() => {
         if (authListener) authListener();
         if (unsubscribeProducts) unsubscribeProducts(); 
         if (unsubscribeCombos) unsubscribeCombos(); 
-        if (unsubscribeSellers) unsubscribeSellers(); 
-        if (unsubscribeSales) unsubscribeSales(); 
         if (reservationTimer.value) clearInterval(reservationTimer.value); 
     });
 });

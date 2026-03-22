@@ -286,11 +286,20 @@ const fetchAllSalesForDateRange = async () => {
     isLoadingData.value = true;
     try {
         const { startStr, endStr } = getDateBounds();
-        const q = query(
-            collection(db, 'sales_reports'), 
+        
+        // 🌟 កែលម្អ Query 🌟
+        // បើមានការរើស Admin យើងប្រាប់ Firebase ឱ្យទាញយកតែវិក្កយបត្រ Admin នោះ
+        // បើអត់ទាន់រើស Admin ទេ យើងទាញយកវិក្កយបត្រទាំងអស់ក្នុងខែនោះ ដើម្បីយកទៅបង្ហាញបញ្ជីឈ្មោះ Admin សកម្ម
+        const constraints = [
             where('createdAt', '>=', startStr), 
             where('createdAt', '<=', endStr)
-        );
+        ];
+        
+        if (selectedAdmin.value) {
+            constraints.push(where('createdBy', '==', selectedAdmin.value));
+        }
+
+        const q = query(collection(db, 'sales_reports'), ...constraints);
         
         const snap = await getDocs(q);
         const validSales = snap.docs
@@ -300,7 +309,7 @@ const fetchAllSalesForDateRange = async () => {
         allSalesInRange.value = validSales;
 
         if (selectedAdmin.value) {
-            const hasSales = validSales.some(s => s.createdBy === selectedAdmin.value && s.sellerName && s.sellerName !== 'undefined' && s.sellerName.trim() !== '');
+            const hasSales = validSales.some(s => s.sellerName && s.sellerName !== 'undefined' && s.sellerName.trim() !== '');
             if (!hasSales) selectedAdmin.value = '';
         }
         selectedSeller.value = 'ALL';
@@ -311,6 +320,12 @@ const fetchAllSalesForDateRange = async () => {
         isLoadingData.value = false;
     }
 };
+
+// 🌟 កែលម្អ Watcher បន្ថែម selectedAdmin 🌟
+// ដើម្បីឱ្យវាទាញទិន្នន័យសាជាថ្មី (เฉพาะរបស់ Admin នោះ) ពេលដូរឈ្មោះ Admin
+watch([dateFilterType, specificDate, selectedMonth, selectedYear, customStart, customEnd, selectedAdmin], () => {
+    fetchAllSalesForDateRange();
+});
 
 onMounted(() => { fetchAllSalesForDateRange(); });
 

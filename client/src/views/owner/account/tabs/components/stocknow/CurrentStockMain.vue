@@ -99,7 +99,7 @@
                                 <p class="text-[10px] font-bold text-slate-400 mt-1 font-mono tracking-wider">{{ item.barcode || 'NO-BARCODE' }}</p>
                             </td>
                             <td class="px-6 py-5 text-center font-black text-slate-600">
-                                {{ item.itemsPerCase || 1 }} <span class="text-[10px] font-bold text-slate-400">{{ translateUnit(item.retailUnit || 'bottle') }}</span>
+                                {{ item.packingText }}
                             </td>
                             <td class="px-6 py-5 text-center">
                                 <span class="px-3.5 py-1.5 rounded-lg text-sm font-black border shadow-sm inline-flex min-w-[100px] justify-center items-center gap-1.5"
@@ -180,34 +180,82 @@ const translateUnit = (u) => { const m = { bottle: 'ដប', case: 'កេះ', 
 // រៀបចំទិន្នន័យ និងកំណត់ទំនិញជិតអស់ស្តុក (<= 40 កេះ)
 const processedStocks = computed(() => {
     return stocks.value.map(item => {
+        const category = item.category || '';
         const qtyBase = Number(item.quantity) || 0;
         const ipc = Number(item.itemsPerCase) || 1;
-        const retailQty = Math.floor(qtyBase * ipc);
         
         const costPerBase = Number(item.unitCost) || 0;
         const totalCapital = qtyBase * costPerBase;
-        
         const pricePerRetail = Number(item.retailPrice || item.price) || 0;
-        const totalEstRevenue = retailQty * pricePerRetail;
         
-        const cases = Math.floor(retailQty / ipc);
-        const remainder = retailQty % ipc;
-        
-        // 🌟 កំណត់លក្ខខណ្ឌជិតអស់ស្តុក (<= 40 កេះ ឬ អស់រលីង)
-        const isLowStock = retailQty <= 0 || cases <= 40;
-
+        let retailQty = 0;
+        let cases = 0;
+        let remainder = 0;
+        let boxes = 0;
+        let sheets = 0;
         let stockText = '';
-        if (ipc > 1) {
-            if (cases > 0) stockText += `${cases.toLocaleString()} ${translateUnit(item.unit || 'case')} `;
-            if (remainder > 0) stockText += `${remainder.toLocaleString()} ${translateUnit(item.retailUnit || 'bottle')}`;
-            if (cases === 0 && remainder === 0) stockText = '0';
-        } else {
-            stockText = `${retailQty.toLocaleString()} ${translateUnit(item.retailUnit || item.unit || 'bottle')}`;
+        let packingText = ''; // សម្រាប់បង្ហាញក្នុងជួរឈរ "ក្នុង១កេះ"
+
+        // 🌟 1. LOGIC គណនាស្តុកសម្រាប់ម៉ាស់ (3-Levels)
+        if (category === 'ម៉ាស់') {
+            const ipb = Number(item.itemsPerBox) || 1;
+            const totalSheets = Math.floor(qtyBase * ipc * ipb);
+            retailQty = totalSheets;
+            
+            cases = Math.floor(totalSheets / (ipc * ipb));
+            const remainingAfterCases = totalSheets % (ipc * ipb);
+            boxes = Math.floor(remainingAfterCases / ipb);
+            sheets = remainingAfterCases % ipb;
+
+            if (cases > 0) stockText += `${cases.toLocaleString()} កេះ `;
+            if (boxes > 0) stockText += `${boxes.toLocaleString()} ប្រអប់ `;
+            if (sheets > 0) stockText += `${sheets.toLocaleString()} សន្លឹក`;
+            if (cases === 0 && boxes === 0 && sheets === 0) stockText = '0';
+            
+            packingText = `${ipc} ប្រអប់`; // ឧ. ១កេះ មាន ៥០ប្រអប់
+        } 
+        // 🌟 2. LOGIC គណនាស្តុកសម្រាប់ខោអាវ និងផ្សេងៗ (1-2 Levels)
+        else {
+            retailQty = Math.floor(qtyBase * ipc);
+            cases = Math.floor(retailQty / ipc);
+            remainder = retailQty % ipc;
+            
+            if (ipc > 1) {
+                if (cases > 0) stockText += `${cases.toLocaleString()} ${translateUnit(item.unit || 'case')} `;
+                if (remainder > 0) stockText += `${remainder.toLocaleString()} ${translateUnit(item.retailUnit || 'bottle')}`;
+                if (cases === 0 && remainder === 0) stockText = '0';
+            } else {
+                stockText = `${retailQty.toLocaleString()} ${translateUnit(item.retailUnit || item.unit || 'bottle')}`;
+            }
+            
+            packingText = `${ipc} ${translateUnit(item.retailUnit || 'bottle')}`;
         }
 
-        return { ...item, retailQty, cases, isLowStock, totalCapital, totalEstRevenue, stockText: stockText.trim() || '0' };
+        const totalEstRevenue = retailQty * pricePerRetail;
+        const isLowStock = retailQty <= 0 || cases <= 40;
+
+        // 🌟 3. LOGIC បង្ហាញពណ៌ និង ទំហំ
+        let displayName = item.name;
+        if ((category === 'អាវ' || category === 'ខោ' || category === 'ស្បែកជើង' || category === 'ការបូប') && item.colors && item.colors.length > 0) {
+             displayName += ` (ពណ៌: ${item.colors.join(', ')})`;
+             if (item.sizes && item.sizes.length > 0) {
+                 displayName += ` (ទំហំ: ${item.sizes.join(', ')})`;
+             }
+        }
+
+        return { 
+            ...item, 
+            name: displayName, // Overwrite name ដើម ដើម្បីឱ្យ Excel/PDF ស្គាល់ឈ្មោះថ្មីស្វ័យប្រវត្តិ
+            retailQty, 
+            cases, 
+            isLowStock, 
+            totalCapital, 
+            totalEstRevenue, 
+            stockText: stockText.trim() || '0',
+            packingText
+        };
     }).sort((a, b) => {
-        // 🌟 រុញអ្នកជិតអស់ស្តុកមកលើគេបង្អស់ បន្ទាប់មកទើបតម្រៀបតាមទុន
+        // រុញអ្នកជិតអស់ស្តុកមកលើគេបង្អស់ បន្ទាប់មកទើបតម្រៀបតាមទុន
         if (a.isLowStock && !b.isLowStock) return -1;
         if (!a.isLowStock && b.isLowStock) return 1;
         return b.totalCapital - a.totalCapital; 
@@ -247,22 +295,30 @@ const summary = computed(() => {
     return { totalItems: filteredStocks.value.length, totalCapital, totalEstRevenue };
 });
 
-
 // ==========================================
-// 🌟 EXPORT EXCEL & PDF LOGIC 🌟
+// 🌟 EXPORT EXCEL & PDF LOGIC (FIXED) 🌟
 // ==========================================
 
 const getExportHTML = (isExcel = false) => {
     let rowsHTML = filteredStocks.value.map((item, index) => {
-        const lowStockStyle = item.isLowStock ? 'color: #e11d48; font-weight: bold; background-color: #fff1f2;' : '';
+        const isLow = item.isLowStock;
+        const lowStockStyle = isLow ? 'color: #dc2626; font-weight: bold; background-color: #fef2f2;' : 'color: #334155;';
+        const rowBg = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+        const packingDisplay = item.packingText || `${item.itemsPerCase || 1} ${translateUnit(item.retailUnit || 'bottle')}`;
+
         return `
-        <tr style="background-color: ${index % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-            <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-size: 13px;">${index + 1}</td>
-            <td style="padding: 10px; border: 1px solid #cbd5e1; font-size: 14px; font-weight: bold; color: #1e293b;">${item.name || item.productName} <br><span style="font-size:11px; color:#64748b;">${item.barcode || 'N/A'}</span></td>
-            <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-size: 13px;">${item.itemsPerCase || 1} ${translateUnit(item.retailUnit || 'bottle')}</td>
-            <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-size: 14px; font-weight: bold; ${lowStockStyle}">${item.retailQty > 0 ? item.stockText : 'អស់ស្តុក'}</td>
-            <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; color: #e11d48; font-size: 14px; font-weight: bold;">${formatCurrency(item.totalCapital)}</td>
-            <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; color: #059669; font-size: 14px; font-weight: bold;">${formatCurrency(item.totalEstRevenue)}</td>
+        <tr style="background-color: ${rowBg}; border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 12px 8px; text-align: center; font-size: 13px; color: #64748b; border-right: 1px solid #e2e8f0;">${index + 1}</td>
+            <td style="padding: 12px 10px; font-size: 14px; font-weight: bold; color: #1e293b; line-height: 1.5; border-right: 1px solid #e2e8f0;">
+                ${item.name || item.productName} <br>
+                <span style="font-size: 11px; color: #94a3b8; font-family: monospace;">${item.barcode || 'N/A'}</span>
+            </td>
+            <td style="padding: 12px 8px; text-align: center; font-size: 13px; color: #475569; border-right: 1px solid #e2e8f0;">${packingDisplay}</td>
+            <td style="padding: 12px 8px; text-align: center; font-size: 14px; font-weight: bold; border-right: 1px solid #e2e8f0; ${lowStockStyle}">
+                ${item.retailQty > 0 ? item.stockText : 'អស់ស្តុក'}
+            </td>
+            <td style="padding: 12px 10px; text-align: right; color: #e11d48; font-size: 14px; font-weight: bold; border-right: 1px solid #e2e8f0;">${formatCurrency(item.totalCapital)}</td>
+            <td style="padding: 12px 10px; text-align: right; color: #059669; font-size: 14px; font-weight: bold;">${formatCurrency(item.totalEstRevenue)}</td>
         </tr>
     `}).join('');
 
@@ -272,7 +328,7 @@ const getExportHTML = (isExcel = false) => {
             <head>
                 <meta charset="utf-8">
                 <style>
-                    table { font-family: 'Battambong', sans-serif; border-collapse: collapse; }
+                    table { font-family: 'Battambang', sans-serif; border-collapse: collapse; }
                     th { background-color: #1e293b; color: #ffffff; font-weight: bold; border: 1px solid #0f172a; padding: 12px; text-transform: uppercase; }
                     td { padding: 8px; border: 1px solid #cbd5e1; vertical-align: middle; }
                     .footer-row td { background-color: #f1f5f9; font-weight: bold; font-size: 14px; padding: 15px; border: 1px solid #94a3b8; }
@@ -300,43 +356,63 @@ const getExportHTML = (isExcel = false) => {
     }
 
     return `
-        <div id="stocknow-export-target" style="width: 1000px; padding: 40px; background-color: #ffffff; font-family: 'Battambong', sans-serif;">
-            <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 30px; border-radius: 16px; color: white; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);">
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700;900&display=swap');
+            
+            .pdf-container { width: 1000px; padding: 40px; background-color: #ffffff; font-family: 'Battambang', sans-serif; margin: 0 auto; box-sizing: border-box; }
+            
+            .header-box { background: #1e293b; padding: 25px 35px; border-radius: 12px 12px 0 0; color: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #4f46e5; }
+            .header-title { margin: 0; font-size: 26px; font-weight: bold; color: #ffffff; line-height: 1.5; }
+            .stats-badge { display: inline-block; background: rgba(255,255,255,0.1); padding: 6px 16px; border-radius: 20px; font-size: 14px; margin-top: 10px; border: 1px solid rgba(255,255,255,0.2); }
+            
+            .stock-table { width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1; border-top: none; }
+            .stock-table th { background-color: #f8fafc; color: #334155; font-weight: bold; font-size: 14px; text-transform: uppercase; padding: 14px 10px; border-bottom: 2px solid #cbd5e1; border-right: 1px solid #e2e8f0; }
+            .stock-table th:last-child { border-right: none; }
+            
+            .summary-row td { background-color: #f1f5f9; padding: 18px 10px; font-size: 15px; border-top: 2px solid #94a3b8; }
+            
+            .footer-note { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #cbd5e1; font-size: 13px; color: #64748b; font-weight: bold; }
+        </style>
+        
+        <div class="pdf-container" id="stocknow-export-target">
+            <div class="header-box">
                 <div>
-                    <h1 style="margin: 0 0 8px 0; font-size: 28px; color: #f8fafc;">របាយការណ៍ស្តុកបច្ចុប្បន្ន</h1>
-                    <div style="display: flex; gap: 20px;">
-                        <p style="margin: 0; font-size: 14px; color: #cbd5e1; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 20px;">សរុប: <b>${summary.value.totalItems}</b> មុខ</p>
-                        <p style="margin: 0; font-size: 14px; color: #fca5a5; background: rgba(225,29,72,0.1); padding: 4px 12px; border-radius: 20px;">ទុនសរុប: <b>${formatCurrency(summary.value.totalCapital)}</b></p>
-                    </div>
+                    <h1 class="header-title">របាយការណ៍ស្តុកបច្ចុប្បន្ន</h1>
+                    <div class="stats-badge">មុខទំនិញសរុប: <b>${summary.value.totalItems}</b> មុខ</div>
                 </div>
                 <div style="text-align: right;">
-                    <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">កាលបរិច្ឆេទ</p>
-                    <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: bold; color: #f8fafc;">${new Date().toLocaleDateString('km-KH')}</p>
-                    <p style="margin: 0; font-size: 12px; color: #cbd5e1;">${new Date().toLocaleTimeString('en-US')}</p>
+                    <p style="margin: 0; font-size: 13px; color: #94a3b8; text-transform: uppercase;">កាលបរិច្ឆេទទាញយក</p>
+                    <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: bold; color: #f8fafc;">${new Date().toLocaleDateString('km-KH')}</p>
+                    <p style="margin: 0; font-size: 13px; color: #cbd5e1;">${new Date().toLocaleTimeString('en-US')}</p>
                 </div>
             </div>
 
-            <table style="width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+            <table class="stock-table">
                 <thead>
-                    <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-                        <th style="padding: 15px 12px; border-right: 1px solid #e2e8f0; font-size: 13px; text-transform: uppercase; color: #475569;">ល.រ</th>
-                        <th style="padding: 15px 12px; border-right: 1px solid #e2e8f0; text-align: left; font-size: 13px; text-transform: uppercase; color: #475569;">ព័ត៌មានទំនិញ</th>
-                        <th style="padding: 15px 12px; border-right: 1px solid #e2e8f0; text-align: center; font-size: 13px; text-transform: uppercase; color: #475569;">ក្នុង១កេះ</th>
-                        <th style="padding: 15px 12px; border-right: 1px solid #e2e8f0; text-align: center; font-size: 13px; text-transform: uppercase; color: #475569;">ស្តុកនៅសល់</th>
-                        <th style="padding: 15px 12px; border-right: 1px solid #e2e8f0; text-align: right; font-size: 13px; text-transform: uppercase; color: #e11d48;">ដើមទុនសរុប</th>
-                        <th style="padding: 15px 12px; text-align: right; font-size: 13px; text-transform: uppercase; color: #059669;">តម្លៃលក់សរុប</th>
+                    <tr>
+                        <th style="width: 5%; text-align: center;">ល.រ</th>
+                        <th style="width: 35%; text-align: left;">ព័ត៌មានទំនិញ</th>
+                        <th style="width: 12%; text-align: center;">ក្នុង១កេះ</th>
+                        <th style="width: 18%; text-align: center;">ស្តុកនៅសល់</th>
+                        <th style="width: 15%; text-align: right;">ដើមទុនសរុប</th>
+                        <th style="width: 15%; text-align: right;">តម្លៃលក់សរុប</th>
                     </tr>
                 </thead>
-                <tbody>${rowsHTML}</tbody>
-                
+                <tbody>
+                    ${rowsHTML}
+                </tbody>
                 <tfoot>
-                    <tr style="background-color: #1e293b; color: white;">
-                        <td colspan="4" style="padding: 16px; text-align: right; font-weight: bold; font-size: 16px;">សរុបរួម (GRAND TOTAL):</td>
-                        <td style="padding: 16px; text-align: right; font-weight: bold; font-size: 18px; color: #fca5a5;">${formatCurrency(summary.value.totalCapital)}</td>
-                        <td style="padding: 16px; text-align: right; font-weight: bold; font-size: 18px; color: #6ee7b7;">${formatCurrency(summary.value.totalEstRevenue)}</td>
+                    <tr class="summary-row">
+                        <td colspan="4" style="text-align: right; font-weight: bold; color: #1e293b;">សរុបរួម (GRAND TOTAL):</td>
+                        <td style="text-align: right; font-weight: bold; color: #e11d48; font-size: 18px;">${formatCurrency(summary.value.totalCapital)}</td>
+                        <td style="text-align: right; font-weight: bold; color: #059669; font-size: 18px;">${formatCurrency(summary.value.totalEstRevenue)}</td>
                     </tr>
                 </tfoot>
             </table>
+
+            <div class="footer-note">
+                របាយការណ៍នេះត្រូវបានបង្កើតដោយប្រព័ន្ធស្វ័យប្រវត្តិ • ថ្ងៃទី ${new Date().toLocaleDateString('en-GB')} ម៉ោង ${new Date().toLocaleTimeString()}
+            </div>
         </div>
     `;
 };
@@ -347,14 +423,54 @@ const downloadPDF = async () => {
         printStaging.value.innerHTML = getExportHTML(false);
         await nextTick(); 
         await document.fonts.ready; 
-        await new Promise(r => setTimeout(r, 500)); 
+        await new Promise(r => setTimeout(r, 600)); 
         
-        const canvas = await html2canvas(document.getElementById('stocknow-export-target'), { scale: 2, useCORS: true, logging: false });
-        const pdf = new jsPDF('p', 'mm', 'a4'); // Portrait ព្រោះទិន្នន័យតិចជួរ
+        const targetElement = document.getElementById('stocknow-export-target');
+        if (!targetElement) throw new Error("រកមិនឃើញកន្លែងត្រូវ Print");
+
+        const canvas = await html2canvas(targetElement, { 
+            scale: 2, 
+            useCORS: true, 
+            logging: false,
+            backgroundColor: "#ffffff" 
+        });
+        
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        const pdf = new jsPDF('p', 'mm', 'a4'); // A4 Portrait
+        
         const pdfWidth = 210; 
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        const pdfHeight = 297; 
+        const margin = 10; // គម្លាតសងខាង និង លើក្រោម (10mm)
+        const printWidth = pdfWidth - (margin * 2); 
+        const printHeight = pdfHeight - (margin * 2); 
         
-        pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        const imgHeight = (canvas.height * printWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = margin; // រុញចុះ 10mm សម្រាប់ទំព័រទី១
+        
+        // 🌟 ទំព័រទី ១
+        pdf.addImage(imgData, 'JPEG', margin, position, printWidth, imgHeight);
+        heightLeft -= printHeight;
+        
+        // គូសប្រអប់ពណ៌សបាំង Footer Margin ទំព័រទី១ កុំឱ្យលៀនរូប
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(0, pdfHeight - margin, pdfWidth, margin, 'F');
+        
+        // 🌟 បង្កើតទំព័របន្តបន្ទាប់
+        while (heightLeft > 0) {
+            position = position - printHeight; 
+            pdf.addPage();
+            
+            pdf.addImage(imgData, 'JPEG', margin, position, printWidth, imgHeight);
+            
+            // គូសប្រអប់ពណ៌សបាំង Header & Footer Margin គ្រប់ទំព័រថ្មី
+            pdf.setFillColor(255, 255, 255);
+            pdf.rect(0, 0, pdfWidth, margin, 'F'); 
+            pdf.rect(0, pdfHeight - margin, pdfWidth, margin, 'F'); 
+            
+            heightLeft -= printHeight;
+        }
+
         pdf.save(`Current_Stock_Report_${new Date().getTime()}.pdf`);
         
         printStaging.value.innerHTML = '';
@@ -366,6 +482,8 @@ const downloadPDF = async () => {
         isExporting.value = false; 
     }
 };
+
+
 
 const downloadExcel = () => {
     try {

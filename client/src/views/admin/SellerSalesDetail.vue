@@ -168,7 +168,8 @@ const allSalesItems = ref([]);
 
 // Filter States
 const searchQuery = ref('');
-const dateFilter = ref('all'); // 'all', 'today', 'month', 'specific', 'range'
+// 🌟 ដោះស្រាយការស៊ី Reads ពេល Load ដំបូង ដោយប្តូរ Default ពី 'all' ទៅ 'month' 🌟
+const dateFilter = ref('month'); 
 
 const getTodayString = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const specificDate = ref(getTodayString());
@@ -194,23 +195,53 @@ const translateUnit = (unit) => {
     return unit;
 };
 
-// Fetch Data
-onMounted(async () => {
+// 🌟 Server-Side Date Scope Logic 🌟
+const getDateRangeISO = () => {
+    let start, end;
+    const createDateBounds = (dateString) => {
+        const base = new Date(dateString);
+        const startDay = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, 0, 0);
+        const endDay = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 23, 59, 59, 999);
+        return { startDay, endDay };
+    };
+
+    if (dateFilter.value === 'today') {
+        const { startDay, endDay } = createDateBounds(getTodayString());
+        start = startDay; end = endDay;
+    } else if (dateFilter.value === 'month') {
+        const today = new Date();
+        start = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0);
+        end = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+    } else if (dateFilter.value === 'specific') {
+        const { startDay, endDay } = createDateBounds(specificDate.value);
+        start = startDay; end = endDay;
+    } else if (dateFilter.value === 'range') {
+        const boundsStart = createDateBounds(startDate.value);
+        const boundsEnd = createDateBounds(endDate.value);
+        start = boundsStart.startDay; end = boundsEnd.endDay;
+    }
+    
+    return { startStr: start?.toISOString(), endStr: end?.toISOString() };
+};
+
+// 🌟 Fetch Sales Data Logic (សន្សំសំចៃ Reads វៃឆ្លាត) 🌟
+const fetchSellerSales = async () => {
+    isLoading.value = true;
     try {
-        // 1. Fetch Seller Info
-        if (sellerId === 'admin_direct') {
-            sellerInfo.value = { fullName: 'ទិញផ្ទាល់ / មិនមានអ្នកលក់', idNumber: 'DIRECT', role: 'admin', photoUrl: '' };
+        const salesRef = collection(db, 'sales_reports');
+        let q1, q2;
+
+        if (dateFilter.value === 'all') {
+            // ទាញទាំងអស់បើសិនជា Admin ជ្រើសរើសយក "ទាំងអស់"
+            q1 = query(salesRef, where('uid', '==', sellerId));
+            q2 = query(salesRef, where('sellerId', '==', sellerId));
         } else {
-            const sellerDoc = await getDoc(doc(db, 'users', sellerId));
-            if (sellerDoc.exists()) sellerInfo.value = sellerDoc.data();
-            else sellerInfo.value = { fullName: 'អ្នកលក់មិនស្គាល់', idNumber: 'N/A' };
+            // ទាញយកតែក្នុងចន្លោះថ្ងៃដែលបានជ្រើសរើស (ជួយសន្សំ Reads កប់ផ្លាត)
+            const { startStr, endStr } = getDateRangeISO();
+            q1 = query(salesRef, where('uid', '==', sellerId), where('createdAt', '>=', startStr), where('createdAt', '<=', endStr));
+            q2 = query(salesRef, where('sellerId', '==', sellerId), where('createdAt', '>=', startStr), where('createdAt', '<=', endStr));
         }
 
-        // 2. Fetch Sales Reports for this seller
-        // Note: Checking both uid and sellerId to be safe based on previous logic
-        const q1 = query(collection(db, 'sales_reports'), where('uid', '==', sellerId));
-        const q2 = query(collection(db, 'sales_reports'), where('sellerId', '==', sellerId));
-        
         const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
         
         // Combine and unique
@@ -253,35 +284,43 @@ onMounted(async () => {
     } finally {
         isLoading.value = false;
     }
-});
-
-// Logic Check Date Scope
-const isDateInScope = (dateStr) => {
-    if (!dateStr) return false;
-    const date = new Date(dateStr);
-    const today = new Date();
-
-    if (dateFilter.value === 'all') return true;
-    if (dateFilter.value === 'today') return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
-    if (dateFilter.value === 'month') return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
-    
-    if (dateFilter.value === 'specific') {
-        const sDate = new Date(specificDate.value);
-        return date.getDate() === sDate.getDate() && date.getMonth() === sDate.getMonth() && date.getFullYear() === sDate.getFullYear();
-    } 
-    
-    if (dateFilter.value === 'range') {
-        const sDate = new Date(startDate.value);
-        const eDate = new Date(endDate.value);
-        eDate.setHours(23, 59, 59, 999);
-        return date >= sDate && date <= eDate;
-    }
-    return true;
 };
 
-// Computed Filtered Data
+// Fetch Initial Data
+onMounted(async () => {
+    try {
+        // 1. Fetch Seller Info
+        if (sellerId === 'admin_direct') {
+            sellerInfo.value = { fullName: 'ទិញផ្ទាល់ / មិនមានអ្នកលក់', idNumber: 'DIRECT', role: 'admin', photoUrl: '' };
+        } else {
+            const sellerDoc = await getDoc(doc(db, 'users', sellerId));
+            if (sellerDoc.exists()) sellerInfo.value = sellerDoc.data();
+            else sellerInfo.value = { fullName: 'អ្នកលក់មិនស្គាល់', idNumber: 'N/A' };
+        }
+
+        // 2. Fetch Sales Reports
+        await fetchSellerSales();
+
+    } catch (error) {
+        console.error("Error loading seller info:", error);
+        isLoading.value = false;
+    }
+});
+
+// Reset page and Refetch when Date Filters change
+watch([dateFilter, specificDate, startDate, endDate], () => {
+    currentPage.value = 1;
+    fetchSellerSales();
+});
+
+// Watch Search Query
+watch(searchQuery, () => {
+    currentPage.value = 1;
+});
+
+// Since we filter mostly on server now, this local filter acts as a fallback/search filter
 const filteredData = computed(() => {
-    let result = allSalesItems.value.filter(item => isDateInScope(item.date));
+    let result = allSalesItems.value;
 
     if (searchQuery.value.trim()) {
         const q = searchQuery.value.toLowerCase().trim();
@@ -304,11 +343,6 @@ const paginatedData = computed(() => {
 
 const totalAmountUSD = computed(() => {
     return filteredData.value.reduce((sum, item) => sum + (Number(item.totalPrice) || 0), 0);
-});
-
-// Reset page when filters change
-watch([searchQuery, dateFilter, specificDate, startDate, endDate], () => {
-    currentPage.value = 1;
 });
 
 // Print Function (Native Browser Print customized via CSS)

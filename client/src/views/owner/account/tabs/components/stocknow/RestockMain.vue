@@ -125,15 +125,44 @@ onMounted(() => {
         
         snap.docs.forEach(doc => {
             const data = doc.data();
-            const qtyBase = Number(data.quantity) || 0;
-            const ipc = Number(data.itemsPerCase) || 1;
-            const retailQty = Math.floor(qtyBase * ipc);
-            const cases = Math.floor(retailQty / ipc);
+            const category = data.category || '';
+            const qtyBase = Number(data.quantity) || 0; // Quantity ដើម (គិតជា Base Unit ធំបំផុតឧ.កេះ)
+            const ipc = Number(data.itemsPerCase) || 1; // ចំនួនក្នុងមួយកេះ
             
-            // 🌟 លក្ខខណ្ឌជិតអស់ស្តុក (<= 40 កេះ) 🌟
-            if (cases <= 40 || retailQty <= 0) {
-                const remainder = retailQty % ipc;
-                let stockText = '';
+            let retailQty = 0;
+            let cases = 0;
+            let remainder = 0;
+            let boxes = 0;
+            let sheets = 0;
+            let stockText = '';
+
+            // 🌟 1. LOGIC គណនាស្តុកសម្រាប់ម៉ាស់ (3-Levels: កេះ -> ប្រអប់ -> សន្លឹក)
+            if (category === 'ម៉ាស់') {
+                const ipb = Number(data.itemsPerBox) || 1; // ចំនួនក្នុងមួយប្រអប់
+                
+                // បំប្លែងស្តុកសរុបទាំងអស់ទៅជា "សន្លឹក" ជាមុនសិន (Total Base Unit)
+                const totalSheets = Math.floor(qtyBase * ipc * ipb); 
+                retailQty = totalSheets; // ទុកសម្រាប់តម្រៀប
+                
+                // បំបែកចេញមកវិញជា កេះ, ប្រអប់, សន្លឹក
+                cases = Math.floor(totalSheets / (ipc * ipb));
+                const remainingAfterCases = totalSheets % (ipc * ipb);
+                boxes = Math.floor(remainingAfterCases / ipb);
+                sheets = remainingAfterCases % ipb;
+
+                // បង្កើតអត្ថបទបង្ហាញ (Text)
+                if (cases > 0) stockText += `${cases.toLocaleString()} កេះ `;
+                if (boxes > 0) stockText += `${boxes.toLocaleString()} ប្រអប់ `;
+                if (sheets > 0) stockText += `${sheets.toLocaleString()} សន្លឹក`;
+                if (cases === 0 && boxes === 0 && sheets === 0) stockText = '0';
+            } 
+            // 🌟 2. LOGIC គណនាស្តុកសម្រាប់ខោអាវ និងផ្សេងៗ (2-Levels ឬ 1-Level)
+            else {
+                retailQty = Math.floor(qtyBase * ipc); // បំប្លែងទៅជាខ្នាតរាយ (PCS, ដប...)
+                cases = Math.floor(retailQty / ipc);
+                remainder = retailQty % ipc;
+                
+                // បង្កើតអត្ថបទបង្ហាញ (Text)
                 if (ipc > 1) {
                     if (cases > 0) stockText += `${cases.toLocaleString()} ${translateUnit(data.unit || 'case')} `;
                     if (remainder > 0) stockText += `${remainder.toLocaleString()} ${translateUnit(data.retailUnit || 'bottle')}`;
@@ -141,13 +170,28 @@ onMounted(() => {
                 } else {
                     stockText = `${retailQty.toLocaleString()} ${translateUnit(data.retailUnit || data.unit || 'bottle')}`;
                 }
+            }
+
+            // 🌟 លក្ខខណ្ឌជិតអស់ស្តុក (<= 40 កេះ) 🌟
+            if (cases <= 40 || retailQty <= 0) {
+                
+                // 🌟 3. LOGIC បង្ហាញឈ្មោះភ្ជាប់ជាមួយ ពណ៌ និង ទំហំ (សម្រាប់តែខោអាវ)
+                let displayName = data.name;
+                if ((category === 'អាវ' || category === 'ខោ' || category === 'ស្បែកជើង' || category === 'ការបូប') && data.colors && data.colors.length > 0) {
+                     // ឧទាហរណ៍: អាវយឺត (ពណ៌: ក្រហម, ខ្មៅ) (ទំហំ: M, L)
+                     displayName += ` (ពណ៌: ${data.colors.join(', ')})`;
+                     if (data.sizes && data.sizes.length > 0) {
+                         displayName += ` (ទំហំ: ${data.sizes.join(', ')})`;
+                     }
+                }
 
                 allLow.push({
                     id: doc.id,
                     ...data,
+                    productName: displayName, // ប្រើឈ្មោះដែលបូកពណ៌/ទំហំរួច
                     retailQty,
                     stockText: stockText.trim(),
-                    caseCost: (Number(data.unitCost) || 0) * ipc,
+                    caseCost: (Number(data.unitCost) || 0) * ipc, // យកតម្លៃរាយគុណនឹងចំនួនក្នុងកេះចេញជាថ្លៃដើម១កេះ
                     selected: true,
                     requestCases: 0
                 });

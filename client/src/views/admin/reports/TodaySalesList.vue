@@ -457,6 +457,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, reactive } from 'vue';
 import { db, auth } from '@/firebaseConfig';
+// 🌟 បន្ថែម getDocs មកទីនេះ
 import { doc, getDoc, collection, query, where, onSnapshot, getDocs, updateDoc, increment, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { jsPDF } from "jspdf";
@@ -488,6 +489,7 @@ const availableProducts = ref([]);
 const miniPosSearchQuery = ref('');
 
 let unsubscribeSales = null;
+let currentUserId = null; // ទុកចាំហៅ Fetch ម្តងទៀតពេលដូរថ្ងៃ
 
 const setFilterType = (type) => {
     filterType.value = type;
@@ -529,13 +531,19 @@ const getDateRangeISO = () => {
     return { startStr: start.toISOString(), endStr: end.toISOString() };
 };
 
-// 🌟 FETCH REALTIME DATA BASED ON FILTER 🌟
-const fetchDynamicSalesData = (userId) => {
-    isLoading.value = true;
+// 🌟 អថេរសម្រាប់ការពារការហៅទិន្នន័យជាន់គ្នា (Race Condition) 🌟
+let currentFetchId = 0;
+
+// 🌟 HYBRID FETCH LOGIC (សន្សំសំចៃ Reads វៃឆ្លាត) 🌟
+const fetchDynamicSalesData = async (userId) => {
+    if (allSales.value.length === 0) isLoading.value = true;
     const { startStr, endStr } = getDateRangeISO();
 
-    // ផ្តាច់ listener ចាស់ចោលដើម្បីកុំឱ្យជាន់គ្នា និងស៊ី reads
-    if (unsubscribeSales) unsubscribeSales();
+    // ផ្តាច់ listener ចាស់ចោលជានិច្ច មុនទាញថ្មី
+    if (unsubscribeSales) {
+        unsubscribeSales();
+        unsubscribeSales = null;
+    }
 
     const salesQ = query(
         collection(db, 'sales_reports'), 
@@ -544,22 +552,46 @@ const fetchDynamicSalesData = (userId) => {
         where('createdAt', '<=', endStr)
     );
 
-    unsubscribeSales = onSnapshot(salesQ, (snapshot) => {
-        let fetched = [];
-        snapshot.docs.forEach(docSnap => {
-            fetched.push({ id: docSnap.id, ...docSnap.data() });
+    currentFetchId++;
+    const thisFetchId = currentFetchId;
+
+    // 🟢 លក្ខខណ្ឌទី ១៖ ប្រសិនបើមើល "ថ្ងៃនេះ" ឱ្យវា Realtime (ស្តាប់ការលក់ថ្មីៗ)
+    if (filterType.value === 'today') {
+        unsubscribeSales = onSnapshot(salesQ, (snapshot) => {
+            if (thisFetchId !== currentFetchId) return;
+            let fetched = [];
+            snapshot.docs.forEach(docSnap => {
+                fetched.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            allSales.value = fetched.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+            isLoading.value = false;
+        }, (error) => {
+            console.error("Error fetching realtime sales:", error);
+            if (thisFetchId === currentFetchId) isLoading.value = false;
         });
-        allSales.value = fetched.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-        isLoading.value = false;
-    }, (error) => {
-        console.error("Error fetching realtime sales:", error);
-        isLoading.value = false;
-    });
+    } 
+    // 🟡 លក្ខខណ្ឌទី ២៖ ប្រសិនបើមើល "ប្រវត្តិ" ប្រើ Static Fetch (getDocs) សន្សំ Reads កប់ផ្លាត!
+    else {
+        try {
+            const snapshot = await getDocs(salesQ);
+            if (thisFetchId !== currentFetchId) return;
+            let fetched = [];
+            snapshot.docs.forEach(docSnap => {
+                fetched.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            allSales.value = fetched.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+            isLoading.value = false;
+        } catch (error) {
+            console.error("Error fetching static sales:", error);
+            if (thisFetchId === currentFetchId) isLoading.value = false;
+        }
+    }
 };
 
 onMounted(() => {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
+            currentUserId = user.uid;
             try {
                 // Fetch static reference data once
                 const unitSnap = await getDocs(collection(db, 'settings_units'));
@@ -577,17 +609,18 @@ onMounted(() => {
                 // ហៅទាញទិន្នន័យពេលចូលដំបូង
                 fetchDynamicSalesData(user.uid);
 
-                // Watcher ចាំទាញថ្មីពេលដូរ filter ថ្ងៃខែ
-                watch([filterType, specificDate, startDate, endDate], () => {
-                    fetchDynamicSalesData(user.uid);
-                });
-
             } catch (error) {
                 console.error("Error fetching data:", error);
                 isLoading.value = false;
             }
         }
     });
+});
+
+// Watcher ចាំទាញថ្មីពេលដូរ filter ថ្ងៃខែ
+watch([filterType, specificDate, startDate, endDate], () => {
+    currentPage.value = 1;
+    if (currentUserId) fetchDynamicSalesData(currentUserId);
 });
 
 onUnmounted(() => {
@@ -623,7 +656,7 @@ const formatKhmerDateTime = (dateStr) => {
     return `${formatKhmerDate(dateStr)} - ${formatTime(dateStr)}`;
 };
 
-// 🌟 Local filtering is now only for search text, since dates are handled by DB 🌟
+// Local filtering is now only for search text
 const filteredSales = computed(() => {
     let result = allSales.value;
 
@@ -645,7 +678,7 @@ const paginatedSales = computed(() => {
     return filteredSales.value.slice(start, start + itemsPerPage.value);
 });
 
-watch([searchQuery, filterType, specificDate, startDate, endDate], () => {
+watch(searchQuery, () => {
     currentPage.value = 1;
 });
 
@@ -724,6 +757,11 @@ const markAsPaid = async (sale) => {
     try {
         await updateDoc(doc(db, 'sales_reports', sale.id), { paymentStatus: 'PAID' });
         emit('triggerAlert', 'success', 'ជោគជ័យ', 'វិក្កយបត្រត្រូវបានប្តូរទៅជា បានទូទាត់ រួចរាល់!');
+        // 🌟 Local State Update សម្រាប់ Static History
+        if (filterType.value !== 'today') {
+            const idx = allSales.value.findIndex(s => s.id === sale.id);
+            if (idx !== -1) allSales.value[idx].paymentStatus = 'PAID';
+        }
     } catch (error) { emit('triggerAlert', 'error', 'បរាជ័យ', 'មិនអាចប្តូរស្ថានភាពបានទេ'); }
 };
 
@@ -736,6 +774,10 @@ const executeDelete = async () => {
     try {
         await deleteDoc(doc(db, 'sales_reports', deleteModal.sale.id));
         emit('triggerAlert', 'success', 'ជោគជ័យ', 'លុបវិក្កយបត្របានជោគជ័យ');
+        // 🌟 Local State Update សម្រាប់ Static History
+        if (filterType.value !== 'today') {
+            allSales.value = allSales.value.filter(s => s.id !== deleteModal.sale.id);
+        }
         deleteModal.isOpen = false;
     } catch (error) { emit('triggerAlert', 'error', 'បរាជ័យ', 'មិនអាចលុបបានទេ'); } 
     finally { isDeleting.value = false; }
@@ -751,8 +793,9 @@ const confirmCancel = async () => {
     isCanceling.value = true;
     try {
         const saleId = cancelModal.sale.id;
+        const cancelDate = new Date().toISOString();
         await updateDoc(doc(db, 'sales_reports', saleId), {
-            paymentStatus: 'CANCELED', cancelReason: cancelReason.value, canceledAt: new Date().toISOString()
+            paymentStatus: 'CANCELED', cancelReason: cancelReason.value, canceledAt: cancelDate
         });
         for (const item of cancelModal.sale.items) {
             const stockRef = doc(db, 'stocks', item.id);
@@ -765,6 +808,15 @@ const confirmCancel = async () => {
             }
         }
         emit('triggerAlert', 'success', 'ជោគជ័យ', 'វិក្កយបត្រត្រូវបានបោះបង់');
+        // 🌟 Local State Update សម្រាប់ Static History
+        if (filterType.value !== 'today') {
+            const idx = allSales.value.findIndex(s => s.id === saleId);
+            if (idx !== -1) {
+                allSales.value[idx].paymentStatus = 'CANCELED';
+                allSales.value[idx].cancelReason = cancelReason.value;
+                allSales.value[idx].canceledAt = cancelDate;
+            }
+        }
         closeCancelModal();
     } catch (error) { emit('triggerAlert', 'error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការបោះបង់វិក្កយបត្រ'); } 
     finally { isCanceling.value = false; }
@@ -788,13 +840,10 @@ const copyInvoiceText = (sale) => {
 // 🌟 2. មុខងារ Share ទៅ Telegram (Safely formatted)
 const shareToTelegram = (sale) => {
     try {
-        // Ensure sale object exists
         if (!sale) {
             emit('triggerAlert', 'error', 'បរាជ័យ', 'មិនមានទិន្នន័យវិក្កយបត្រទេ');
             return;
         }
-
-        // Safely extract values with fallbacks
         const receiptId = sale.receiptId || 'N/A';
         const dateStr = formatKhmerDate(sale.createdAt) || 'N/A';
         const customerName = sale.customerName || 'ទូទៅ';
@@ -804,7 +853,6 @@ const shareToTelegram = (sale) => {
 
         let text = `🛒 វិក្កយបត្រ (INVOICE)\nលេខ: ${receiptId}\nកាលបរិច្ឆេទ: ${dateStr}\n--------------------------------\n👤 អតិថិជន: ${customerName}\n📞 ទូរស័ព្ទ: ${customerPhone}\n📍 ទីតាំង: ${location}\n👨‍💼 អ្នកលក់: ${sellerName}\n--------------------------------\n`;
 
-        // Safely process items
         const items = sale.items || [];
         items.forEach((item, i) => {
             const name = item.name || 'មិនស្គាល់ទំនិញ';
@@ -813,43 +861,27 @@ const shareToTelegram = (sale) => {
             const unit = translateUnit(item.unit) || '';
             const price = Number(item.price || 0);
             const total = price * qty;
-            
             text += `${i+1}. ${name} (${typeLabel})\n   ➔ ${qty} ${unit} x $${price} = $${total}\n`;
         });
 
-        // Calculate totals
         const totalAmount = Number(sale.totalAmount || 0);
         let productsTotal = totalAmount;
         const deliveryFee = Number(sale.deliveryFee || 0);
         const deliveryCurrency = sale.deliveryCurrency === 'USD' ? '$' : '៛';
 
-        // Only subtract delivery if it's in USD to match totalAmount currency
         if ((sale.deliveryCurrency === 'USD' || sale.deliveryCurrency === '$') && deliveryFee > 0) {
             productsTotal -= deliveryFee;
         }
 
         text += `--------------------------------\n💰 សរុបទំនិញ: $${productsTotal}\n`;
-        
-        if (deliveryFee > 0) {
-            text += `🛵 ថ្លៃដឹកជញ្ជូន: ${deliveryFee} ${deliveryCurrency}\n`;
-        }
-        
+        if (deliveryFee > 0) text += `🛵 ថ្លៃដឹកជញ្ជូន: ${deliveryFee} ${deliveryCurrency}\n`;
         text += `💳 សរុបរួម: $${totalAmount}\n`;
 
-        if (sale.paymentNote) {
-            text += `📝 ចំណាំ: ${sale.paymentNote}\n`;
-        }
-        
-        if (sale.paymentStatus === 'CANCELED') {
-            text += `\n❌ វិក្កយបត្រនេះត្រូវបានបោះបង់ (CANCELED) ❌\nមូលហេតុ: ${sale.cancelReason || 'មិនមានបញ្ជាក់'}`;
-        }
+        if (sale.paymentNote) text += `📝 ចំណាំ: ${sale.paymentNote}\n`;
+        if (sale.paymentStatus === 'CANCELED') text += `\n❌ វិក្កយបត្រនេះត្រូវបានបោះបង់ (CANCELED) ❌\nមូលហេតុ: ${sale.cancelReason || 'មិនមានបញ្ជាក់'}`;
 
-        // Encode and open URL
         const encodedText = encodeURIComponent(text);
-        const telegramUrl = `https://t.me/share/url?url=&text=${encodedText}`;
-        
-        window.open(telegramUrl, '_blank', 'noopener,noreferrer');
-
+        window.open(`https://t.me/share/url?url=&text=${encodedText}`, '_blank', 'noopener,noreferrer');
     } catch (error) {
         console.error("Error generating Telegram share link:", error);
         emit('triggerAlert', 'error', 'បរាជ័យ', 'មានបញ្ហាក្នុងការបង្កើតទម្រង់ចែករំលែក');
@@ -934,6 +966,13 @@ const saveEdit = async () => {
         }
 
         await updateDoc(doc(db, 'sales_reports', editModal.saleId), payloadToUpdate);
+        
+        // 🌟 Local State Update សម្រាប់ Static History
+        if (filterType.value !== 'today') {
+            const idx = allSales.value.findIndex(s => s.id === editModal.saleId);
+            if (idx !== -1) allSales.value[idx] = { ...allSales.value[idx], ...payloadToUpdate };
+        }
+
         editModal.isOpen = false;
         emit('triggerAlert', 'success', 'ជោគជ័យ', 'កែប្រែព័ត៌មានបានជោគជ័យ');
     } catch (error) {

@@ -232,7 +232,7 @@
               
               <div class="flex items-center gap-3">
                   <div v-if="mode === 'OUT'" class="bg-rose-500/10 border border-rose-500/30 px-4 py-2 rounded-xl text-rose-400 font-bold text-sm shadow-inner flex items-center gap-2">
-                      ការខាតបង់សរុប (Loss): 
+                      ការខាតបង់ (ពីទិន្នន័យកំពុងបង្ហាញ): 
                       <span class="text-lg font-black">{{ formatPrice(totalLossUSD) }}$</span>
                   </div>
                   
@@ -264,14 +264,14 @@
                       </tr>
                   </thead>
                   <tbody class="divide-y divide-neutral-800 bg-neutral-800/30">
-                      <tr v-if="isLoadingHistory">
+                      <tr v-if="isLoadingHistory && displayHistory.length === 0">
                           <td colspan="9" class="py-12 text-center"><div class="animate-spin rounded-full h-8 w-8 border-2 border-amber-500 border-t-transparent mx-auto"></div></td>
                       </tr>
-                      <tr v-else-if="paginatedHistory.length === 0">
+                      <tr v-else-if="displayHistory.length === 0">
                           <td colspan="9" class="py-12 text-center text-neutral-500 font-bold">មិនទាន់មានប្រវត្តិប្រតិបត្តិការទេ</td>
                       </tr>
-                      <tr v-else v-for="(h, idx) in paginatedHistory" :key="h.id" class="hover:bg-neutral-700/50 transition-colors">
-                          <td class="px-5 py-3.5 text-xs text-center font-bold text-neutral-500">{{ (currentPage - 1) * 20 + idx + 1 }}</td>
+                      <tr v-else v-for="(h, idx) in displayHistory" :key="h.id" class="hover:bg-neutral-700/50 transition-colors">
+                          <td class="px-5 py-3.5 text-xs text-center font-bold text-neutral-500">{{ idx + 1 }}</td>
                           <td class="px-5 py-3.5 text-xs font-bold text-neutral-300">{{ formatDate(h.createdAt) }}</td>
                           <td class="px-5 py-3.5 text-center">
                               <span class="px-2.5 py-1 rounded text-[10px] font-black tracking-widest shadow-sm" :class="h.type === 'IN' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'">
@@ -301,23 +301,15 @@
               </table>
           </div>
 
-          <div v-if="historyTotalPages > 1" class="bg-neutral-900 p-4 rounded-b-xl border border-neutral-700 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p class="text-xs font-bold text-neutral-400 pl-2">
-                  បង្ហាញទំព័រ {{ currentPage }} នៃ {{ historyTotalPages }}
-              </p>
-              <div class="flex items-center gap-1.5">
-                  <button @click="currentPage--" :disabled="currentPage === 1" class="w-9 h-9 flex items-center justify-center rounded-xl bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors border border-neutral-600">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                  </button>
-                  <div class="flex gap-1 overflow-x-auto custom-scrollbar max-w-[200px]">
-                      <button v-for="p in visiblePages" :key="p" @click="currentPage = p" class="w-9 h-9 shrink-0 flex items-center justify-center rounded-xl font-bold text-sm transition-colors border" :class="currentPage === p ? 'bg-blue-600 text-white border-blue-500 shadow-md' : 'bg-neutral-800 text-neutral-400 border-neutral-600 hover:bg-neutral-700 hover:text-white'">
-                          {{ p }}
-                      </button>
-                  </div>
-                  <button @click="currentPage++" :disabled="currentPage === historyTotalPages" class="w-9 h-9 flex items-center justify-center rounded-xl bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors border border-neutral-600">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                  </button>
-              </div>
+          <div v-if="hasMoreHistory && displayHistory.length > 0" class="bg-neutral-900 p-4 rounded-b-xl border border-neutral-700 flex justify-center">
+              <button @click="loadMoreHistory" :disabled="isFetchingMore" class="px-6 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold rounded-lg border border-neutral-600 transition-all flex items-center gap-2 disabled:opacity-50 active:scale-95 shadow-sm">
+                  <svg v-if="isFetchingMore" class="animate-spin h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                  ទាញយក ៥ បន្តទៀត... (Load More)
+              </button>
+          </div>
+          <div v-else-if="displayHistory.length > 0" class="bg-neutral-900 p-4 rounded-b-xl border border-neutral-700 text-center text-xs font-bold text-neutral-500">
+              អស់ទិន្នន័យប្រវត្តិហើយ
           </div>
 
       </div>
@@ -359,7 +351,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
 import { db, auth } from '@/firebaseConfig';
-import { collection, addDoc, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, orderBy, onSnapshot, deleteDoc, limit } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, orderBy, onSnapshot, deleteDoc, limit, startAfter, where } from 'firebase/firestore';
 import { useNotificationStore } from '@/stores/notification';
 
 const props = defineProps({
@@ -385,12 +377,18 @@ const isSubmitting = ref(false);
 const history = ref([]);
 const isLoadingHistory = ref(true);
 
+// 🌟 Server-side Pagination States 🌟
+const historyLimit = 5;
+let lastVisibleDoc = null;
+const hasMoreHistory = ref(true);
+const isFetchingMore = ref(false);
+
 const form = reactive({ 
   qty: null, 
   cost: null, 
   reason: '', 
   transactionDate: getTodayDate(),
-  transactionUnit: 'bulk', // 'bulk', 'box', 'retail'
+  transactionUnit: 'bulk', 
   mfgDate: '',
   expDate: ''
 });
@@ -433,6 +431,7 @@ const lossValue = computed(() => {
   return form.qty * unitCostBulk; 
 });
 
+// ⚠️ Note: Total Loss will now only calculate based on the loaded (visible) history items.
 const totalLossUSD = computed(() => {
   const activeProductIds = new Set(props.products.map(p => p.id));
   return history.value
@@ -510,6 +509,7 @@ watch(() => form.transactionUnit, (newUnit) => {
   }
 });
 
+// 🌟 Watch Mode Change to fetch new specific 5 records
 watch(mode, (newMode) => {
   if (selectedProduct.value) {
       form.transactionUnit = 'bulk';
@@ -518,7 +518,7 @@ watch(mode, (newMode) => {
       }
       form.reason = '';
   }
-  currentPage.value = 1; 
+  fetchHistory(); // 👈 Load fresh top 5 for the new mode
 });
 
 // Actions
@@ -670,7 +670,7 @@ const submitTransaction = async () => {
           type: mode.value,
           productId: selectedProduct.value.id,
           productName: selectedProduct.value.name,
-          productCategory: selectedProduct.value.category || 'DFG', // 👈 Save Category to History
+          productCategory: selectedProduct.value.category || 'DFG',
           qty: form.qty,
           unitDisplay: displayUnitStr,
           unitCost: historyUnitCost, 
@@ -684,7 +684,7 @@ const submitTransaction = async () => {
       notification.success(`បាន${mode.value === 'IN' ? 'នាំចូល' : 'ដកចេញ'}ដោយជោគជ័យ!`);
       clearSelection();
       
-      fetchHistory();
+      fetchHistory(); // Reload top 5 after transaction
 
   } catch (error) {
       console.error(error);
@@ -772,7 +772,7 @@ const confirmDeleteTransaction = async () => {
       notification.success("លុបប្រវត្តិ និងធ្វើបច្ចុប្បន្នភាពស្តុកដោយជោគជ័យ!");
       deleteModal.show = false;
       
-      fetchHistory();
+      fetchHistory(); // Reload top 5 after delete
 
   } catch (error) {
       console.error("Delete Error:", error);
@@ -793,13 +793,28 @@ let latestDocId = null;
 const fetchHistory = async () => {
   isLoadingHistory.value = true;
   hasNewData.value = false;
+  lastVisibleDoc = null; // Reset cursor
+  history.value = []; // Clear array
+  hasMoreHistory.value = true;
+
   try {
-      const q = query(collection(db, 'stock_transactions'), orderBy('createdAt', 'desc'));
+      // 🌟 Fetch only 5 based on Mode 🌟
+      const q = query(
+          collection(db, 'stock_transactions'), 
+          where('type', '==', mode.value), 
+          orderBy('createdAt', 'desc'),
+          limit(historyLimit)
+      );
       const snap = await getDocs(q);
+      
       history.value = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if (history.value.length > 0) {
-          latestDocId = history.value[0].id;
+      
+      if (snap.docs.length > 0) {
+          latestDocId = snap.docs[0].id;
+          lastVisibleDoc = snap.docs[snap.docs.length - 1]; // Set cursor for load more
       }
+      
+      hasMoreHistory.value = snap.docs.length === historyLimit;
   } catch (e) {
       console.error(e);
   } finally {
@@ -808,9 +823,39 @@ const fetchHistory = async () => {
   }
 };
 
+const loadMoreHistory = async () => {
+    if (!hasMoreHistory.value || isFetchingMore.value) return;
+    isFetchingMore.value = true;
+
+    try {
+        const q = query(
+            collection(db, 'stock_transactions'),
+            where('type', '==', mode.value),
+            orderBy('createdAt', 'desc'),
+            startAfter(lastVisibleDoc),
+            limit(historyLimit)
+        );
+        const snap = await getDocs(q);
+
+        const moreDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        history.value.push(...moreDocs);
+
+        if (snap.docs.length > 0) {
+            lastVisibleDoc = snap.docs[snap.docs.length - 1];
+        }
+
+        hasMoreHistory.value = snap.docs.length === historyLimit;
+    } catch (e) {
+        console.error(e);
+    } finally {
+        isFetchingMore.value = false;
+    }
+};
+
 const setupHistoryListener = () => {
   if (historyUnsubscribe) historyUnsubscribe();
-  const q = query(collection(db, 'stock_transactions'), orderBy('createdAt', 'desc'), limit(1));
+  // Listener នេះគ្រាន់តែរង់ចាំមើលថាមាន Data ថ្មីឬអត់ មិនមែនទាញយកទាំងអស់ទេ (ចំណាយ ១ read)
+  const q = query(collection(db, 'stock_transactions'), where('type', '==', mode.value), orderBy('createdAt', 'desc'), limit(1));
   historyUnsubscribe = onSnapshot(q, (snap) => {
       if (!snap.empty) {
           const newTopId = snap.docs[0].id;
@@ -829,28 +874,11 @@ onUnmounted(() => {
   if (historyUnsubscribe) historyUnsubscribe();
 });
 
-const currentPage = ref(1);
-const filteredHistoryBase = computed(() => {
+const displayHistory = computed(() => {
   const activeProductIds = new Set(props.products.map(p => p.id));
-  return history.value.filter(h => h.type === mode.value && activeProductIds.has(h.productId));
+  // Filter out any products that were completely deleted from stock list
+  return history.value.filter(h => activeProductIds.has(h.productId));
 });
-
-const historyTotalPages = computed(() => Math.ceil(filteredHistoryBase.value.length / 20) || 1);
-
-const paginatedHistory = computed(() => {
-  const start = (currentPage.value - 1) * 20;
-  return filteredHistoryBase.value.slice(start, start + 20);
-});
-
-const visiblePages = computed(() => {
-  const pages = []; const maxVisible = 5;
-  let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
-  let end = Math.min(historyTotalPages.value, start + maxVisible - 1);
-  if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
-  for (let i = start; i <= end; i++) pages.push(i);
-  return pages;
-});
-
 
 // Utils
 const formatPrice = (val) => Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });

@@ -240,9 +240,11 @@
   </div>
 </template>
 
+
 <script setup>
 import { ref, reactive, onMounted, computed, watch, onUnmounted } from 'vue';
 import { db, auth } from '@/firebaseConfig';
+// 🌟 បន្ថែម getDocs សម្រាប់ទាញទិន្នន័យប្រវត្តិ
 import { collection, query, where, getDocs, doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router'; 
@@ -313,7 +315,6 @@ watch([searchQuery, activeCategory, activityFilter, dateFilterType, specificDate
 });
 
 let unsubscribeSales = null;
-let unsubscribeSellers = null;
 
 // 🌟 DYNAMIC QUERY LOGIC (Server-Side Filtering) 🌟
 const getDateRangeISO = () => {
@@ -345,12 +346,16 @@ const getDateRangeISO = () => {
     return { startStr: start.toISOString(), endStr: end.toISOString() };
 };
 
-// 🌟 Fetch Data function 🌟
-const fetchDynamicSalesData = (userId) => {
+// 🌟 HYBRID FETCH DATA LOGIC 🌟
+const fetchDynamicSalesData = async (userId) => {
     isLoading.value = true;
     const { startStr, endStr } = getDateRangeISO();
 
-    if (unsubscribeSales) unsubscribeSales();
+    // ផ្តាច់ Listener ចាស់ជានិច្ច មុននឹងទាញទិន្នន័យថ្មី
+    if (unsubscribeSales) {
+        unsubscribeSales();
+        unsubscribeSales = null;
+    }
 
     const salesQ = query(
         collection(db, 'sales_reports'), 
@@ -359,11 +364,11 @@ const fetchDynamicSalesData = (userId) => {
         where('createdAt', '<=', endStr)
     );
     
-    unsubscribeSales = onSnapshot(salesQ, (salesSnap) => {
+    // Logic សម្រាប់រៀបចំ Data (រក្សាដដែល ១០០% មិនឱ្យបាត់មុខងារ)
+    const processSnapshot = (docs) => {
         let flatSales = [];
-        salesSnap.docs.forEach(doc => {
+        docs.forEach(doc => {
             const data = doc.data();
-            
             if (data.items && Array.isArray(data.items)) {
                 data.items.forEach((item, index) => {
                     let typeStr = String(item.type || '').toLowerCase();
@@ -385,13 +390,29 @@ const fetchDynamicSalesData = (userId) => {
                 });
             }
         });
-
         allSales.value = flatSales.sort((a,b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
         isLoading.value = false;
-    }, (error) => {
-        console.error("Error in realtime sales stream:", error);
-        isLoading.value = false;
-    });
+    };
+
+    // 🟢 ប្រសិនបើជា "ថ្ងៃនេះ" -> ប្រើ Realtime (onSnapshot) ឱ្យ Admin មើល Live
+    if (dateFilterType.value === 'today') {
+        unsubscribeSales = onSnapshot(salesQ, (salesSnap) => {
+            processSnapshot(salesSnap.docs);
+        }, (error) => {
+            console.error("Error in realtime sales stream:", error);
+            isLoading.value = false;
+        });
+    } 
+    // 🟡 ប្រសិនបើជា "ប្រវត្តិ (ខែនេះ, ល...)" -> ប្រើ Static Fetch (getDocs) ដើម្បីសន្សំ Reads ឱ្យកប់
+    else {
+        try {
+            const salesSnap = await getDocs(salesQ);
+            processSnapshot(salesSnap.docs);
+        } catch (error) {
+            console.error("Error fetching static sales data:", error);
+            isLoading.value = false;
+        }
+    }
 };
 
 onMounted(() => {
@@ -408,15 +429,15 @@ onMounted(() => {
         ? query(collection(db, 'users'), where('role', 'in', ['seller', 'dealer']), where('createdBy', '==', user.uid))
         : query(collection(db, 'users'), where('role', 'in', ['seller', 'dealer']));
 
-     unsubscribeSellers = onSnapshot(sellerQ, (sellerSnap) => {
-         let fetchedSellers = sellerSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(s => s.isDeleted === false || !s.isDeleted);
-         fetchedSellers.push({
-             id: 'admin_direct', fullName: 'ទិញផ្ទាល់ / មិនមានអ្នកលក់', idNumber: 'DIRECT', role: 'admin', photoUrl: ''
-         });
-         sellersList.value = fetchedSellers;
+     // 🌟 ប្តូរពី onSnapshot មក getDocs ដើម្បីសន្សំ Reads 🌟
+     const sellerSnap = await getDocs(sellerQ);
+     let fetchedSellers = sellerSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(s => s.isDeleted === false || !s.isDeleted);
+     fetchedSellers.push({
+         id: 'admin_direct', fullName: 'ទិញផ្ទាល់ / មិនមានអ្នកលក់', idNumber: 'DIRECT', role: 'admin', photoUrl: ''
      });
+     sellersList.value = fetchedSellers;
 
-     // ហៅទាញយកទិន្នន័យពេល Mount
+     // ហៅទាញយកទិន្នន័យការលក់ពេល Mount
      fetchDynamicSalesData(user.uid);
 
      // បង្កើត Watcher ដើម្បីទាញទិន្នន័យឡើងវិញនៅពេលប្តូរ Filter ថ្ងៃខែ
@@ -434,7 +455,6 @@ onMounted(() => {
 
 onUnmounted(() => {
     if (unsubscribeSales) unsubscribeSales();
-    if (unsubscribeSellers) unsubscribeSellers();
 });
 
 // Since we are filtering at the database level, we don't strictly need isDateInScope anymore, 
@@ -763,7 +783,7 @@ const selectedDateFormatter = (dateStr) => {
 
 const getPrintDataPayload = () => ({
     filteredSellers: filteredSellers.value,
-    allSales: allSales.value, // <-- បន្ថែមបន្ទាត់នេះ
+    allSales: allSales.value,
     regionalReportSummary: regionalReportSummary.value, 
     grandTotals: grandTotals.value,
     reportDateLabel: reportDateLabel.value,
@@ -776,7 +796,6 @@ const handlePrint = () => { executeNativePrint(getPrintDataPayload()); };
 const handlePDF = async () => { await generatePDF(getPrintDataPayload(), printStaging.value, processing); };
 
 </script>
-
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700;900&family=Kantumruy+Pro:wght@400;700&display=swap');
 .font-khmer { font-family: 'Battambang', 'Kantumruy Pro', sans-serif; }
