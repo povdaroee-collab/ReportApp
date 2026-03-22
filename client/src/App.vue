@@ -7,16 +7,22 @@ const {
   needRefresh,
   updateServiceWorker,
 } = useRegisterSW({
+  // 🌟 បញ្ជាក់ផ្លូវទៅកាន់ sw.js ឱ្យប្រាកដ 🌟
+  immediate: true,
   onRegistered(r) {
-    // ឆែករក Update ថ្មីរៀងរាល់ ១ ម៉ោងម្តង (Optional)
+    // ឆែករក Update ថ្មីរៀងរាល់ ១ ម៉ោងម្តង
     r && setInterval(() => {
       r.update()
     }, 60 * 60 * 1000)
   },
+  onRegisterError(error) {
+    console.error('PWA registration error:', error); // ជួយប្រាប់ Error ក្នុង Console បើវា Fail
+  }
 })
 
 // ពេលចុច Update
 const handleUpdate = async () => {
+  // ប្រាប់ Service Worker ឱ្យ Update និង Reload ទំព័រ
   await updateServiceWorker(true);
 }
 
