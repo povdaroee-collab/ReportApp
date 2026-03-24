@@ -119,8 +119,8 @@
                                   class="bg-neutral-700 border-l border-neutral-600 px-3 py-3 text-white text-[11px] font-bold outline-none cursor-pointer hover:bg-neutral-600 transition-colors h-[46px] max-w-[120px] text-ellipsis"
                               >
                                   <option value="bulk">កេះ ({{ translateUnit(selectedProduct.unit) }})</option>
-                                  <option v-if="selectedProduct.category === 'ម៉ាស់'" value="box">ប្រអប់</option>
-                                  <option value="retail">{{ selectedProduct.category === 'ម៉ាស់' ? 'សន្លឹក (រាយ)' : 'ដប (រាយ)' }}</option>
+                                  <option v-if="selectedProduct.category === 'ម៉ាស់' || selectedProduct.category === 'POL'" value="box">ប្រអប់</option>
+                                  <option value="retail">{{ selectedProduct.category === 'ម៉ាស់' ? 'សន្លឹក (រាយ)' : (selectedProduct.category === 'POL' ? 'ដប (រាយ)' : 'ដប/រាយ') }}</option>
                               </select>
                               <div v-else class="bg-neutral-700 border-l border-neutral-600 px-4 py-3 text-white text-[11px] font-bold flex items-center justify-center h-[46px]">
                                   {{ translateUnit(selectedProduct.unit) }}
@@ -185,7 +185,7 @@
                       </div>
                       
                       <div v-if="selectedProduct.unit === 'case'" class="flex justify-between items-center">
-                          <span class="text-neutral-400">ថ្លៃដើមធ្លាក់លើ <span class="text-white font-bold">១ រាយ ({{ selectedProduct.category === 'ម៉ាស់' ? 'សន្លឹក' : 'ដប' }})</span>:</span>
+                          <span class="text-neutral-400">ថ្លៃដើមធ្លាក់លើ <span class="text-white font-bold">១ រាយ ({{ selectedProduct.category === 'ម៉ាស់' ? 'សន្លឹក' : (selectedProduct.category === 'POL' ? 'ដប' : 'ដប/កញ្ចប់') }})</span>:</span>
                           <span class="text-sky-400 font-bold">{{ calculateCostPerRetail() }} {{ selectedProduct.currency === 'USD' ? '$' : '៛' }}</span>
                       </div>
                   </div>
@@ -412,18 +412,18 @@ const filteredProducts = computed(() => {
   return props.products.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
 });
 
-// 🌟 SMART LOSS COMPUTATION 🌟
+// 🌟 SMART LOSS COMPUTATION (Updated for POL) 🌟
 const lossValue = computed(() => {
   if (!selectedProduct.value || !form.qty || mode.value !== 'OUT') return 0;
   const unitCostBulk = Number(selectedProduct.value.unitCost) || 0;
   
   if (selectedProduct.value.unit === 'case') {
       const itemsPerCase = Number(selectedProduct.value.itemsPerCase) || 1;
-      const itemsPerBox = selectedProduct.value.category === 'ម៉ាស់' ? (Number(selectedProduct.value.itemsPerBox) || 1) : 1;
+      const itemsPerBox = (selectedProduct.value.category === 'ម៉ាស់' || selectedProduct.value.category === 'POL') ? (Number(selectedProduct.value.itemsPerBox) || 1) : 1;
       
       if (form.transactionUnit === 'retail') {
           return form.qty * (unitCostBulk / (itemsPerCase * itemsPerBox));
-      } else if (form.transactionUnit === 'box' && selectedProduct.value.category === 'ម៉ាស់') {
+      } else if (form.transactionUnit === 'box' && (selectedProduct.value.category === 'ម៉ាស់' || selectedProduct.value.category === 'POL')) {
           return form.qty * (unitCostBulk / itemsPerCase);
       }
   }
@@ -431,7 +431,6 @@ const lossValue = computed(() => {
   return form.qty * unitCostBulk; 
 });
 
-// ⚠️ Note: Total Loss will now only calculate based on the loaded (visible) history items.
 const totalLossUSD = computed(() => {
   const activeProductIds = new Set(props.products.map(p => p.id));
   return history.value
@@ -443,7 +442,7 @@ const totalLossUSD = computed(() => {
       }, 0);
 });
 
-// 🌟 SMART COST CALCULATIONS 🌟
+// 🌟 SMART COST CALCULATIONS (Updated for POL) 🌟
 const calculateTotalCost = () => {
   const q = Number(form.qty) || 0;
   const c = Number(form.cost) || 0;
@@ -456,12 +455,12 @@ const calculateCostPerCase = () => {
   
   if (form.transactionUnit === 'bulk') {
       return c.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  } else if (form.transactionUnit === 'box' && selectedProduct.value?.category === 'ម៉ាស់') {
+  } else if (form.transactionUnit === 'box' && (selectedProduct.value?.category === 'ម៉ាស់' || selectedProduct.value?.category === 'POL')) {
       const perCase = Number(selectedProduct.value.itemsPerCase) || 1;
       return (c * perCase).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   } else {
       const perCase = Number(selectedProduct.value.itemsPerCase) || 1;
-      const perBox = selectedProduct.value?.category === 'ម៉ាស់' ? (Number(selectedProduct.value.itemsPerBox) || 1) : 1;
+      const perBox = (selectedProduct.value?.category === 'ម៉ាស់' || selectedProduct.value?.category === 'POL') ? (Number(selectedProduct.value.itemsPerBox) || 1) : 1;
       return (c * perCase * perBox).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 };
@@ -469,7 +468,7 @@ const calculateCostPerCase = () => {
 const calculateCostPerRetail = () => {
   const c = Number(form.cost) || 0;
   const perCase = Number(selectedProduct.value?.itemsPerCase) || 1;
-  const perBox = selectedProduct.value?.category === 'ម៉ាស់' ? (Number(selectedProduct.value.itemsPerBox) || 1) : 1;
+  const perBox = (selectedProduct.value?.category === 'ម៉ាស់' || selectedProduct.value?.category === 'POL') ? (Number(selectedProduct.value.itemsPerBox) || 1) : 1;
 
   if (form.transactionUnit === 'retail') {
       return c.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
@@ -482,23 +481,23 @@ const calculateCostPerRetail = () => {
 
 const displayUnitLabel = computed(() => {
     if (!selectedProduct.value) return '';
-    if (form.transactionUnit === 'retail') return selectedProduct.value.category === 'ម៉ាស់' ? 'សន្លឹក' : 'ដប/រាយ';
+    if (form.transactionUnit === 'retail') return selectedProduct.value.category === 'ម៉ាស់' ? 'សន្លឹក' : (selectedProduct.value.category === 'POL' ? 'ដប' : 'ដប/រាយ');
     if (form.transactionUnit === 'box') return 'ប្រអប់';
     return translateUnit(selectedProduct.value.unit);
 });
 
-// 🌟 WATCHERS 🌟
+// 🌟 WATCHERS (Updated for POL) 🌟
 watch(() => form.transactionUnit, (newUnit) => {
   if (mode.value === 'IN' && selectedProduct.value) {
       const baseBulkCost = Number(selectedProduct.value.unitCost) || 0;
       
       if (selectedProduct.value.unit === 'case') {
           const perCase = Number(selectedProduct.value.itemsPerCase) || 1;
-          const perBox = selectedProduct.value.category === 'ម៉ាស់' ? (Number(selectedProduct.value.itemsPerBox) || 1) : 1;
+          const perBox = (selectedProduct.value.category === 'ម៉ាស់' || selectedProduct.value.category === 'POL') ? (Number(selectedProduct.value.itemsPerBox) || 1) : 1;
 
           if (newUnit === 'retail') {
               form.cost = Number((baseBulkCost / (perCase * perBox)).toFixed(4));
-          } else if (newUnit === 'box' && selectedProduct.value.category === 'ម៉ាស់') {
+          } else if (newUnit === 'box' && (selectedProduct.value.category === 'ម៉ាស់' || selectedProduct.value.category === 'POL')) {
               form.cost = Number((baseBulkCost / perCase).toFixed(4));
           } else {
               form.cost = baseBulkCost;
@@ -509,7 +508,6 @@ watch(() => form.transactionUnit, (newUnit) => {
   }
 });
 
-// 🌟 Watch Mode Change to fetch new specific 5 records
 watch(mode, (newMode) => {
   if (selectedProduct.value) {
       form.transactionUnit = 'bulk';
@@ -518,7 +516,7 @@ watch(mode, (newMode) => {
       }
       form.reason = '';
   }
-  fetchHistory(); // 👈 Load fresh top 5 for the new mode
+  fetchHistory(); 
 });
 
 // Actions
@@ -560,15 +558,15 @@ const submitTransaction = async () => {
   let qtyDeltaBulk = 0;
   let inputCostBulk = 0;
 
-  // 🌟 SMART QTY DELTA & COST CONVERSION 🌟
+  // 🌟 SMART QTY DELTA & COST CONVERSION (Updated for POL) 🌟
   if (selectedProduct.value.unit === 'case') {
       const perCase = Number(selectedProduct.value.itemsPerCase) || 1;
-      const perBox = selectedProduct.value.category === 'ម៉ាស់' ? (Number(selectedProduct.value.itemsPerBox) || 1) : 1;
+      const perBox = (selectedProduct.value.category === 'ម៉ាស់' || selectedProduct.value.category === 'POL') ? (Number(selectedProduct.value.itemsPerBox) || 1) : 1;
 
       if (form.transactionUnit === 'retail') {
           qtyDeltaBulk = form.qty / (perCase * perBox);
           inputCostBulk = form.cost * (perCase * perBox); 
-      } else if (form.transactionUnit === 'box' && selectedProduct.value.category === 'ម៉ាស់') {
+      } else if (form.transactionUnit === 'box' && (selectedProduct.value.category === 'ម៉ាស់' || selectedProduct.value.category === 'POL')) {
           qtyDeltaBulk = form.qty / perCase;
           inputCostBulk = form.cost * perCase;
       } else {
@@ -630,7 +628,7 @@ const submitTransaction = async () => {
           
           if (selectedProduct.value.unit === 'case') {
               const perCase = Number(selectedProduct.value.itemsPerCase) || 1;
-              const perBox = selectedProduct.value.category === 'ម៉ាស់' ? (Number(selectedProduct.value.itemsPerBox) || 1) : 1;
+              const perBox = (selectedProduct.value.category === 'ម៉ាស់' || selectedProduct.value.category === 'POL') ? (Number(selectedProduct.value.itemsPerBox) || 1) : 1;
 
               if (form.transactionUnit === 'retail') {
                   transactionTotalValue = form.qty * (newCostBulk / (perCase * perBox));
@@ -654,7 +652,11 @@ const submitTransaction = async () => {
       await updateDoc(productRef, dataToUpdate);
 
       let displayUnitStr = 'bulk';
-      if (form.transactionUnit === 'retail') displayUnitStr = selectedProduct.value.category === 'ម៉ាស់' ? 'សន្លឹក' : 'ដប';
+      if (form.transactionUnit === 'retail') {
+          if (selectedProduct.value.category === 'ម៉ាស់') displayUnitStr = 'សន្លឹក';
+          else if (selectedProduct.value.category === 'POL') displayUnitStr = 'ដប';
+          else displayUnitStr = 'ដប';
+      }
       else if (form.transactionUnit === 'box') displayUnitStr = 'ប្រអប់';
       else displayUnitStr = translateUnit(selectedProduct.value.unit);
 
@@ -684,7 +686,7 @@ const submitTransaction = async () => {
       notification.success(`បាន${mode.value === 'IN' ? 'នាំចូល' : 'ដកចេញ'}ដោយជោគជ័យ!`);
       clearSelection();
       
-      fetchHistory(); // Reload top 5 after transaction
+      fetchHistory(); 
 
   } catch (error) {
       console.error(error);
@@ -717,10 +719,10 @@ const confirmDeleteTransaction = async () => {
           let bulkQtyToReverse = Number(trx.qty) || 0;
           let transactionUnitCostBulk = Number(trx.unitCost) || 0;
 
-          // 🌟 SMART REVERSE COMPUTATION 🌟
+          // 🌟 SMART REVERSE COMPUTATION (Updated for POL) 🌟
           if (prodData.unit === 'case') {
               const perCase = Number(prodData.itemsPerCase) || 1;
-              const perBox = prodData.category === 'ម៉ាស់' ? (Number(prodData.itemsPerBox) || 1) : 1;
+              const perBox = (prodData.category === 'ម៉ាស់' || prodData.category === 'POL') ? (Number(prodData.itemsPerBox) || 1) : 1;
 
               if (trx.unitDisplay === 'សន្លឹក' || trx.unitDisplay === 'ដប') {
                   bulkQtyToReverse = bulkQtyToReverse / (perCase * perBox); 
@@ -772,7 +774,7 @@ const confirmDeleteTransaction = async () => {
       notification.success("លុបប្រវត្តិ និងធ្វើបច្ចុប្បន្នភាពស្តុកដោយជោគជ័យ!");
       deleteModal.show = false;
       
-      fetchHistory(); // Reload top 5 after delete
+      fetchHistory(); 
 
   } catch (error) {
       console.error("Delete Error:", error);
@@ -782,10 +784,6 @@ const confirmDeleteTransaction = async () => {
   }
 };
 
-
-// ==========================================
-// 🌟 SMART FETCHING & PAGINATION LOGIC 🌟
-// ==========================================
 const hasNewData = ref(false); 
 let historyUnsubscribe = null;
 let latestDocId = null;
@@ -793,12 +791,11 @@ let latestDocId = null;
 const fetchHistory = async () => {
   isLoadingHistory.value = true;
   hasNewData.value = false;
-  lastVisibleDoc = null; // Reset cursor
-  history.value = []; // Clear array
+  lastVisibleDoc = null; 
+  history.value = []; 
   hasMoreHistory.value = true;
 
   try {
-      // 🌟 Fetch only 5 based on Mode 🌟
       const q = query(
           collection(db, 'stock_transactions'), 
           where('type', '==', mode.value), 
@@ -811,7 +808,7 @@ const fetchHistory = async () => {
       
       if (snap.docs.length > 0) {
           latestDocId = snap.docs[0].id;
-          lastVisibleDoc = snap.docs[snap.docs.length - 1]; // Set cursor for load more
+          lastVisibleDoc = snap.docs[snap.docs.length - 1]; 
       }
       
       hasMoreHistory.value = snap.docs.length === historyLimit;
@@ -854,7 +851,6 @@ const loadMoreHistory = async () => {
 
 const setupHistoryListener = () => {
   if (historyUnsubscribe) historyUnsubscribe();
-  // Listener នេះគ្រាន់តែរង់ចាំមើលថាមាន Data ថ្មីឬអត់ មិនមែនទាញយកទាំងអស់ទេ (ចំណាយ ១ read)
   const q = query(collection(db, 'stock_transactions'), where('type', '==', mode.value), orderBy('createdAt', 'desc'), limit(1));
   historyUnsubscribe = onSnapshot(q, (snap) => {
       if (!snap.empty) {
@@ -876,7 +872,6 @@ onUnmounted(() => {
 
 const displayHistory = computed(() => {
   const activeProductIds = new Set(props.products.map(p => p.id));
-  // Filter out any products that were completely deleted from stock list
   return history.value.filter(h => activeProductIds.has(h.productId));
 });
 
@@ -893,8 +888,10 @@ const translateUnit = (unit) => {
   return map[unit] || unit;
 };
 
+// 🌟 ធ្វើឱ្យស្គាល់ខ្នាតរាយចុងក្រោយ 🌟
 const translateRetailUnit = (prod) => {
   if (prod && prod.category === 'ម៉ាស់') return 'សន្លឹក';
+  if (prod && prod.category === 'POL') return 'ដប';
   if (prod && prod.unit === 'case') return 'ដប/កញ្ចប់';
   return translateUnit(prod ? prod.unit : 'bottle');
 };

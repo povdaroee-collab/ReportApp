@@ -192,27 +192,29 @@ const processedStocks = computed(() => {
         let cases = 0;
         let remainder = 0;
         let boxes = 0;
-        let sheets = 0;
+        let retailPieces = 0;
         let stockText = '';
         let packingText = ''; // សម្រាប់បង្ហាញក្នុងជួរឈរ "ក្នុង១កេះ"
 
-        // 🌟 1. LOGIC គណនាស្តុកសម្រាប់ម៉ាស់ (3-Levels)
-        if (category === 'ម៉ាស់') {
-            const ipb = Number(item.itemsPerBox) || 1;
-            const totalSheets = Math.floor(qtyBase * ipc * ipb);
-            retailQty = totalSheets;
+        // 🌟 1. LOGIC គណនាស្តុកសម្រាប់ ម៉ាស់ និង POL (3-Levels) 🌟
+        if (category === 'ម៉ាស់' || category === 'POL') {
+            const ipb = Number(item.itemsPerBox) || 12; // 👈 Default 12 ដូចយើងនិយាយគ្នា
+            const totalRetailPieces = Math.floor(qtyBase * ipc * ipb);
+            retailQty = totalRetailPieces;
             
-            cases = Math.floor(totalSheets / (ipc * ipb));
-            const remainingAfterCases = totalSheets % (ipc * ipb);
+            cases = Math.floor(totalRetailPieces / (ipc * ipb));
+            const remainingAfterCases = totalRetailPieces % (ipc * ipb);
             boxes = Math.floor(remainingAfterCases / ipb);
-            sheets = remainingAfterCases % ipb;
+            retailPieces = remainingAfterCases % ipb;
+            
+            const retailLabel = category === 'ម៉ាស់' ? 'សន្លឹក' : 'ដប';
 
             if (cases > 0) stockText += `${cases.toLocaleString()} កេះ `;
             if (boxes > 0) stockText += `${boxes.toLocaleString()} ប្រអប់ `;
-            if (sheets > 0) stockText += `${sheets.toLocaleString()} សន្លឹក`;
-            if (cases === 0 && boxes === 0 && sheets === 0) stockText = '0';
+            if (retailPieces > 0) stockText += `${retailPieces.toLocaleString()} ${retailLabel}`;
+            if (cases === 0 && boxes === 0 && retailPieces === 0) stockText = '0';
             
-            packingText = `${ipc} ប្រអប់`; // ឧ. ១កេះ មាន ៥០ប្រអប់
+            packingText = `${ipc} ប្រអប់`; // ឧ. ១កេះ មាន ៤ប្រអប់
         } 
         // 🌟 2. LOGIC គណនាស្តុកសម្រាប់ខោអាវ និងផ្សេងៗ (1-2 Levels)
         else {
@@ -482,8 +484,6 @@ const downloadPDF = async () => {
         isExporting.value = false; 
     }
 };
-
-
 
 const downloadExcel = () => {
     try {

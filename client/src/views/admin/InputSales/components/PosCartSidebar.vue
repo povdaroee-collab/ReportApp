@@ -113,7 +113,16 @@
 
                               <div class="flex flex-col min-w-0">
                                   <h4 class="font-bold text-[12px] text-slate-800 truncate" :class="{'text-amber-700': item.manualType === 'ថែមជូន'}">{{ item.product.name }}</h4>
-                                  <span class="text-[9px] text-slate-400 font-bold truncate">{{ translateRetailUnit(item.product) }} • {{ getAutoCalculatedType(item) }}</span>
+                                  
+                                  <div class="flex items-center flex-wrap gap-1 mt-0.5">
+                                      <span v-if="getUnitConversionText(item)" class="text-[8.5px] md:text-[9.5px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded truncate">
+                                          {{ getUnitConversionText(item) }}
+                                      </span>
+                                      <span v-else class="text-[9px] text-slate-400 font-bold truncate">
+                                          {{ translateRetailUnit(item.product) }}
+                                      </span>
+                                      <span class="text-[8.5px] md:text-[9px] text-slate-400 font-bold truncate">• {{ getAutoCalculatedType(item) }}</span>
+                                  </div>
                               </div>
                           </div>
                           
@@ -132,18 +141,32 @@
                               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                           </button>
                           
-                          <div class="mb-2.5 pr-6">
+                          <div class="mb-2 pr-6">
                               <h4 class="font-black text-[13px] md:text-sm text-slate-800 leading-snug line-clamp-2" :class="{'text-amber-700': item.manualType === 'ថែមជូន'}">
                                   {{ item.product.name }}
                               </h4>
+                              
+                              <div v-if="getUnitConversionText(item)" class="text-[9px] md:text-[10px] text-indigo-700 font-black bg-indigo-50 border border-indigo-100 px-2 py-1 rounded mt-1.5 w-fit">
+                                  🔄 {{ getUnitConversionText(item) }}
+                              </div>
                           </div>
                           
-                          <div class="flex flex-wrap items-center gap-2 mb-3">
+                          <div class="flex flex-wrap items-center gap-2 mb-3 mt-1">
                               <div class="relative w-fit">
                                   <select :value="item.selectedUnit" @change="$emit('unit-change', index, $event)" @click.stop @dblclick.stop class="appearance-none bg-slate-100/80 border border-slate-200 text-slate-700 py-1.5 pl-2.5 pr-7 rounded-md text-[11px] font-black focus:bg-white outline-none cursor-pointer transition-colors shadow-sm">
                                       <option value="retail">{{ item.product.isCombo ? 'ឈុត' : translateRetailUnit(item.product) + ' (រាយ)' }}</option>
-                                      <option v-if="!item.product.isCombo && item.product.category === 'ម៉ាស់' && item.product.itemsPerBox > 1" value="box">ប្រអប់ (Box)</option>
-                                      <option v-if="!item.product.isCombo && item.product.itemsPerCase > 1 && item.product.enableCaseTiers !== false" value="case">កេះ (ដុំ)</option>
+                                      
+                                      <option v-if="!item.product.isCombo && item.product.enableWholesale !== false && item.product.enableBoxTiers !== false && (item.product.category === 'ម៉ាស់' || item.product.category === 'POL') && item.product.itemsPerBox > 1" value="box">
+                                          ប្រអប់ (Box)
+                                      </option>
+                                      
+                                      <option v-if="!item.product.isCombo && item.product.enableWholesale !== false && item.product.enableDozenTiers === true" value="dozen">
+                                          ឡូ (Dozen)
+                                      </option>
+
+                                      <option v-if="!item.product.isCombo && item.product.enableWholesale !== false && item.product.enableCaseTiers !== false && item.product.itemsPerCase > 1" value="case">
+                                          កេះ (ដុំ)
+                                      </option>
                                   </select>
                                   <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-400"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg></div>
                               </div>
@@ -175,7 +198,7 @@
                                       <input type="number" v-model.number="item.manualPrice" @change="$emit('update-backend')" step="any" min="0" class="w-16 bg-indigo-50 border border-indigo-200 rounded px-1.5 py-0.5 text-[13px] font-black text-indigo-700 outline-none focus:border-indigo-500 focus:bg-white text-center shadow-inner">
                                   </div>
                                   <div v-else class="text-[13px] md:text-[14px] font-black mt-0.5" :class="item.manualPrice === 0 && item.manualType === 'ថែមជូន' ? 'text-amber-500' : 'text-slate-800'">
-                                      {{ formatPrice(getSingleBasePrice(item), item.product.currency) }} <span class="text-[9px] text-slate-400 font-bold ml-0.5">/ឯកតា</span>
+                                      {{ formatPrice(calculateItemPrice(item) / item.qty, item.product.currency) }} <span class="text-[9px] text-slate-400 font-bold ml-0.5">/ឯកតា</span>
                                   </div>
                               </div>
 
@@ -230,7 +253,7 @@ const props = defineProps({
   translateHardcodedUnit: Function,
   translateRetailUnit: Function, 
   suggestedAddons: Array,
-  autoOpenReceipt: Boolean // 🌟 Props សម្រាប់គ្រប់គ្រង Toggle 🌟
+  autoOpenReceipt: Boolean 
 });
 
 const emit = defineEmits([
@@ -238,6 +261,39 @@ const emit = defineEmits([
   'unit-change', 'manual-price-toggle', 'manual-type-change', 'checkout', 
   'update-backend', 'add-suggestion', 'update:autoOpenReceipt' 
 ]);
+
+// 🌟 SMART UNIT CONVERSION DISPLAY 🌟
+const getUnitConversionText = (item) => {
+    if (!item.product || item.product.isCombo) return '';
+
+    let multiplier = 1;
+    let label = '';
+    const retailUnit = props.translateRetailUnit(item.product);
+
+    if (item.selectedUnit === 'case') {
+        const perCase = Number(item.product.itemsPerCase) || 1;
+        const perBox = (item.product.category === 'ម៉ាស់' || item.product.category === 'POL') ? (Number(item.product.itemsPerBox) || 12) : 1;
+        multiplier = perCase * perBox;
+        label = '១កេះ';
+    } else if (item.selectedUnit === 'box') {
+        multiplier = Number(item.product.itemsPerBox) || 12;
+        label = '១ប្រអប់';
+    } else if (item.selectedUnit === 'dozen') {
+        multiplier = 12;
+        label = '១ឡូ';
+    } else {
+        return ''; // បើជាខ្នាតរាយ មិនបាច់បង្ហាញទេ
+    }
+
+    const currentQty = Number(item.inputQty) || Number(item.qty) || 1;
+    let text = `${label} = ${multiplier} ${retailUnit}`;
+
+    if (currentQty > 1) {
+        text += ` | សរុប: ${multiplier * currentQty} ${retailUnit}`;
+    }
+
+    return text;
+};
 
 // 🌟 SMART AUTO-COLLAPSE LOGIC (10 seconds) 🌟
 const expandedStates = ref({});

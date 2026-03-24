@@ -174,7 +174,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 
 import IncomeQuickModal from './components/IncomeQuickModal.vue';
 import CurrentStockMain from './components/stocknow/CurrentStockMain.vue';
-import RestockMain from './components/stocknow/RestockMain.vue'; // Import Component ថ្មី
+import RestockMain from './components/stocknow/RestockMain.vue'; 
 
 // Sub-Tab State
 const activeSubTab = ref('sold');
@@ -200,7 +200,12 @@ const originalStocksGlobal = ref([]);
 const combosGlobal = ref([]);
 
 const formatCurrency = (val) => Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " $";
-const translateHardcodedUnit = (u) => { const m={ bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ', set: 'ឈុត' }; return m[u]||u; };
+
+// 🌟 1. បន្ថែមការបកប្រែខ្នាតថ្មី (សន្លឹក, ប្រអប់)
+const translateHardcodedUnit = (u) => { 
+    const m = { bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ', set: 'ឈុត', sheet: 'សន្លឹក', box: 'ប្រអប់' }; 
+    return m[u] || u; 
+};
 
 const getDateBounds = () => {
     let start, end;
@@ -219,29 +224,64 @@ const getDateBounds = () => {
     return { startStr: start.toISOString(), endStr: end.toISOString() };
 };
 
+// 🌟 2. កែប្រែប្រព័ន្ធគណនាស្តុកនៅសល់ (ស្គាល់ម៉ាស់ ៣កម្រិត)
 const getDynamicStockInfo = (id) => {
     let product = originalStocksGlobal.value.find(s => s.id === id);
     if (!product) return { text: 'N/A', isLow: false };
     
-    const retailTotal = Math.floor(Number(product.quantity || 0) * Number(product.itemsPerCase || 1));
-    const itemsPerCase = Number(product.itemsPerCase) || 1;
+    const category = product.category || '';
+    const qtyBase = Number(product.quantity || 0);
+    const ipc = Number(product.itemsPerCase || 1);
     
+    let retailTotal = 0;
+    let cases = 0;
     let isLow = false;
-    if (itemsPerCase > 1) { isLow = Math.floor(retailTotal / itemsPerCase) <= 30; } 
-    else { isLow = retailTotal <= 200; }
+    let text = '';
 
-    if (retailTotal <= 0) return { text: 'អស់ស្តុក', isLow: true };
+    // 🌟 LOGIC សម្រាប់ម៉ាស់ និង POL (3 Levels) 🌟
+    if (category === 'ម៉ាស់' || category === 'POL') {
+        const ipb = Number(product.itemsPerBox) || 12; // 👈 ជួសជុលបញ្ហា Null
+        retailTotal = Math.floor(qtyBase * ipc * ipb);
+        cases = Math.floor(retailTotal / (ipc * ipb));
+        
+        isLow = cases <= 40 || retailTotal <= 0; 
 
-    if (itemsPerCase <= 1 || !product.retailUnit) {
-        return { text: `${retailTotal.toLocaleString()} ${translateHardcodedUnit(product.retailUnit || product.unit || 'bottle')}`, isLow };
+        if (retailTotal <= 0) return { text: 'អស់ស្តុក', isLow: true };
+
+        const remainder = retailTotal % (ipc * ipb);
+        const boxes = Math.floor(remainder / ipb);
+        const retailPieces = remainder % ipb;
+        const retailLabel = category === 'ម៉ាស់' ? 'សន្លឹក' : 'ដប';
+
+        let result = [];
+        if (cases > 0) result.push(`${cases.toLocaleString()} កេះ`);
+        if (boxes > 0) result.push(`${boxes.toLocaleString()} ប្រអប់`);
+        if (retailPieces > 0) result.push(`${retailPieces.toLocaleString()} ${retailLabel}`);
+        text = result.join(' ');
+        
+    } 
+    // LOGIC សម្រាប់ទំនិញធម្មតា និងខោអាវ
+    else {
+        retailTotal = Math.floor(qtyBase * ipc);
+        cases = Math.floor(retailTotal / ipc);
+        
+        if (ipc > 1) { isLow = cases <= 40 || retailTotal <= 0; } 
+        else { isLow = retailTotal <= 200; }
+
+        if (retailTotal <= 0) return { text: 'អស់ស្តុក', isLow: true };
+
+        if (ipc <= 1 || !product.retailUnit) {
+            text = `${retailTotal.toLocaleString()} ${translateHardcodedUnit(product.retailUnit || product.unit || 'bottle')}`;
+        } else {
+            const remainder = retailTotal % ipc;
+            let result = [];
+            if (cases > 0) result.push(`${cases.toLocaleString()} ${translateHardcodedUnit(product.unit || 'case')}`);
+            if (remainder > 0) result.push(`${remainder.toLocaleString()} ${translateHardcodedUnit(product.retailUnit || 'bottle')}`);
+            text = result.join(' ');
+        }
     }
 
-    const cases = Math.floor(retailTotal / itemsPerCase);
-    const bottles = Math.floor(retailTotal % itemsPerCase);
-    let result = [];
-    if (cases > 0) result.push(`${cases} ${translateHardcodedUnit(product.unit || 'case')}`);
-    if (bottles > 0) result.push(`${bottles} ${translateHardcodedUnit(product.retailUnit || 'bottle')}`);
-    return { text: result.join(' '), isLow };
+    return { text, isLow };
 };
 
 const fetchSalesData = async () => {
@@ -289,12 +329,48 @@ const fetchSalesData = async () => {
 onMounted(() => fetchSalesData());
 watch([dateFilterType, specificDate, selectedMonth, selectedYear], () => fetchSalesData());
 
+// 🌟 3. កែប្រែមុខងារបូកសរុបទំនិញលក់ចេញ (ឱ្យត្រូវខ្នាតឆ្លាតវៃ និងមានពណ៌/ទំហំ)
 const aggregatedMainProducts = computed(() => {
     const resultObj = {};
+    
+    // Function តូចមួយសម្រាប់បង្កើតឈ្មោះទំនិញភ្ជាប់ពណ៌ និងទំហំ
+    const buildDisplayName = (baseProd, defaultName) => {
+        let displayName = baseProd ? baseProd.name : defaultName;
+        if (baseProd) {
+            const cat = baseProd.category || '';
+            if (['អាវ', 'ខោ', 'ស្បែកជើង', 'ការបូប', 'កាបូប'].includes(cat) && baseProd.colors && baseProd.colors.length > 0) {
+                displayName += ` (ពណ៌: ${baseProd.colors.join(', ')})`;
+                if (baseProd.sizes && baseProd.sizes.length > 0) {
+                    displayName += ` (ទំហំ: ${baseProd.sizes.join(', ')})`;
+                }
+            }
+        }
+        return displayName;
+    };
+
+    // 🌟 ដំណោះស្រាយ: ដាក់ Category Check លើគេ ដើម្បីកុំឱ្យចាញ់បោកទិន្នន័យចាស់ក្នុង DB 🌟
+    const getRetailUnitLabel = (baseProd) => {
+        if (!baseProd) return 'ដប';
+        
+        const cat = baseProd.category || '';
+        
+        if (cat === 'ម៉ាស់') return 'សន្លឹក';
+        if (cat === 'POL') return 'ដប';
+        if (cat === 'អាវ') return 'អាវ';
+        if (cat === 'ខោ') return 'ខោ';
+        if (cat === 'ស្បែកជើង') return 'គូ';
+        if (cat === 'ការបូប' || cat === 'កាបូប') return 'កាបូប';
+        
+        if (baseProd.retailUnit) return translateHardcodedUnit(baseProd.retailUnit);
+        
+        return 'ដប'; 
+    };
+
     allSalesRaw.value.forEach(inv => {
         if (inv.items) {
             inv.items.forEach(item => {
                 const invoiceCurrencyMulti = (inv.currency === 'KHR') ? (1/4000) : 1;
+                
                 if (item.isCombo) {
                     const comboData = combosGlobal.value.find(c => c.id === item.id);
                     if (comboData && comboData.items) {
@@ -303,13 +379,22 @@ const aggregatedMainProducts = computed(() => {
                             const baseProd = originalStocksGlobal.value.find(s => s.id === subItem.productId);
                             const subIpc = baseProd ? (Number(baseProd.itemsPerCase) || 1) : 1;
                             const cost = baseProd ? (Number(baseProd.unitCost) / subIpc) * Number(subItem.qty) : 0;
-                            totalComboCost += cost; return { ...subItem, baseProd, cost };
+                            totalComboCost += cost; 
+                            return { ...subItem, baseProd, cost };
                         });
+                        
                         const comboRevenue = Number(item.qty) * Number(item.price);
+                        
                         comboItemsWithCost.forEach(subItem => {
                             if (subItem.baseProd) {
                                 const key = subItem.baseProd.id;
-                                if (!resultObj[key]) resultObj[key] = { id: key, name: subItem.baseProd.name, qty: 0, revenue: 0, cost: 0, unitStr: translateHardcodedUnit(subItem.baseProd.retailUnit || 'bottle') };
+                                const displayName = buildDisplayName(subItem.baseProd, subItem.baseProd.name);
+
+                                if (!resultObj[key]) resultObj[key] = { 
+                                    id: key, name: displayName, qty: 0, revenue: 0, cost: 0, 
+                                    unitStr: getRetailUnitLabel(subItem.baseProd) 
+                                };
+                                
                                 resultObj[key].qty += (Number(subItem.qty) * Number(item.qty));
                                 const ratio = totalComboCost > 0 ? (subItem.cost / totalComboCost) : (1 / comboItemsWithCost.length);
                                 resultObj[key].revenue += (comboRevenue * ratio * invoiceCurrencyMulti);
@@ -320,9 +405,28 @@ const aggregatedMainProducts = computed(() => {
                 } else {
                     const key = item.id;
                     const baseProd = originalStocksGlobal.value.find(s => s.id === item.id);
-                    if (!resultObj[key]) resultObj[key] = { id: key, name: item.name, qty: 0, revenue: 0, cost: 0, unitStr: translateHardcodedUnit(baseProd?.retailUnit || 'bottle') };
+                    const displayName = buildDisplayName(baseProd, item.name);
+
+                    if (!resultObj[key]) resultObj[key] = { 
+                        id: key, name: displayName, qty: 0, revenue: 0, cost: 0, 
+                        unitStr: getRetailUnitLabel(baseProd) 
+                    };
+                    
                     let itemQty = Number(item.qty || 0);
-                    if (item.unit === 'case') itemQty = itemQty * (Number(item.itemsPerCase) || 1);
+                    const cat = baseProd?.category || '';
+                    
+                    // 🌟 Update: Logic បំប្លែងបរិមាណលក់ចេញទៅតាមកម្រិតខ្នាត (បញ្ចូល POL ផងដែរ) 🌟
+                    if (cat === 'ម៉ាស់' || cat === 'POL') {
+                        const ipc = Number(baseProd?.itemsPerCase || 1);
+                        const ipb = Number(baseProd?.itemsPerBox) || 12; // Default to 12 if null
+                        if (item.unit === 'case' || item.unit === 'កេះ') itemQty = itemQty * ipc * ipb;
+                        else if (item.unit === 'box' || item.unit === 'ប្រអប់') itemQty = itemQty * ipb;
+                        else if (item.unit === 'dozen' || item.unit === 'ឡូ') itemQty = itemQty * 12; // 👈 Dozen
+                    } else {
+                        if (item.unit === 'case' || item.unit === 'កេះ') itemQty = itemQty * (Number(baseProd?.itemsPerCase || item.itemsPerCase) || 1);
+                        else if (item.unit === 'dozen' || item.unit === 'ឡូ') itemQty = itemQty * 12; // 👈 Dozen
+                    }
+
                     resultObj[key].qty += itemQty;
                     resultObj[key].revenue += (Number(item.qty) * Number(item.price) * invoiceCurrencyMulti);
                     resultObj[key].cost += (Number(item.qty) * Number(item.cost || 0));

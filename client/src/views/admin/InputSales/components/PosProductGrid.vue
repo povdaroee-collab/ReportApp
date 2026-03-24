@@ -82,14 +82,18 @@
           <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5 max-w-[100rem] mx-auto animate-fade-in">
               
               <div v-for="product in paginatedProducts" :key="product.id" @click="$emit('add-to-cart', product)" 
-                  class="bg-white border border-slate-200 shadow-sm transition-all cursor-pointer group relative flex flex-col select-none" 
+                  class="bg-white border border-slate-200 shadow-sm transition-all cursor-pointer group relative flex flex-col select-none overflow-hidden" 
                   :class="[
                       getTotalRetailStock(product) > 0 ? 'hover:shadow-xl hover:-translate-y-1 hover:border-indigo-300 active:scale-95' : 'opacity-60 cursor-not-allowed grayscale-[50%]',
-                      viewMode === 'card' ? 'rounded-[1.25rem] p-2.5 md:p-3 h-full' : 'rounded-xl p-3 justify-between h-24 md:h-28'
+                      viewMode === 'card' ? 'rounded-[1.25rem] p-2.5 md:p-3 h-full' : 'rounded-xl p-3 justify-between h-[120px] md:h-32'
                   ]">
                   
                   <template v-if="viewMode === 'card'">
                       <div v-if="product.isCombo" class="absolute top-2 left-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] md:text-[10px] font-black px-2 py-1 rounded-lg shadow-md z-10 flex items-center gap-1 border border-orange-200">🎁 ឈុត</div>
+                      
+                      <div v-else-if="product.category" class="absolute top-2 left-2 bg-indigo-500/90 backdrop-blur-md text-white text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded shadow-sm z-10 uppercase border border-indigo-400">
+                          {{ product.category }}
+                      </div>
                       
                       <div class="w-full aspect-[4/3] rounded-xl bg-slate-50 mb-3 overflow-hidden border border-slate-100 relative flex items-center justify-center shrink-0">
                           <img v-if="product.image && (product.image.startsWith('http') || product.image.startsWith('data:image'))" :src="product.image" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
@@ -104,12 +108,25 @@
                       
                       <div class="flex-1 flex flex-col">
                           <h3 class="font-black text-xs md:text-sm text-slate-800 leading-snug mb-1 line-clamp-2 group-hover:text-indigo-600 transition-colors" :title="product.name">{{ product.name }}</h3>
-                          <p class="text-[8px] md:text-[9px] text-slate-400 font-mono mb-2.5 line-clamp-1">{{ product.barcode || 'NO-BARCODE' }}</p>
                           
-                          <div class="mt-auto pt-2.5 border-t border-slate-100 flex flex-col gap-1.5">
-                              <div v-if="!product.isCombo && product.itemsPerCase && product.itemsPerCase > 1" class="text-[8px] md:text-[9px] text-slate-500 font-bold bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100 w-fit"><span class="text-slate-600">១{{ translateHardcodedUnit(product.unit) }} = {{ product.itemsPerCase }}{{ translateHardcodedUnit(product.retailUnit) }}</span></div>
+                          <div v-if="(product.colors && product.colors.length > 0) || (product.sizes && product.sizes.length > 0)" class="flex flex-wrap gap-1 mb-1.5">
+                              <span v-for="(color, cIdx) in (product.colors || [])" :key="'c'+cIdx" class="bg-sky-50 text-sky-500 text-[8px] font-bold px-1 rounded border border-sky-100">{{ color }}</span>
+                              <span v-for="(size, sIdx) in (product.sizes || [])" :key="'s'+sIdx" class="bg-pink-50 text-pink-500 text-[8px] font-bold px-1 rounded border border-pink-100 uppercase">{{ size }}</span>
+                          </div>
+
+                          <p class="text-[8px] md:text-[9px] text-slate-400 font-mono mb-2 line-clamp-1">{{ product.barcode || 'NO-BARCODE' }}</p>
+                          
+                          <div class="mt-auto pt-2 border-t border-slate-100 flex flex-col gap-1">
+                              <div v-if="!product.isCombo && product.itemsPerCase && product.itemsPerCase > 1" class="text-[8px] md:text-[9px] text-slate-500 font-bold bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100 w-fit">
+                                  <span class="text-slate-600">
+                                      ១{{ translateHardcodedUnit(product.unit) }} = 
+                                      {{ product.itemsPerCase }} {{ (product.category === 'ម៉ាស់' || product.category === 'POL') ? 'ប្រអប់' : translateRetailUnit(product) }}
+                                  </span>
+                              </div>
                               <div class="flex items-end justify-between mt-0.5">
-                                  <div class="text-[9px] md:text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded"><span>1 {{ translateHardcodedUnit(product.isCombo ? 'set' : (product.retailUnit || 'bottle')) }}</span></div>
+                                  <div class="text-[9px] md:text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                      <span>1 {{ translateRetailUnit(product) }}</span>
+                                  </div>
                                   <div class="text-right"><p class="text-[14px] md:text-[16px] font-black text-indigo-600">{{ formatPrice(product.retailPrice, product.currency) }}</p></div>
                               </div>
                           </div>
@@ -120,6 +137,12 @@
                       <div class="flex justify-between items-start gap-2">
                           <div class="flex-1 min-w-0">
                               <h3 class="font-black text-[12px] md:text-[13px] text-slate-800 leading-tight mb-1 line-clamp-2 group-hover:text-indigo-600 transition-colors">{{ product.name }}</h3>
+                              
+                              <div v-if="(product.colors && product.colors.length > 0) || (product.sizes && product.sizes.length > 0)" class="flex flex-wrap gap-1 mb-1">
+                                  <span v-for="(color, cIdx) in (product.colors || [])" :key="'c'+cIdx" class="bg-sky-50 text-sky-500 text-[8px] font-bold px-1 rounded border border-sky-100">{{ color }}</span>
+                                  <span v-for="(size, sIdx) in (product.sizes || [])" :key="'s'+sIdx" class="bg-pink-50 text-pink-500 text-[8px] font-bold px-1 rounded border border-pink-100 uppercase">{{ size }}</span>
+                              </div>
+
                               <div class="flex items-center gap-1.5">
                                   <span class="text-[8px] md:text-[9px] text-slate-400 font-mono line-clamp-1">{{ product.barcode || 'NO-BARCODE' }}</span>
                                   <span v-if="product.isCombo" class="bg-amber-100 text-amber-700 px-1.5 py-[1px] rounded text-[8px] font-black shrink-0">🎁 ឈុត</span>
@@ -172,6 +195,7 @@ const props = defineProps({
   getTotalRetailStock: Function,
   formatComplexStock: Function,
   translateHardcodedUnit: Function,
+  translateRetailUnit: Function, // 🌟 បន្ថែម Props នេះដើម្បីកុំឱ្យវា Error 🌟
   formatPrice: Function
 });
 

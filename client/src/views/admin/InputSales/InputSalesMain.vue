@@ -119,7 +119,6 @@
 import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { db, auth } from '@/firebaseConfig';
-// 🌟 បានបន្ថែម getDocs, orderBy និង limit នៅទីនេះ
 import { collection, addDoc, query, where, onSnapshot, doc, updateDoc, increment, setDoc, deleteDoc, getDocs, orderBy, limit } from 'firebase/firestore'; 
 import { onAuthStateChanged } from 'firebase/auth';
 import Toast from '@/components/Toast.vue';
@@ -135,7 +134,6 @@ import PosFloatingReceipt from './components/PosFloatingReceipt.vue';
 const router = useRouter();
 const notification = useNotificationStore();
 
-// --- STATE ---
 const mainTab = ref('pos'); 
 const showMobileCart = ref(false); 
 const showFloatingReceipt = ref(false); 
@@ -158,7 +156,6 @@ const showWarning = (msg) => { warningModal.message = msg; warningModal.show = t
 
 const cart = ref([]);
 
-// --- MODAL STATES ---
 const isCheckoutModalOpen = ref(false);
 const checkoutModalRef = ref(null);
 const isSubmitting = ref(false);
@@ -173,7 +170,6 @@ let unsubscribeCombos = null;
 const timeLeft = ref("");
 const reservationTimer = ref(null);
 
-// --- UTILS ---
 const triggerAlert = (type, title, message) => { if (type === 'error') notification.error(message); else notification.success(message); };
 const formatPrice = (val, currency = 'USD') => { 
     if (val === undefined || val === null) return '0.00'; 
@@ -186,12 +182,12 @@ const translateRetailUnit = (prod) => {
     if (!prod) return 'ដប';
     if (prod.isCombo) return 'ឈុត';
     if (prod.category === 'ម៉ាស់') return 'សន្លឹក';
+    if (prod.category === 'POL') return 'ដប';
     if (prod.category === 'ស្បែកជើង') return 'គូ';
     if (prod.category === 'ការបូប' || prod.category === 'ខោ' || prod.category === 'អាវ') return 'PCS';
     return translateHardcodedUnit(prod.retailUnit || 'bottle');
 };
 
-// --- FETCH DATA ---
 onMounted(() => {
     const authListener = onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -199,7 +195,6 @@ onMounted(() => {
                 if (unsubscribeProducts) unsubscribeProducts();
                 if (unsubscribeCombos) unsubscribeCombos();
 
-                // 1. រក្សាទុក onSnapshot សម្រាប់ស្តុកដើម្បីការពារការលក់ជាន់គ្នា
                 unsubscribeProducts = onSnapshot(collection(db, 'stocks'), (snapshot) => {
                     originalStocks.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isCombo: false })).filter(i => !i.isDeleted);
                     combineProductsAndCombos();
@@ -210,12 +205,10 @@ onMounted(() => {
                     combineProductsAndCombos();
                 });
 
-                // 2. អាប់ដេតមុខងារទាញយក "អ្នកលក់" ដោយប្រើត្រឹម getDocs (សន្សំសំចៃ Read) 🌟
                 const qSellers = query(collection(db, "users"), where("role", "in", ["seller", "dealer"]), where("createdBy", "==", user.uid));
                 const sellerSnap = await getDocs(qSellers);
                 sellers.value = sellerSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 
-                // 3. អាប់ដេតមុខងារទាញយក "ឈ្មោះអតិថិជន" ដោយប្រើ getDocs, orderBy និងកំណត់ Limit ត្រឹម 50 🌟
                 const qSales = query(
                     collection(db, 'sales_reports'), 
                     where('createdBy', '==', user.uid),
@@ -318,7 +311,7 @@ const getTotalRetailStock = (product) => {
             let itemRetailStock = 0;
             if (stockItem.unit === 'case') {
                  const perCase = Number(stockItem.itemsPerCase) || 1;
-                 const perBox = stockItem.category === 'ម៉ាស់' ? (Number(stockItem.itemsPerBox) || 1) : 1;
+                 const perBox = (stockItem.category === 'ម៉ាស់' || stockItem.category === 'POL') ? (Number(stockItem.itemsPerBox) || 12) : 1;
                  itemRetailStock = Math.floor((Number(stockItem.quantity) || 0) * perCase * perBox);
             } else {
                  itemRetailStock = Math.floor(Number(stockItem.quantity) || 0);
@@ -330,7 +323,7 @@ const getTotalRetailStock = (product) => {
     } else {
         if (product.unit === 'case') {
              const perCase = Number(product.itemsPerCase) || 1;
-             const perBox = product.category === 'ម៉ាស់' ? (Number(product.itemsPerBox) || 1) : 1;
+             const perBox = (product.category === 'ម៉ាស់' || product.category === 'POL') ? (Number(product.itemsPerBox) || 12) : 1;
              return Math.floor((Number(product.quantity) || 0) * perCase * perBox);
         }
         return Math.floor(Number(product.quantity) || 0);
@@ -344,21 +337,21 @@ const formatComplexStock = (product) => {
     
     if (product.unit === 'case') {
         const perCase = Number(product.itemsPerCase) || 1;
-        const perBox = product.category === 'ម៉ាស់' ? (Number(product.itemsPerBox) || 1) : 1;
+        const perBox = (product.category === 'ម៉ាស់' || product.category === 'POL') ? (Number(product.itemsPerBox) || 12) : 1;
         
         const totalInBaseRetail = retailTotal;
         const cases = Math.floor(totalInBaseRetail / (perCase * perBox));
         let remainderText = '';
         
-        if (product.category === 'ម៉ាស់') {
+        if (product.category === 'ម៉ាស់' || product.category === 'POL') {
             const remainingPiecesAfterCases = totalInBaseRetail % (perCase * perBox);
             const boxes = Math.floor(remainingPiecesAfterCases / perBox);
-            const sheets = remainingPiecesAfterCases % perBox;
+            const pieces = remainingPiecesAfterCases % perBox;
             
             let parts = [];
             if (cases > 0) parts.push(`${cases} កេះ`);
             if (boxes > 0) parts.push(`${boxes} ប្រអប់`);
-            if (sheets > 0) parts.push(`${sheets} សន្លឹក`);
+            if (pieces > 0) parts.push(`${pieces} ${translateRetailUnit(product)}`);
             return parts.join(' ');
         } else {
             const retailRem = totalInBaseRetail % perCase;
@@ -376,21 +369,26 @@ const getRetailQtyEquivalent = (product, qty, selectedUnit) => {
     if (product.isCombo) return qty;
     if (selectedUnit === 'case') {
         const perCase = Number(product.itemsPerCase) || 1;
-        const perBox = product.category === 'ម៉ាស់' ? (Number(product.itemsPerBox) || 1) : 1;
+        const perBox = (product.category === 'ម៉ាស់' || product.category === 'POL') ? (Number(product.itemsPerBox) || 12) : 1;
         return qty * perCase * perBox;
     }
-    if (selectedUnit === 'box' && product.category === 'ម៉ាស់') {
-        return qty * (Number(product.itemsPerBox) || 1);
+    if (selectedUnit === 'box' && (product.category === 'ម៉ាស់' || product.category === 'POL')) {
+        return qty * (Number(product.itemsPerBox) || 12);
+    }
+    if (selectedUnit === 'dozen') {
+        return qty * 12;
     }
     return qty;
 };
 
+// 🌟 ទាញយកតម្លៃរាយ ១ដប/សន្លឹក ជានិច្ច 🌟
 const getSingleBasePrice = (item) => {
     const { product, qty, selectedUnit } = item;
     let targetUnit = 'bottle';
     if (product.isCombo) targetUnit = 'set';
     else if (selectedUnit === 'case') targetUnit = 'case';
     else if (selectedUnit === 'box') targetUnit = 'box';
+    else if (selectedUnit === 'dozen') targetUnit = 'dozen';
 
     if (product.wholesaleTiers && Array.isArray(product.wholesaleTiers) && product.wholesaleTiers.length > 0) {
         let unitTiers = product.wholesaleTiers.filter(t => t.unit === targetUnit);
@@ -398,32 +396,33 @@ const getSingleBasePrice = (item) => {
         if (unitTiers.length > 0) {
             const sorted = [...unitTiers].sort((a, b) => Number(b.minQty) - Number(a.minQty));
             const appliedTier = sorted.find(t => qty >= Number(t.minQty));
-            if (appliedTier && Number(appliedTier.price) > 0) return Number(appliedTier.price);
+            if (appliedTier && Number(appliedTier.price) > 0) return Number(appliedTier.price); // តម្លៃរាយដែលចុះថ្លៃ
         }
     }
-    return Number(product.retailPrice) || 0;
+    return Number(product.retailPrice) || 0; // តម្លៃរាយធម្មតា
 };
 
-const getSingleCasePrice = (item) => getSingleBasePrice(item) * (Number(item.product.itemsPerCase) || 1);
-
+// 🚨 ជួសជុលបញ្ហាតម្លៃ (Fix: គុណយកតម្លៃសរុបឱ្យត្រូវតាមខ្នាត) 🚨
 const calculateItemUnitPrice = (item) => {
     if (item.isManualPrice) return Number(item.manualPrice) || 0;
     if (item.product.isCombo) return getSingleBasePrice(item);
-    
-    const basePrice = getSingleBasePrice(item);
+
+    const basePricePerRetail = getSingleBasePrice(item); // យកតម្លៃ ១ដប
+
     if (item.selectedUnit === 'case') {
         const perCase = Number(item.product.itemsPerCase) || 1;
-        const perBox = item.product.category === 'ម៉ាស់' ? (Number(item.product.itemsPerBox) || 1) : 1;
-        const tierFound = item.product.wholesaleTiers?.find(t=>t.unit === 'case');
-        return tierFound ? basePrice : (basePrice * perCase * perBox);
+        const perBox = (item.product.category === 'ម៉ាស់' || item.product.category === 'POL') ? (Number(item.product.itemsPerBox) || 12) : 1;
+        return basePricePerRetail * perCase * perBox; // គុណយកតម្លៃ ១កេះ
     }
-    if (item.selectedUnit === 'box' && item.product.category === 'ម៉ាស់') {
-         const perBox = Number(item.product.itemsPerBox) || 1;
-         const tierFound = item.product.wholesaleTiers?.find(t=>t.unit === 'box');
-         return tierFound ? basePrice : (basePrice * perBox);
+    if (item.selectedUnit === 'box' && (item.product.category === 'ម៉ាស់' || item.product.category === 'POL')) {
+         const perBox = Number(item.product.itemsPerBox) || 12;
+         return basePricePerRetail * perBox; // គុណយកតម្លៃ ១ប្រអប់
+    }
+    if (item.selectedUnit === 'dozen') {
+         return basePricePerRetail * 12; // គុណយកតម្លៃ ១ឡូ
     }
 
-    return basePrice;
+    return basePricePerRetail;
 };
 
 const calculateItemPrice = (item) => calculateItemUnitPrice(item) * item.qty;
@@ -435,6 +434,7 @@ const getAutoCalculatedType = (item) => {
     if (product.isCombo) targetUnit = 'set';
     else if (selectedUnit === 'case') targetUnit = 'case';
     else if (selectedUnit === 'box') targetUnit = 'box';
+    else if (selectedUnit === 'dozen') targetUnit = 'dozen';
 
     let sysWholesalePrice = null;
     if (product.wholesaleTiers && Array.isArray(product.wholesaleTiers) && product.wholesaleTiers.length > 0) {
@@ -561,7 +561,7 @@ const modifyStockReservation = async (product, retailQtyDelta) => {
                 let perBox = 1;
                 if (originalStock && originalStock.unit === 'case') {
                     perCase = Number(originalStock.itemsPerCase) || 1;
-                    if (originalStock.category === 'ម៉ាស់') perBox = Number(originalStock.itemsPerBox) || 1;
+                    if (originalStock.category === 'ម៉ាស់' || originalStock.category === 'POL') perBox = Number(originalStock.itemsPerBox) || 12;
                 }
                 
                 const bulkQtyDelta = (subItem.qty * retailQtyDelta) / (perCase * perBox); 
@@ -573,7 +573,7 @@ const modifyStockReservation = async (product, retailQtyDelta) => {
             let perBox = 1;
             if (product.unit === 'case') {
                  perCase = Number(product.itemsPerCase) || 1;
-                 if (product.category === 'ម៉ាស់') perBox = Number(product.itemsPerBox) || 1;
+                 if (product.category === 'ម៉ាស់' || product.category === 'POL') perBox = Number(product.itemsPerBox) || 12;
             }
             const bulkQtyDelta = retailQtyDelta / (perCase * perBox); 
             await updateDoc(stockRef, { quantity: increment(-bulkQtyDelta), stock_reserved: increment(bulkQtyDelta) });
@@ -599,7 +599,6 @@ const addToCart = async (product) => {
     await modifyStockReservation(product, retailQtyToAdd); 
     await updateActiveCartBackend();
 
-    // 🌟 បើកវិក្កយបត្រស្វ័យប្រវត្តិ ប្រសិនបើបានបើក AutoToggle 🌟
     if (autoOpenReceipt.value) {
         showFloatingReceipt.value = true;
     }
@@ -663,7 +662,6 @@ const removeFromCart = async (index) => {
     }
 };
 
-// 🌟 បិទវិក្កយបត្រស្វ័យប្រវត្តិ ពេលចុចប៊ូតុង បន្តការទូទាត់ 🌟
 const openCheckoutModal = () => { 
     isCheckoutModalOpen.value = true; 
     showFloatingReceipt.value = false;
@@ -678,7 +676,8 @@ const submitSale = async (formData) => {
 
         const itemsToSave = cart.value.map((item, index) => {
             const finalType = item.manualType !== 'auto' ? item.manualType : getAutoCalculatedType(item);
-            let correctUnit = item.product.isCombo ? 'set' : (item.selectedUnit === 'case' ? (item.product.unit || 'case') : (item.product.retailUnit || 'bottle'));
+            let correctUnit = item.product.isCombo ? 'set' : (item.selectedUnit === 'case' ? (item.product.unit || 'case') : (item.selectedUnit === 'box' ? 'box' : (item.selectedUnit === 'dozen' ? 'dozen' : (item.product.retailUnit || 'bottle'))));
+            
             let safeImage = item.product.image || '';
             if (safeImage.startsWith('data:image')) safeImage = ''; 
             
@@ -687,10 +686,11 @@ const submitSale = async (formData) => {
                 itemCost = item.product.totalBaseCost;
             } else {
                 const perCase = Number(item.product.itemsPerCase) || 1;
-                const perBox = item.product.category === 'ម៉ាស់' ? (Number(item.product.itemsPerBox) || 1) : 1;
+                const perBox = (item.product.category === 'ម៉ាស់' || item.product.category === 'POL') ? (Number(item.product.itemsPerBox) || 12) : 1;
                 
                 if (item.selectedUnit === 'case') itemCost = Number(item.product.unitCost);
-                else if (item.selectedUnit === 'box' && item.product.category === 'ម៉ាស់') itemCost = Number(item.product.unitCost) / perCase;
+                else if (item.selectedUnit === 'box' && (item.product.category === 'ម៉ាស់' || item.product.category === 'POL')) itemCost = Number(item.product.unitCost) / perCase;
+                else if (item.selectedUnit === 'dozen') itemCost = (Number(item.product.unitCost) / (perCase * perBox)) * 12;
                 else itemCost = Number(item.product.unitCost) / (perCase * perBox);
             }
 
@@ -724,7 +724,7 @@ const submitSale = async (formData) => {
                     let perCase = 1; let perBox = 1;
                     if (originalStock && originalStock.unit === 'case') {
                          perCase = Number(originalStock.itemsPerCase) || 1;
-                         if (originalStock.category === 'ម៉ាស់') perBox = Number(originalStock.itemsPerBox) || 1;
+                         if (originalStock.category === 'ម៉ាស់' || originalStock.category === 'POL') perBox = Number(originalStock.itemsPerBox) || 12;
                     }
                     const bulkQtyToDeduct = (subItem.qty * item.qty) / (perCase * perBox);
                     await updateDoc(doc(db, 'stocks', subItem.productId), { stock_reserved: increment(-bulkQtyToDeduct) });
@@ -734,7 +734,7 @@ const submitSale = async (formData) => {
                 let perCase = 1; let perBox = 1;
                 if (item.product.unit === 'case') {
                      perCase = Number(item.product.itemsPerCase) || 1;
-                     if (item.product.category === 'ម៉ាស់') perBox = Number(item.product.itemsPerBox) || 1;
+                     if (item.product.category === 'ម៉ាស់' || item.product.category === 'POL') perBox = Number(item.product.itemsPerBox) || 12;
                 }
                 const bulkQtyToDeduct = retailQtyToDeduct / (perCase * perBox);
                 await updateDoc(doc(db, 'stocks', item.product.id), { stock_reserved: increment(-bulkQtyToDeduct) });
