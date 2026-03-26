@@ -695,8 +695,8 @@ const submitSeller = async () => {
   try {
      const token = await auth.currentUser.getIdToken(true);
      const url = isEditing.value 
-        ? `https://api.sellerorder.fyi/api/update-seller/${currentSellerId.value}`
-        : 'https://api.sellerorder.fyi/api/create-seller';
+        ? `https://reportapp-81vf.onrender.com/api/update-seller/${currentSellerId.value}`
+        : 'https://reportapp-81vf.onrender.com/api/create-seller';
      const method = isEditing.value ? 'put' : 'post';
 
      const res = await axios({
@@ -743,7 +743,7 @@ const promptDelete = async (seller) => {
 const executeDelete = async (id) => {
     try {
         const token = await auth.currentUser.getIdToken(true);
-        await axios.delete(`https://api.sellerorder.fyi/api/delete-seller/${id}`, {
+        await axios.delete(`https://reportapp-81vf.onrender.com/api/delete-seller/${id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         notification.success('គណនីត្រូវបានលុបចេញពីប្រព័ន្ធ');

@@ -254,7 +254,7 @@ const executePermanentDelete = async () => {
    try {
       const token = await auth.currentUser.getIdToken(true);
       // Calls the newly updated backend API
-      await axios.delete(`https://api.sellerorder.fyi/api/delete-admin/${targetAdmin.value.id}`, {
+      await axios.delete(`https://reportapp-81vf.onrender.com/api/delete-admin/${targetAdmin.value.id}`, {
          headers: { 'Authorization': `Bearer ${token}` }
       });
       triggerAlert('success', 'ជោគជ័យ', 'គណនី និងទិន្នន័យពាក់ព័ន្ធទាំងអស់ត្រូវបានលុបជារៀងរហូត');

@@ -272,7 +272,7 @@ const requestHelp = async () => {
         const token = await auth.currentUser.getIdToken(true);
         
         const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const BASE_URL = isLocalhost ? 'http://localhost:3000' : 'https://api.sellerorder.fyi';
+        const BASE_URL = isLocalhost ? 'http://localhost:3000' : 'https://reportapp-81vf.onrender.com';
         
         await axios.post(`${BASE_URL}/api/request-finance-reset`, {
             uid: currentUserUid,
