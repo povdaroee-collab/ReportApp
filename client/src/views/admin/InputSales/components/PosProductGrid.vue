@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 flex flex-col h-full bg-[#F4F7FE] relative overflow-hidden">
+  <div class="flex-1 flex flex-col h-full bg-[#F4F7FE] relative overflow-hidden" @click="activeTooltipId = null">
       
       <div class="bg-white/90 backdrop-blur-xl border-b border-slate-200/60 p-3 md:p-4 shadow-sm z-20 shrink-0">
           <div class="flex flex-col gap-4">
@@ -82,14 +82,38 @@
           <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5 max-w-[100rem] mx-auto animate-fade-in">
               
               <div v-for="product in paginatedProducts" :key="product.id" @click="$emit('add-to-cart', product)" 
-                  class="bg-white border border-slate-200 shadow-sm transition-all cursor-pointer group relative flex flex-col select-none overflow-hidden" 
+                  class="bg-white border border-slate-200 shadow-sm transition-all cursor-pointer group relative flex flex-col select-none overflow-visible" 
                   :class="[
                       getTotalRetailStock(product) > 0 ? 'hover:shadow-xl hover:-translate-y-1 hover:border-indigo-300 active:scale-95' : 'opacity-60 cursor-not-allowed grayscale-[50%]',
                       viewMode === 'card' ? 'rounded-[1.25rem] p-2.5 md:p-3 h-full' : 'rounded-xl p-3 justify-between h-[120px] md:h-32'
                   ]">
                   
                   <template v-if="viewMode === 'card'">
-                      <div v-if="product.isCombo" class="absolute top-2 left-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] md:text-[10px] font-black px-2 py-1 rounded-lg shadow-md z-10 flex items-center gap-1 border border-orange-200">🎁 ឈុត</div>
+                      <div v-if="product.isCombo" class="absolute top-2 left-2 z-30 flex items-center gap-1">
+                          <div class="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] md:text-[10px] font-black px-2 py-1 rounded-lg shadow-md flex items-center gap-1 border border-orange-200">
+                              🎁 ឈុត
+                          </div>
+                          
+                          <div class="relative">
+                              <button @click.stop="toggleTooltip(product.id)" class="w-6 h-6 bg-white/95 backdrop-blur-sm text-slate-600 rounded-full shadow-sm border border-slate-200 flex items-center justify-center hover:bg-slate-50 hover:text-indigo-600 transition-colors tooltip-trigger">
+                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                              </button>
+                              
+                              <div v-if="activeTooltipId === product.id" class="absolute top-full left-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-2xl p-3 z-[100] animate-fade-in-up origin-top-left flex flex-col" @click.stop>
+                                  <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 border-b border-slate-100 pb-1.5 shrink-0">ទំនិញក្នុងឈុតនេះ</h4>
+                                  <ul class="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1.5">
+                                      <li v-for="(detail, i) in getComboDetails(product)" :key="i" class="flex items-start gap-1.5 text-[11px] leading-tight">
+                                          <span class="text-amber-500 mt-0.5 shrink-0">•</span>
+                                          <div class="flex-1 min-w-0">
+                                              <span class="font-bold text-slate-700 block line-clamp-2" :title="detail.name">{{ detail.name }}</span>
+                                              <span class="text-[10px] text-slate-400 font-mono font-bold mt-0.5 block">x{{ detail.qty }} {{ detail.unit }}</span>
+                                          </div>
+                                      </li>
+                                  </ul>
+                                  <div class="absolute -top-1.5 left-2.5 w-3 h-3 bg-white border-l border-t border-slate-200 rotate-45"></div>
+                              </div>
+                          </div>
+                      </div>
                       
                       <div v-else-if="product.category" class="absolute top-2 left-2 bg-indigo-500/90 backdrop-blur-md text-white text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded shadow-sm z-10 uppercase border border-indigo-400">
                           {{ product.category }}
@@ -145,7 +169,28 @@
 
                               <div class="flex items-center gap-1.5">
                                   <span class="text-[8px] md:text-[9px] text-slate-400 font-mono line-clamp-1">{{ product.barcode || 'NO-BARCODE' }}</span>
-                                  <span v-if="product.isCombo" class="bg-amber-100 text-amber-700 px-1.5 py-[1px] rounded text-[8px] font-black shrink-0">🎁 ឈុត</span>
+                                  
+                                  <div v-if="product.isCombo" class="flex items-center gap-1 relative z-30">
+                                      <span class="bg-amber-100 text-amber-700 px-1.5 py-[1px] rounded text-[8px] font-black shrink-0">🎁 ឈុត</span>
+                                      
+                                      <button @click.stop="toggleTooltip(product.id)" class="w-4 h-4 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center hover:bg-indigo-100 hover:text-indigo-600 transition-colors tooltip-trigger">
+                                          <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                      </button>
+                                      
+                                      <div v-if="activeTooltipId === product.id" class="absolute bottom-full left-0 mb-2 w-56 bg-white border border-slate-200 rounded-xl shadow-2xl p-3 z-[100] animate-fade-in-up origin-bottom-left flex flex-col" @click.stop>
+                                          <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 border-b border-slate-100 pb-1.5 shrink-0">ទំនិញក្នុងឈុតនេះ</h4>
+                                          <ul class="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1.5">
+                                              <li v-for="(detail, i) in getComboDetails(product)" :key="i" class="flex items-start gap-1.5 text-[11px] leading-tight">
+                                                  <span class="text-amber-500 mt-0.5 shrink-0">•</span>
+                                                  <div class="flex-1 min-w-0">
+                                                      <span class="font-bold text-slate-700 block line-clamp-2" :title="detail.name">{{ detail.name }}</span>
+                                                      <span class="text-[10px] text-slate-400 font-mono font-bold mt-0.5 block">x{{ detail.qty }} {{ detail.unit }}</span>
+                                                  </div>
+                                              </li>
+                                          </ul>
+                                          <div class="absolute -bottom-1.5 left-2.5 w-3 h-3 bg-white border-b border-r border-slate-200 rotate-45"></div>
+                                      </div>
+                                  </div>
                               </div>
                           </div>
                       </div>
@@ -195,8 +240,9 @@ const props = defineProps({
   getTotalRetailStock: Function,
   formatComplexStock: Function,
   translateHardcodedUnit: Function,
-  translateRetailUnit: Function, // 🌟 បន្ថែម Props នេះដើម្បីកុំឱ្យវា Error 🌟
-  formatPrice: Function
+  translateRetailUnit: Function, 
+  formatPrice: Function,
+  getComboDetails: Function // 🌟 ទទួល Props ថ្មីពីមេ 🌟
 });
 
 defineEmits(['add-to-cart']);
@@ -208,6 +254,16 @@ const searchQuery = ref('');
 const currentPage = ref(1);
 const ITEMS_PER_PAGE = 20;
 
+const activeTooltipId = ref(null); // 🌟 គ្រប់គ្រងការបើកបិទ Tooltip 🌟
+
+const toggleTooltip = (id) => {
+    if (activeTooltipId.value === id) {
+        activeTooltipId.value = null; // បិទវិញបើរួចហើយ
+    } else {
+        activeTooltipId.value = id; // បើកថ្មី
+    }
+};
+
 // 🌟 Reset Pagination on Filter/Search Change 🌟
 watch([searchQuery, activeFilter], () => {
   currentPage.value = 1;
@@ -217,12 +273,11 @@ watch([searchQuery, activeFilter], () => {
 const filteredProducts = computed(() => {
   let result = props.products || [];
 
-  // 1. Group / Category Filters
   if (activeFilter.value === 'COMBO') {
       result = result.filter(p => p.isCombo);
   } else {
       if (activeFilter.value !== 'ALL') {
-          result = result.filter(p => !p.isCombo); // Hide combos for specific tags
+          result = result.filter(p => !p.isCombo); 
       }
 
       if (activeFilter.value === 'BIOAOUA') {
@@ -240,7 +295,6 @@ const filteredProducts = computed(() => {
       }
   }
 
-  // 2. Text Search Filter
   if (searchQuery.value) {
       const q = searchQuery.value.toLowerCase().trim();
       result = result.filter(p => 
@@ -254,7 +308,6 @@ const filteredProducts = computed(() => {
 
 const totalProductsCount = computed(() => filteredProducts.value.length);
 
-// 🌟 Pagination Logic 🌟
 const paginatedProducts = computed(() => {
   const start = (currentPage.value - 1) * ITEMS_PER_PAGE;
   return filteredProducts.value.slice(start, start + ITEMS_PER_PAGE);
@@ -268,6 +321,14 @@ const paginatedProducts = computed(() => {
 .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 🌟 Tooltip Animation 🌟 */
+.animate-fade-in-up { animation: fadeInUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes fadeInUp { 
+    from { opacity: 0; transform: translateY(10px) scale(0.95); } 
+    to { opacity: 1; transform: translateY(0) scale(1); } 
+}
 </style>

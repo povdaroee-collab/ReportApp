@@ -23,6 +23,17 @@
                       </span>
                       <svg v-if="mainTab === 'analytics'" class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                   </button>
+
+                  <div class="h-px w-full bg-slate-100 my-1"></div>
+
+                  <button @click="selectMainTab('finance')" class="w-full text-left px-4 py-2 text-xs font-bold transition-colors flex items-center justify-between group" :class="mainTab === 'finance' ? 'bg-rose-50/50 text-rose-700' : 'text-slate-700 hover:bg-rose-50 hover:text-rose-600'">
+                    <span class="flex items-center gap-2">
+                    <svg class="w-4 h-4 opacity-70 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        របាយការណ៍ខ្លី
+                        <span class="bg-rose-100 text-rose-600 text-[9px] px-1.5 py-0.5 rounded-md border border-rose-200 ml-1">ថ្មី</span>
+                    </span>
+                    <svg v-if="mainTab === 'finance'" class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                </button>
                   
                   <div class="h-px w-full bg-slate-100 my-1"></div>
                   
@@ -35,25 +46,18 @@
                       <svg v-if="mainTab === 'today'" class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                   </button>
 
-                  <div class="h-px w-full bg-slate-100 my-1"></div>
+                  
 
-                  <button @click="selectMainTab('finance')" class="w-full text-left px-4 py-2 text-xs font-bold transition-colors flex items-center justify-between group" :class="mainTab === 'finance' ? 'bg-rose-50/50 text-rose-700' : 'text-slate-700 hover:bg-rose-50 hover:text-rose-600'">
-                      <span class="flex items-center gap-2">
-                          <svg class="w-4 h-4 opacity-70 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                          គណនាហិរញ្ញវត្ថុ
-                          <span class="bg-rose-100 text-rose-600 text-[9px] px-1.5 py-0.5 rounded-md border border-rose-200 ml-1">ថ្មី</span>
-                      </span>
-                      <svg v-if="mainTab === 'finance'" class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                  </button>
+                
 
               </div>
           </div>
           
-          <div class="h-4 w-px bg-slate-300 mx-2"></div>
-          <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
-             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-             / System / <span class="text-slate-600">{{ mainTab === 'analytics' ? 'Analytics' : (mainTab === 'finance' ? 'Finance Calculator' : 'Today Sales POS') }}</span>
-          </span>
+      <div class="h-4 w-px bg-slate-300 mx-2"></div>
+        <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          / System / <span class="text-slate-600">{{ mainTab === 'analytics' ? 'Analytics' : (mainTab === 'finance' ? 'Short Report' : 'Today Sales POS') }}</span>
+       </span>    
       </div>
 
       <div v-if="mainTab === 'today'" class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
@@ -64,7 +68,7 @@
 
       <div v-if="mainTab === 'finance'" class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 bg-[#F8FAFC]">
         <div class="max-w-[95rem] mx-auto w-full h-full">
-            <FinanceCalculator />
+            <ShortReport />
         </div>
       </div>
 
@@ -254,7 +258,7 @@ import SellerDataView from './reports/SellerDataView.vue';
 import ReportStatsCards from './reports/ReportStatsCards.vue'; 
 import ReportBottomSummary from './reports/ReportBottomSummary.vue';
 import TodaySalesList from './reports/pos/POSTodaySales.vue'; 
-import FinanceCalculator from './reports/pos/FinanceCalculator.vue';
+import ShortReport from './reports/pos/ShortReport.vue';
 import { executeNativePrint, generatePDF } from './printPdfLogic.js';
 
 const router = useRouter(); 

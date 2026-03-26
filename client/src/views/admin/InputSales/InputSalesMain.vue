@@ -40,6 +40,7 @@
             :translateHardcodedUnit="translateHardcodedUnit"
             :translateRetailUnit="translateRetailUnit"
             :formatPrice="formatPrice"
+            :getComboDetails="getComboDetails" 
             @add-to-cart="addToCart"
         />
 
@@ -365,6 +366,22 @@ const formatComplexStock = (product) => {
     return `${retailTotal.toLocaleString()} ${translateRetailUnit(product)}`;
 };
 
+// 🌟 SMART COMBO DETAILS FETCHING 🌟
+// នេះជា Function ថ្មី ដើម្បីបំប្លែង ID ក្នុងឈុត ទៅជាឈ្មោះទំនិញ
+const getComboDetails = (product) => {
+    if (!product || !product.isCombo || !product.items) return [];
+    
+    return product.items.map(comboItem => {
+        const stockItem = originalStocks.value.find(s => s.id === comboItem.productId);
+        return {
+            id: comboItem.productId,
+            name: stockItem ? stockItem.name : 'ទំនិញមិនស្គាល់',
+            qty: comboItem.qty,
+            unit: translateRetailUnit(stockItem)
+        };
+    });
+};
+
 const getRetailQtyEquivalent = (product, qty, selectedUnit) => {
     if (product.isCombo) return qty;
     if (selectedUnit === 'case') {
@@ -381,7 +398,6 @@ const getRetailQtyEquivalent = (product, qty, selectedUnit) => {
     return qty;
 };
 
-// 🌟 ទាញយកតម្លៃរាយ ១ដប/សន្លឹក ជានិច្ច 🌟
 const getSingleBasePrice = (item) => {
     const { product, qty, selectedUnit } = item;
     let targetUnit = 'bottle';
@@ -396,30 +412,29 @@ const getSingleBasePrice = (item) => {
         if (unitTiers.length > 0) {
             const sorted = [...unitTiers].sort((a, b) => Number(b.minQty) - Number(a.minQty));
             const appliedTier = sorted.find(t => qty >= Number(t.minQty));
-            if (appliedTier && Number(appliedTier.price) > 0) return Number(appliedTier.price); // តម្លៃរាយដែលចុះថ្លៃ
+            if (appliedTier && Number(appliedTier.price) > 0) return Number(appliedTier.price);
         }
     }
-    return Number(product.retailPrice) || 0; // តម្លៃរាយធម្មតា
+    return Number(product.retailPrice) || 0;
 };
 
-// 🚨 ជួសជុលបញ្ហាតម្លៃ (Fix: គុណយកតម្លៃសរុបឱ្យត្រូវតាមខ្នាត) 🚨
 const calculateItemUnitPrice = (item) => {
     if (item.isManualPrice) return Number(item.manualPrice) || 0;
     if (item.product.isCombo) return getSingleBasePrice(item);
-
-    const basePricePerRetail = getSingleBasePrice(item); // យកតម្លៃ ១ដប
-
+    
+    const basePricePerRetail = getSingleBasePrice(item);
+    
     if (item.selectedUnit === 'case') {
         const perCase = Number(item.product.itemsPerCase) || 1;
         const perBox = (item.product.category === 'ម៉ាស់' || item.product.category === 'POL') ? (Number(item.product.itemsPerBox) || 12) : 1;
-        return basePricePerRetail * perCase * perBox; // គុណយកតម្លៃ ១កេះ
+        return basePricePerRetail * perCase * perBox;
     }
     if (item.selectedUnit === 'box' && (item.product.category === 'ម៉ាស់' || item.product.category === 'POL')) {
          const perBox = Number(item.product.itemsPerBox) || 12;
-         return basePricePerRetail * perBox; // គុណយកតម្លៃ ១ប្រអប់
+         return basePricePerRetail * perBox;
     }
     if (item.selectedUnit === 'dozen') {
-         return basePricePerRetail * 12; // គុណយកតម្លៃ ១ឡូ
+         return basePricePerRetail * 12;
     }
 
     return basePricePerRetail;
