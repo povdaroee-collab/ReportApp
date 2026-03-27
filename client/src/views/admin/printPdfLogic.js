@@ -238,6 +238,9 @@ const buildTotalBlock = (dataObj, titleStr) => {
     let totalRetailUSD = dataObj.paid.retailUSD + dataObj.pending.retailUSD + (dataObj.direct ? dataObj.direct.retailUSD : 0);
     let totalRetailClients = dataObj.paid.retailClients + dataObj.pending.retailClients + (dataObj.direct ? dataObj.direct.retailClients : 0);
 
+    // 🌟 គណនាតម្លៃសរុបចុងក្រោយ (Grand Total) 🌟
+    let grandTotalUSD = totalWholesaleUSD + totalRetailUSD + (dataObj.deliveryUSD || 0);
+
     return `
         <div style="background: #1e293b; padding: 15px; border-radius: 8px; color: white; margin-top: 15px;">
             <h4 style="margin: 0 0 10px 0; color: #818cf8; font-size: 13px;">= ${titleStr}</h4>
@@ -252,6 +255,10 @@ const buildTotalBlock = (dataObj, titleStr) => {
             <div style="display: flex; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px dashed #475569; font-size: 14px;">
                 <span style="font-weight: 900; color: #fdba74;">🛵 ថ្លៃដឹកជញ្ជូនសរុប:</span>
                 <span style="font-weight: 900; color: #fdba74; font-size: 16px;">${fC(dataObj.deliveryUSD)} $</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 12px; border-top: 2px solid #818cf8; background-color: rgba(79, 70, 229, 0.15); padding: 12px; border-radius: 6px;">
+                <span style="font-weight: 900; color: #818cf8; font-size: 12px;">💰 តម្លៃទំនិញសរុប និងថ្លៃដឹក:</span>
+                <span style="font-weight: 900; color: #fff; font-size: 18px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${fC(grandTotalUSD)} $</span>
             </div>
         </div>
     `;
