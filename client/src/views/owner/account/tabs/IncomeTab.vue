@@ -8,21 +8,6 @@
 
     <div v-else class="space-y-6 print:hidden animate-fade-in-up">
         
-        <div class="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 w-fit mb-6 shadow-sm overflow-x-auto custom-scrollbar">
-            <button @click="activeSubTab = 'sold'" :class="activeSubTab === 'sold' ? 'bg-white text-indigo-600 shadow-sm border-slate-200' : 'text-slate-500 hover:text-slate-700 border-transparent'" class="px-5 md:px-6 py-2.5 rounded-xl text-[12px] md:text-[13px] font-black transition-all flex items-center gap-2 border whitespace-nowrap">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                ស្តុកបានលក់ចេញ
-            </button>
-            <button @click="activeSubTab = 'current'" :class="activeSubTab === 'current' ? 'bg-emerald-50 text-emerald-600 shadow-sm border-emerald-200' : 'text-slate-500 hover:text-slate-700 border-transparent'" class="px-5 md:px-6 py-2.5 rounded-xl text-[12px] md:text-[13px] font-black transition-all flex items-center gap-2 border whitespace-nowrap">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                ស្តុកបច្ចុប្បន្នជាក់ស្តែង
-            </button>
-            <button @click="activeSubTab = 'supplier'" :class="activeSubTab === 'supplier' ? 'bg-purple-50 text-purple-600 shadow-sm border-purple-200' : 'text-slate-500 hover:text-slate-700 border-transparent'" class="px-5 md:px-6 py-2.5 rounded-xl text-[12px] md:text-[13px] font-black transition-all flex items-center gap-2 border whitespace-nowrap">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
-                អ្នកផ្គត់ផ្គង់ (ស្នើទិញស្តុក)
-            </button>
-        </div>
-
         <div v-show="activeSubTab === 'sold'" class="space-y-6 animate-fade-in">
             <div class="bg-white p-4 rounded-[1.5rem] border border-slate-200 shadow-sm flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 relative z-20">
                 <div class="flex flex-wrap items-center gap-3 w-full xl:w-auto overflow-x-auto no-scrollbar">
@@ -155,6 +140,10 @@
              <RestockMain />
         </div>
 
+        <div v-if="activeSubTab === 'import'" class="animate-fade-in">
+            <StockImportMain />
+        </div>
+
         <IncomeQuickModal 
             v-if="showSummaryModal"
             :is-open="showSummaryModal" 
@@ -168,16 +157,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, defineProps } from 'vue';
 import { db } from '@/firebaseConfig';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
 import IncomeQuickModal from './components/IncomeQuickModal.vue';
 import CurrentStockMain from './components/stocknow/CurrentStockMain.vue';
 import RestockMain from './components/stocknow/RestockMain.vue'; 
+import StockImportMain from './components/stocknow/StockImportMain.vue';
 
-// Sub-Tab State
-const activeSubTab = ref('sold');
+// 🌟 ទទួល State ពី File មេ AccountMain.vue
+const props = defineProps({
+    activeSubTab: {
+        type: String,
+        default: 'sold'
+    }
+});
 
 // Existing States
 const isLoading = ref(false);
@@ -201,7 +196,6 @@ const combosGlobal = ref([]);
 
 const formatCurrency = (val) => Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " $";
 
-// 🌟 1. បន្ថែមការបកប្រែខ្នាតថ្មី (សន្លឹក, ប្រអប់)
 const translateHardcodedUnit = (u) => { 
     const m = { bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ', set: 'ឈុត', sheet: 'សន្លឹក', box: 'ប្រអប់' }; 
     return m[u] || u; 
@@ -224,7 +218,6 @@ const getDateBounds = () => {
     return { startStr: start.toISOString(), endStr: end.toISOString() };
 };
 
-// 🌟 2. កែប្រែប្រព័ន្ធគណនាស្តុកនៅសល់ (ស្គាល់ម៉ាស់ ៣កម្រិត)
 const getDynamicStockInfo = (id) => {
     let product = originalStocksGlobal.value.find(s => s.id === id);
     if (!product) return { text: 'N/A', isLow: false };
@@ -238,9 +231,8 @@ const getDynamicStockInfo = (id) => {
     let isLow = false;
     let text = '';
 
-    // 🌟 LOGIC សម្រាប់ម៉ាស់ និង POL (3 Levels) 🌟
     if (category === 'ម៉ាស់' || category === 'POL') {
-        const ipb = Number(product.itemsPerBox) || 12; // 👈 ជួសជុលបញ្ហា Null
+        const ipb = Number(product.itemsPerBox) || 12; 
         retailTotal = Math.floor(qtyBase * ipc * ipb);
         cases = Math.floor(retailTotal / (ipc * ipb));
         
@@ -259,9 +251,7 @@ const getDynamicStockInfo = (id) => {
         if (retailPieces > 0) result.push(`${retailPieces.toLocaleString()} ${retailLabel}`);
         text = result.join(' ');
         
-    } 
-    // LOGIC សម្រាប់ទំនិញធម្មតា និងខោអាវ
-    else {
+    } else {
         retailTotal = Math.floor(qtyBase * ipc);
         cases = Math.floor(retailTotal / ipc);
         
@@ -329,11 +319,9 @@ const fetchSalesData = async () => {
 onMounted(() => fetchSalesData());
 watch([dateFilterType, specificDate, selectedMonth, selectedYear], () => fetchSalesData());
 
-// 🌟 3. កែប្រែមុខងារបូកសរុបទំនិញលក់ចេញ (ឱ្យត្រូវខ្នាតឆ្លាតវៃ និងមានពណ៌/ទំហំ)
 const aggregatedMainProducts = computed(() => {
     const resultObj = {};
     
-    // Function តូចមួយសម្រាប់បង្កើតឈ្មោះទំនិញភ្ជាប់ពណ៌ និងទំហំ
     const buildDisplayName = (baseProd, defaultName) => {
         let displayName = baseProd ? baseProd.name : defaultName;
         if (baseProd) {
@@ -348,7 +336,6 @@ const aggregatedMainProducts = computed(() => {
         return displayName;
     };
 
-    // 🌟 ដំណោះស្រាយ: ដាក់ Category Check លើគេ ដើម្បីកុំឱ្យចាញ់បោកទិន្នន័យចាស់ក្នុង DB 🌟
     const getRetailUnitLabel = (baseProd) => {
         if (!baseProd) return 'ដប';
         
@@ -415,16 +402,15 @@ const aggregatedMainProducts = computed(() => {
                     let itemQty = Number(item.qty || 0);
                     const cat = baseProd?.category || '';
                     
-                    // 🌟 Update: Logic បំប្លែងបរិមាណលក់ចេញទៅតាមកម្រិតខ្នាត (បញ្ចូល POL ផងដែរ) 🌟
                     if (cat === 'ម៉ាស់' || cat === 'POL') {
                         const ipc = Number(baseProd?.itemsPerCase || 1);
-                        const ipb = Number(baseProd?.itemsPerBox) || 12; // Default to 12 if null
+                        const ipb = Number(baseProd?.itemsPerBox) || 12; 
                         if (item.unit === 'case' || item.unit === 'កេះ') itemQty = itemQty * ipc * ipb;
                         else if (item.unit === 'box' || item.unit === 'ប្រអប់') itemQty = itemQty * ipb;
-                        else if (item.unit === 'dozen' || item.unit === 'ឡូ') itemQty = itemQty * 12; // 👈 Dozen
+                        else if (item.unit === 'dozen' || item.unit === 'ឡូ') itemQty = itemQty * 12; 
                     } else {
                         if (item.unit === 'case' || item.unit === 'កេះ') itemQty = itemQty * (Number(baseProd?.itemsPerCase || item.itemsPerCase) || 1);
-                        else if (item.unit === 'dozen' || item.unit === 'ឡូ') itemQty = itemQty * 12; // 👈 Dozen
+                        else if (item.unit === 'dozen' || item.unit === 'ឡូ') itemQty = itemQty * 12; 
                     }
 
                     resultObj[key].qty += itemQty;
