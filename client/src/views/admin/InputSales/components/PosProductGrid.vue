@@ -1,7 +1,7 @@
 <template>
-  <div class="flex-1 flex flex-col h-full bg-[#F4F7FE] relative overflow-hidden" @click="activeTooltipId = null">
+  <div class="flex-1 flex flex-col h-full bg-[#F4F7FE] relative" @click="activeTooltipId = null">
       
-      <div class="bg-white/90 backdrop-blur-xl border-b border-slate-200/60 p-3 md:p-4 shadow-sm z-20 shrink-0">
+      <div class="bg-white/90 backdrop-blur-xl border-b border-slate-200/60 p-3 md:p-4 shadow-sm z-30 shrink-0 relative">
           <div class="flex flex-col gap-4">
               
               <div class="flex items-center justify-between">
@@ -10,7 +10,7 @@
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                       </button>
                       <div>
-                          <h1 class="text-lg md:text-xl font-black text-slate-800 leading-tight flex items-center gap-2">
+                          <h1 class="text-lg md:text-xl font-black text-slate-800 leading-tight flex items-center gap-2 font-khmer">
                               <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                               ប្រព័ន្ធបញ្ជូលការលក់ (POS)
                           </h1>
@@ -28,7 +28,7 @@
                   </div>
               </div>
 
-              <div class="flex flex-col xl:flex-row gap-3 xl:items-center">
+              <div class="flex flex-col xl:flex-row gap-3 xl:items-center font-khmer">
                   <div class="relative w-full xl:w-80 shrink-0">
                       <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -60,11 +60,10 @@
                       </button>
                   </div>
               </div>
-
           </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-3 md:p-4 custom-scrollbar relative pb-28 md:pb-24 touch-pan-y">
+      <div class="flex-1 overflow-y-auto p-3 md:p-4 custom-scrollbar relative z-10 pb-28 md:pb-24 touch-pan-y font-khmer">
           
           <div v-if="isLoadingProducts" class="flex flex-col items-center justify-center h-full opacity-60">
               <div class="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-indigo-600 mb-4"></div>
@@ -79,55 +78,68 @@
               <p class="text-xs mt-1 text-slate-400 font-bold">សូមសាកល្បងស្វែងរកម្ដងទៀត ឬផ្លាស់ប្តូរ Filter</p>
           </div>
           
-          <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5 max-w-[100rem] mx-auto animate-fade-in">
+          <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5 max-w-[100rem] mx-auto animate-fade-in pb-10">
               
               <div v-for="product in paginatedProducts" :key="product.id" @click="$emit('add-to-cart', product)" 
-                  class="bg-white border border-slate-200 shadow-sm transition-all cursor-pointer group relative flex flex-col select-none overflow-visible" 
+                  class="bg-white border border-slate-200 shadow-sm transition-all cursor-pointer group flex flex-col select-none relative" 
                   :class="[
                       getTotalRetailStock(product) > 0 ? 'hover:shadow-xl hover:-translate-y-1 hover:border-indigo-300 active:scale-95' : 'opacity-60 cursor-not-allowed grayscale-[50%]',
-                      viewMode === 'card' ? 'rounded-[1.25rem] p-2.5 md:p-3 h-full' : 'rounded-xl p-3 justify-between h-[120px] md:h-32'
+                      viewMode === 'card' ? 'rounded-[1.25rem] p-2.5 md:p-3 h-full' : 'rounded-xl p-3 justify-between h-[120px] md:h-32',
+                      activeTooltipId === product.id ? 'z-[100]' : 'z-10'
                   ]">
                   
                   <template v-if="viewMode === 'card'">
-                      <div v-if="product.isCombo" class="absolute top-2 left-2 z-30 flex items-center gap-1">
-                          <div class="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] md:text-[10px] font-black px-2 py-1 rounded-lg shadow-md flex items-center gap-1 border border-orange-200">
-                              🎁 ឈុត
-                          </div>
+                      
+                      <div class="relative w-full mb-3">
                           
-                          <div class="relative">
-                              <button @click.stop="toggleTooltip(product.id)" class="w-6 h-6 bg-white/95 backdrop-blur-sm text-slate-600 rounded-full shadow-sm border border-slate-200 flex items-center justify-center hover:bg-slate-50 hover:text-indigo-600 transition-colors tooltip-trigger">
-                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                              </button>
+                          <div v-if="product.isCombo" 
+                               class="absolute top-2 left-2 z-20"
+                               @mouseenter="activeTooltipId = product.id"
+                               @mouseleave="activeTooltipId = null">
                               
-                              <div v-if="activeTooltipId === product.id" class="absolute top-full left-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-2xl p-3 z-[100] animate-fade-in-up origin-top-left flex flex-col" @click.stop>
-                                  <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 border-b border-slate-100 pb-1.5 shrink-0">ទំនិញក្នុងឈុតនេះ</h4>
-                                  <ul class="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1.5">
-                                      <li v-for="(detail, i) in getComboDetails(product)" :key="i" class="flex items-start gap-1.5 text-[11px] leading-tight">
-                                          <span class="text-amber-500 mt-0.5 shrink-0">•</span>
-                                          <div class="flex-1 min-w-0">
-                                              <span class="font-bold text-slate-700 block line-clamp-2" :title="detail.name">{{ detail.name }}</span>
-                                              <span class="text-[10px] text-slate-400 font-mono font-bold mt-0.5 block">x{{ detail.qty }} {{ detail.unit }}</span>
-                                          </div>
-                                      </li>
-                                  </ul>
-                                  <div class="absolute -top-1.5 left-2.5 w-3 h-3 bg-white border-l border-t border-slate-200 rotate-45"></div>
+                              <div class="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] md:text-[11px] font-black px-2.5 py-1 rounded-lg shadow-md flex items-center gap-1 border border-orange-200 cursor-help">
+                                  🎁 ឈុត
                               </div>
-                          </div>
-                      </div>
-                      
-                      <div v-else-if="product.category" class="absolute top-2 left-2 bg-indigo-500/90 backdrop-blur-md text-white text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded shadow-sm z-10 uppercase border border-indigo-400">
-                          {{ product.category }}
-                      </div>
-                      
-                      <div class="w-full aspect-[4/3] rounded-xl bg-slate-50 mb-3 overflow-hidden border border-slate-100 relative flex items-center justify-center shrink-0">
-                          <img v-if="product.image && (product.image.startsWith('http') || product.image.startsWith('data:image'))" :src="product.image" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                          <div v-else class="text-slate-300 text-4xl font-black opacity-40">{{ product.name.charAt(0) }}</div>
-                          
-                          <div class="absolute top-1.5 right-1.5 md:top-2 md:right-2 px-2 py-1 rounded text-[9px] md:text-[10px] font-black bg-white/95 backdrop-blur-sm border shadow-sm" :class="getTotalRetailStock(product) > 0 ? 'text-emerald-600 border-emerald-100' : 'text-rose-600 border-rose-100'">
-                              {{ formatComplexStock(product) }}
-                          </div>
 
-                          <div v-if="getTotalRetailStock(product) <= 0" class="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center"><span class="bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">អស់ស្តុក</span></div>
+                              <transition enter-active-class="transition duration-200 ease-out" enter-from-class="transform scale-95 opacity-0" enter-to-class="transform scale-100 opacity-100" leave-active-class="transition duration-150 ease-in" leave-from-class="transform scale-100 opacity-100" leave-to-class="transform scale-95 opacity-0">
+                                  <div v-if="activeTooltipId === product.id" class="absolute top-full left-0 mt-2 w-64 md:w-72 bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-xl shadow-2xl p-4 z-[9999] origin-top-left pointer-events-auto" @click.stop>
+                                      
+                                      <div class="absolute -top-1.5 left-5 w-3 h-3 bg-slate-900 border-l border-t border-slate-700 rotate-45"></div>
+                                      
+                                      <h4 class="text-[11px] font-black text-white uppercase tracking-widest mb-3 border-b border-slate-700 pb-2 flex items-center gap-2">
+                                          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                                          ទំនិញក្នុងឈុតនេះ
+                                      </h4>
+                                      <ul class="space-y-3 max-h-[430px] overflow-y-auto custom-scrollbar-dark pr-1 relative z-10">
+                                          <li v-for="(detail, i) in getComboDetails(product)" :key="i" class="flex items-start justify-between gap-3">
+                                              <div class="flex items-start gap-2 flex-1 min-w-0">
+                                                  <span class="text-amber-400 mt-1 shrink-0 text-xs">•</span>
+                                                  <span class="font-bold text-slate-200 text-[11px] leading-snug break-words" :title="detail.name">{{ detail.name }}</span>
+                                              </div>
+                                              <div class="bg-slate-800 text-amber-400 text-[10px] font-black px-2 py-1 rounded-md shrink-0 border border-slate-700 flex items-center gap-1 shadow-sm h-fit">
+                                                  <span>x{{ detail.qty }}</span>
+                                                  <span class="text-[8px] text-slate-400 uppercase">{{ detail.unit }}</span>
+                                              </div>
+                                          </li>
+                                      </ul>
+                                  </div>
+                              </transition>
+                          </div>
+                          
+                          <div v-else-if="product.category" class="absolute top-2 left-2 bg-indigo-500/90 backdrop-blur-md text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm z-10 uppercase border border-indigo-400 pointer-events-none">
+                              {{ product.category }}
+                          </div>
+                          
+                          <div class="w-full aspect-[4/3] rounded-xl bg-slate-50 border border-slate-100 relative flex items-center justify-center shrink-0 overflow-hidden">
+                              <img v-if="product.image && (product.image.startsWith('http') || product.image.startsWith('data:image'))" :src="product.image" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                              <div v-else class="text-slate-300 text-4xl font-black opacity-40">{{ product.name.charAt(0) }}</div>
+                              
+                              <div class="absolute top-1.5 right-1.5 md:top-2 md:right-2 px-2 py-1 rounded text-[9px] md:text-[10px] font-black bg-white/95 backdrop-blur-sm border shadow-sm pointer-events-none" :class="getTotalRetailStock(product) > 0 ? 'text-emerald-600 border-emerald-100' : 'text-rose-600 border-rose-100'">
+                                  {{ formatComplexStock(product) }}
+                              </div>
+
+                              <div v-if="getTotalRetailStock(product) <= 0" class="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center pointer-events-none"><span class="bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">អស់ស្តុក</span></div>
+                          </div>
                       </div>
                       
                       <div class="flex-1 flex flex-col">
@@ -158,7 +170,8 @@
                   </template>
 
                   <template v-else>
-                      <div class="flex justify-between items-start gap-2">
+                      <div class="flex justify-between items-start gap-2 relative w-full h-full">
+                           
                           <div class="flex-1 min-w-0">
                               <h3 class="font-black text-[12px] md:text-[13px] text-slate-800 leading-tight mb-1 line-clamp-2 group-hover:text-indigo-600 transition-colors">{{ product.name }}</h3>
                               
@@ -167,34 +180,42 @@
                                   <span v-for="(size, sIdx) in (product.sizes || [])" :key="'s'+sIdx" class="bg-pink-50 text-pink-500 text-[8px] font-bold px-1 rounded border border-pink-100 uppercase">{{ size }}</span>
                               </div>
 
-                              <div class="flex items-center gap-1.5">
+                              <div class="flex items-center gap-1.5 mt-1">
                                   <span class="text-[8px] md:text-[9px] text-slate-400 font-mono line-clamp-1">{{ product.barcode || 'NO-BARCODE' }}</span>
                                   
-                                  <div v-if="product.isCombo" class="flex items-center gap-1 relative z-30">
-                                      <span class="bg-amber-100 text-amber-700 px-1.5 py-[1px] rounded text-[8px] font-black shrink-0">🎁 ឈុត</span>
+                                  <div v-if="product.isCombo" 
+                                       class="relative z-30"
+                                       @mouseenter="activeTooltipId = product.id"
+                                       @mouseleave="activeTooltipId = null">
+                                      <span class="bg-amber-100 text-amber-700 px-1.5 py-[1px] rounded text-[8px] font-black shrink-0 cursor-help">🎁 ឈុត</span>
                                       
-                                      <button @click.stop="toggleTooltip(product.id)" class="w-4 h-4 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center hover:bg-indigo-100 hover:text-indigo-600 transition-colors tooltip-trigger">
-                                          <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                      </button>
-                                      
-                                      <div v-if="activeTooltipId === product.id" class="absolute bottom-full left-0 mb-2 w-56 bg-white border border-slate-200 rounded-xl shadow-2xl p-3 z-[100] animate-fade-in-up origin-bottom-left flex flex-col" @click.stop>
-                                          <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 border-b border-slate-100 pb-1.5 shrink-0">ទំនិញក្នុងឈុតនេះ</h4>
-                                          <ul class="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1.5">
-                                              <li v-for="(detail, i) in getComboDetails(product)" :key="i" class="flex items-start gap-1.5 text-[11px] leading-tight">
-                                                  <span class="text-amber-500 mt-0.5 shrink-0">•</span>
-                                                  <div class="flex-1 min-w-0">
-                                                      <span class="font-bold text-slate-700 block line-clamp-2" :title="detail.name">{{ detail.name }}</span>
-                                                      <span class="text-[10px] text-slate-400 font-mono font-bold mt-0.5 block">x{{ detail.qty }} {{ detail.unit }}</span>
-                                                  </div>
-                                              </li>
-                                          </ul>
-                                          <div class="absolute -bottom-1.5 left-2.5 w-3 h-3 bg-white border-b border-r border-slate-200 rotate-45"></div>
-                                      </div>
+                                      <transition enter-active-class="transition duration-200 ease-out" enter-from-class="transform scale-95 opacity-0" enter-to-class="transform scale-100 opacity-100" leave-active-class="transition duration-150 ease-in" leave-from-class="transform scale-100 opacity-100" leave-to-class="transform scale-95 opacity-0">
+                                          <div v-if="activeTooltipId === product.id" class="absolute bottom-full left-0 mb-2 w-64 md:w-72 bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-xl shadow-2xl p-4 z-[9999] origin-bottom-left pointer-events-auto" @click.stop>
+                                              <div class="absolute -bottom-1.5 left-5 w-3 h-3 bg-slate-900 border-b border-r border-slate-700 rotate-45"></div>
+                                              <h4 class="text-[11px] font-black text-white uppercase tracking-widest mb-3 border-b border-slate-700 pb-2 flex items-center gap-2">
+                                                  <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                                                  ទំនិញក្នុងឈុតនេះ
+                                              </h4>
+                                              <ul class="space-y-3 max-h-[430px] overflow-y-auto custom-scrollbar-dark pr-1 relative z-10">
+                                                  <li v-for="(detail, i) in getComboDetails(product)" :key="i" class="flex items-start justify-between gap-3">
+                                                      <div class="flex items-start gap-2 flex-1 min-w-0">
+                                                          <span class="text-amber-400 mt-1 shrink-0 text-xs">•</span>
+                                                          <span class="font-bold text-slate-200 text-[11px] leading-snug break-words" :title="detail.name">{{ detail.name }}</span>
+                                                      </div>
+                                                      <div class="bg-slate-800 text-amber-400 text-[10px] font-black px-2 py-1 rounded-md shrink-0 border border-slate-700 flex items-center gap-1 shadow-sm h-fit">
+                                                          <span>x{{ detail.qty }}</span>
+                                                          <span class="text-[8px] text-slate-400 uppercase">{{ detail.unit }}</span>
+                                                      </div>
+                                                  </li>
+                                              </ul>
+                                          </div>
+                                      </transition>
                                   </div>
                               </div>
                           </div>
                       </div>
-                      <div class="flex justify-between items-end mt-2 pt-2 border-t border-slate-100/60">
+
+                      <div class="flex justify-between items-end mt-2 pt-2 border-t border-slate-100/60 pointer-events-none">
                           <div class="text-[9px] md:text-[10px] font-black" :class="getTotalRetailStock(product) > 0 ? 'text-emerald-600' : 'text-rose-600'">
                               <span v-if="getTotalRetailStock(product) <= 0" class="bg-rose-100 px-1.5 py-0.5 rounded">អស់ស្តុក</span>
                               <span v-else>{{ formatComplexStock(product) }}</span>
@@ -207,7 +228,7 @@
           </div>
       </div>
 
-      <div v-if="totalProductsCount > ITEMS_PER_PAGE" class="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 p-3 md:p-4 flex items-center justify-between z-30 shadow-[0_-10px_30px_rgb(0,0,0,0.03)]">
+      <div v-if="totalProductsCount > ITEMS_PER_PAGE" class="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 p-3 md:p-4 flex items-center justify-between z-30 shadow-[0_-10px_30px_rgb(0,0,0,0.03)] font-khmer">
           <p class="text-xs font-bold text-slate-500 hidden sm:block">
               បង្ហាញ {{ Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, totalProductsCount) }} ដល់ {{ Math.min(currentPage * ITEMS_PER_PAGE, totalProductsCount) }} នៃ {{ totalProductsCount }} ទំនិញ
           </p>
@@ -242,7 +263,7 @@ const props = defineProps({
   translateHardcodedUnit: Function,
   translateRetailUnit: Function, 
   formatPrice: Function,
-  getComboDetails: Function // 🌟 ទទួល Props ថ្មីពីមេ 🌟
+  getComboDetails: Function 
 });
 
 defineEmits(['add-to-cart']);
@@ -254,22 +275,12 @@ const searchQuery = ref('');
 const currentPage = ref(1);
 const ITEMS_PER_PAGE = 20;
 
-const activeTooltipId = ref(null); // 🌟 គ្រប់គ្រងការបើកបិទ Tooltip 🌟
+const activeTooltipId = ref(null); 
 
-const toggleTooltip = (id) => {
-    if (activeTooltipId.value === id) {
-        activeTooltipId.value = null; // បិទវិញបើរួចហើយ
-    } else {
-        activeTooltipId.value = id; // បើកថ្មី
-    }
-};
-
-// 🌟 Reset Pagination on Filter/Search Change 🌟
 watch([searchQuery, activeFilter], () => {
   currentPage.value = 1;
 });
 
-// 🌟 Smart Filter Logic 🌟
 const filteredProducts = computed(() => {
   let result = props.products || [];
 
@@ -315,10 +326,19 @@ const paginatedProducts = computed(() => {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700;900&display=swap');
+.font-khmer { font-family: 'Kantumruy Pro', sans-serif; }
+
 .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
+
+.custom-scrollbar-dark::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar-dark::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+.custom-scrollbar-dark::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+.custom-scrollbar-dark:hover::-webkit-scrollbar-thumb { background: #64748b; }
+
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 

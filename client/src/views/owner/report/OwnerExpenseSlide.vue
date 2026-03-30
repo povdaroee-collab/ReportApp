@@ -102,7 +102,7 @@
                     <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/60">
                         <label class="block text-[11px] font-black text-indigo-800 mb-3 uppercase tracking-wide">កាត់កងចំណាយទៅលើអ្នកគ្រប់គ្រងណាខ្លះ?</label>
                         
-                        <div v-if="activeAdmins.length === 0" class="text-xs text-rose-600 font-bold bg-white p-3 rounded-lg border border-rose-100 shadow-sm flex items-center gap-2">
+                        <div v-if="!activeAdmins || activeAdmins.length === 0" class="text-xs text-rose-600 font-bold bg-white p-3 rounded-lg border border-rose-100 shadow-sm flex items-center gap-2">
                             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                             មិនមានអ្នកគ្រប់គ្រងដែលមានចំណូលទេក្នុងកាលបរិច្ឆេទនេះ!
                         </div>
@@ -283,7 +283,7 @@ const initDefaultRow = () => {
 };
 
 onMounted(() => {
-    defaultAdminName.value = auth.currentUser?.displayName || '';
+    defaultAdminName.value = auth.currentUser?.displayName || 'Admin';
     initDefaultRow();
 });
 
@@ -398,33 +398,29 @@ const executeDelete = async () => {
         deleteAlert.show = false;
         deleteAlert.targetId = null;
         emit('expensesUpdated');
-    } catch(e) {
-        console.error(e);
-    }
+    } catch(e) { console.error(e); }
 };
 
+// 🌟 Safety Check Utility Functions 🌟
 const formatDate = (dateInput) => {
    if(!dateInput) return '';
-   let date;
-   if (typeof dateInput.toDate === 'function') date = dateInput.toDate();
-   else date = new Date(dateInput);
-   if (isNaN(date.getTime())) return '';
-   
-   return new Intl.DateTimeFormat('km-KH', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+   try {
+       let date;
+       if (typeof dateInput.toDate === 'function') date = dateInput.toDate();
+       else date = new Date(dateInput);
+       if (isNaN(date.getTime())) return '';
+       return new Intl.DateTimeFormat('km-KH', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+   } catch(e) { return ''; }
 };
 
 const formatTargets = (targets) => {
-    if(!targets || targets.includes('ALL')) return 'រួមទាំងអស់';
+    if(!targets || !Array.isArray(targets) || targets.includes('ALL')) return 'រួមទាំងអស់';
     const names = targets.map(id => {
-        const found = props.activeAdmins.find(a => a.originalAdminId === id);
+        const found = (props.activeAdmins || []).find(a => a.originalAdminId === id);
         return found ? found.fullName : 'មិនស្គាល់';
     });
     return names.join(', ');
 };
-
-// ==========================================
-// 🌟 EXPORT LOGIC (PDF & EXCEL រចនាថ្មី) 🌟
-// ==========================================
 
 const getFilterLabelForExport = () => {
     if (props.dateFilterType === 'daily') return `ប្រចាំថ្ងៃទី ${props.selectedDate}`;
@@ -433,185 +429,204 @@ const getFilterLabelForExport = () => {
     return `ចាប់ពី ${props.customStart} ដល់ ${props.customEnd}`;
 };
 
-// 🌟 ១. TEMPLATE សម្រាប់ PDF (ស្រស់ស្អាត ទំនើប) 🌟
-const getPDFTemplate = () => {
-    const totalUSD = props.expensesList.filter(e => e.currency === 'USD').reduce((sum, e) => sum + Number(e.amount), 0);
-    const totalKHR = props.expensesList.filter(e => e.currency !== 'USD').reduce((sum, e) => sum + Number(e.amount), 0);
 
-    const rowsHTML = props.expensesList.map((item, index) => {
-        const amountDisplay = `${Number(item.amount).toLocaleString()} ${item.currency === 'USD' ? '$' : '៛'}`;
-        const amountColor = item.currency === 'USD' ? '#e11d48' : '#ea580c'; 
-        
-        return `
-        <tr style="background-color: ${index % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 12px; text-align: center; color: #64748b; font-size: 13px;">${index + 1}</td>
-            <td style="padding: 12px; font-weight: bold; color: #1e293b; font-size: 14px;">${item.reason}</td>
-            <td style="padding: 12px; text-align: center; color: #475569; font-size: 13px;">${item.requester || 'មិនបញ្ជាក់'}</td>
-            <td style="padding: 12px; text-align: right; font-weight: bold; color: ${amountColor}; font-size: 15px;">${amountDisplay}</td>
-            <td style="padding: 12px; text-align: center; color: #64748b; font-size: 12px;">${formatDate(item.createdAt || item.date)}</td>
-            <td style="padding: 12px; color: #4338ca; font-size: 12px;">${formatTargets(item.targetAdmins)}</td>
-        </tr>
-    `}).join('');
-
-    return `
-        <div id="expense-export-target" style="width: 1050px; padding: 50px; background-color: #ffffff; font-family: 'Battambong', 'Khmer OS Battambong', sans-serif; position: relative;">
-            
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px;">
-                <div>
-                    <h1 style="margin: 0 0 10px 0; font-size: 28px; color: #0f172a; font-weight: 900; letter-spacing: 1px;">របាយការណ៍ចំណាយ</h1>
-                    <div style="display: inline-block; background-color: #f1f5f9; padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 14px; color: #475569; font-weight: bold;">
-                        📅 ${getFilterLabelForExport()}
-                    </div>
-                </div>
-                <div style="text-align: right; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; background: #f8fafc; min-width: 250px;">
-                    <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b; font-weight: bold; text-transform: uppercase;">ព័ត៌មានឯកសារ</p>
-                    <p style="margin: 0 0 5px 0; font-size: 14px; color: #1e293b;">ទាញយកដោយ: <b style="color: #4f46e5;">${defaultAdminName.value || 'Admin'}</b></p>
-                    <p style="margin: 0; font-size: 14px; color: #1e293b;">ម៉ោង: <b>${new Date().toLocaleTimeString('en-US')}</b></p>
-                </div>
-            </div>
-
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px; border: 1px solid #e2e8f0;">
-                <thead>
-                    <tr style="background-color: #1e293b; color: white;">
-                        <th style="padding: 15px 12px; text-align: center; font-size: 13px;">ល.រ</th>
-                        <th style="padding: 15px 12px; text-align: left; font-size: 13px;">បរិយាយ / មូលហេតុ</th>
-                        <th style="padding: 15px 12px; text-align: center; font-size: 13px;">អ្នកស្នើប្រាក់</th>
-                        <th style="padding: 15px 12px; text-align: right; font-size: 13px;">ទឹកប្រាក់</th>
-                        <th style="padding: 15px 12px; text-align: center; font-size: 13px;">កាលបរិច្ឆេទ</th>
-                        <th style="padding: 15px 12px; text-align: left; font-size: 13px;">កាត់លើអ្នកគ្រប់គ្រង</th>
-                    </tr>
-                </thead>
-                <tbody>${rowsHTML}</tbody>
-            </table>
-
-            <div style="display: flex; justify-content: flex-end;">
-                <div style="background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border: 1px solid #fecdd3; border-radius: 16px; padding: 25px; width: 400px; box-shadow: 0 10px 25px -5px rgba(225, 29, 72, 0.1);">
-                    <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #be123c; border-bottom: 1px dashed #fda4af; padding-bottom: 10px;">សរុបការចំណាយ (Grand Total)</h3>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <span style="color: #9f1239; font-weight: bold; font-size: 15px;">សរុប (USD):</span>
-                        <span style="font-size: 24px; font-weight: 900; color: #e11d48;">${totalUSD.toLocaleString(undefined, {minimumFractionDigits:2})} $</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #9f1239; font-weight: bold; font-size: 15px;">សរុប (KHR):</span>
-                        <span style="font-size: 24px; font-weight: 900; color: #ea580c;">${totalKHR.toLocaleString()} ៛</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-};
-
-// 🌟 ២. TEMPLATE សម្រាប់ EXCEL (ទម្រង់តារាងសុទ្ធ ងាយស្រួលមើល) 🌟
-const generateExcelData = () => {
-    const totalUSD = props.expensesList.filter(e => e.currency === 'USD').reduce((sum, e) => sum + Number(e.amount), 0);
-    const totalKHR = props.expensesList.filter(e => e.currency !== 'USD').reduce((sum, e) => sum + Number(e.amount), 0);
-
-    let rows = '';
-    props.expensesList.forEach((item, index) => {
-        const amountDisplay = `${Number(item.amount).toLocaleString()} ${item.currency === 'USD' ? '$' : '៛'}`;
-        rows += `
-            <tr>
-                <td style="text-align: center; border: 1px solid #000000; vertical-align: middle;">${index + 1}</td>
-                <td style="border: 1px solid #000000; vertical-align: middle;">${item.reason}</td>
-                <td style="text-align: center; border: 1px solid #000000; vertical-align: middle;">${item.requester || 'មិនបញ្ជាក់'}</td>
-                <td style="text-align: right; border: 1px solid #000000; vertical-align: middle; color: ${item.currency === 'USD' ? '#ff0000' : '#ff8800'}; font-weight: bold;">${amountDisplay}</td>
-                <td style="text-align: center; border: 1px solid #000000; vertical-align: middle;">${formatDate(item.createdAt || item.date)}</td>
-                <td style="border: 1px solid #000000; vertical-align: middle;">${formatTargets(item.targetAdmins)}</td>
-            </tr>
-        `;
-    });
-
-    return `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-        <head>
-            <meta charset="utf-8">
-            <style>
-                table { font-family: 'Battambong', 'Arial', sans-serif; border-collapse: collapse; }
-                th { background-color: #1e293b; color: #ffffff; font-weight: bold; border: 1px solid #000000; padding: 10px; font-size: 12pt; }
-                td { padding: 8px; font-size: 11pt; }
-                .title { font-size: 18pt; font-weight: bold; text-align: center; background-color: #f1f5f9; height: 40px; vertical-align: middle;}
-                .subtitle { font-size: 12pt; font-weight: bold; text-align: center; background-color: #f1f5f9; height: 30px; vertical-align: middle;}
-                .total-label { font-weight: bold; text-align: right; background-color: #fff1f2; border: 1px solid #000000;}
-                .total-val { font-weight: bold; font-size: 14pt; background-color: #fff1f2; border: 1px solid #000000;}
-            </style>
-        </head>
-        <body>
-            <table>
-                <tr>
-                    <td colspan="6" class="title">របាយការណ៍ចំណាយ (Expense Report)</td>
-                </tr>
-                <tr>
-                    <td colspan="6" class="subtitle">កាលបរិច្ឆេទ: ${getFilterLabelForExport()} | ទាញយកនៅ: ${new Date().toLocaleString('km-KH')}</td>
-                </tr>
-                <tr>
-                    <td colspan="6"></td>
-                </tr>
-                <tr>
-                    <th width="50">ល.រ</th>
-                    <th width="300">បរិយាយ / មូលហេតុ</th>
-                    <th width="150">អ្នកស្នើប្រាក់</th>
-                    <th width="120">ទឹកប្រាក់</th>
-                    <th width="150">កាលបរិច្ឆេទ</th>
-                    <th width="250">កាត់លើអ្នកគ្រប់គ្រង</th>
-                </tr>
-                ${rows}
-                <tr>
-                    <td colspan="6"></td>
-                </tr>
-                <tr>
-                    <td colspan="3" class="total-label">សរុបការចំណាយ (USD):</td>
-                    <td colspan="3" class="total-val" style="color: #e11d48;">${totalUSD.toLocaleString()} $</td>
-                </tr>
-                <tr>
-                    <td colspan="3" class="total-label">សរុបការចំណាយ (KHR):</td>
-                    <td colspan="3" class="total-val" style="color: #ea580c;">${totalKHR.toLocaleString()} ៛</td>
-                </tr>
-            </table>
-        </body>
-        </html>
-    `;
-};
-
+// ==========================================
+// 🌟 SMART PDF PAGINATION LOGIC (FIXED PAGE BREAKS) 🌟
+// ==========================================
 const downloadPDF = async () => {
     isExportingPDF.value = true;
     try {
-        printStaging.value.innerHTML = getPDFTemplate();
-        await nextTick(); 
-        await document.fonts.ready; 
-        await new Promise(r => setTimeout(r, 500)); 
-        
-        const targetElement = document.getElementById('expense-export-target');
-        
-        const canvas = await html2canvas(targetElement, { 
-            scale: 2, 
-            useCORS: true, 
-            backgroundColor: "#ffffff",
-            windowWidth: 1100
-        });
-        
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        
+        const totalUSD = props.expensesList.filter(e => e.currency === 'USD').reduce((sum, e) => sum + (Number(e.amount)||0), 0);
+        const totalKHR = props.expensesList.filter(e => e.currency !== 'USD').reduce((sum, e) => sum + (Number(e.amount)||0), 0);
+
+        // ១. ចែកទិន្នន័យជាកញ្ចប់តូចៗ (Chunking 20 ជួរ ក្នុង ១ ទំព័រ A4)
+        const rowsPerPage = 23; 
+        const chunks = [];
+        for (let i = 0; i < props.expensesList.length; i += rowsPerPage) {
+            chunks.push(props.expensesList.slice(i, i + rowsPerPage));
+        }
+
         const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = 210; 
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        const pdfWidth = 210;
+        const pdfHeight = 297; 
+
+        // ២. គូរទំព័រម្តងមួយៗ (Page by Page Render)
+        for (let pageIndex = 0; pageIndex < chunks.length; pageIndex++) {
+            const chunk = chunks[pageIndex];
+            const startIndex = pageIndex * rowsPerPage;
+
+            const rowsHTML = chunk.map((item, idx) => {
+                const amountDisplay = `${Number(item.amount).toLocaleString()} ${item.currency === 'USD' ? '$' : '៛'}`;
+                const amountColor = item.currency === 'USD' ? '#e11d48' : '#ea580c'; 
+                return `
+                <tr style="background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px; text-align: center; color: #64748b; font-size: 13px;">${startIndex + idx + 1}</td>
+                    <td style="padding: 12px; font-weight: bold; color: #1e293b; font-size: 14px;">${item.reason}</td>
+                    <td style="padding: 12px; text-align: center; color: #475569; font-size: 13px;">${item.requester || 'មិនបញ្ជាក់'}</td>
+                    <td style="padding: 12px; text-align: right; font-weight: bold; color: ${amountColor}; font-size: 15px;">${amountDisplay}</td>
+                    <td style="padding: 12px; text-align: center; color: #64748b; font-size: 12px;">${formatDate(item.createdAt || item.date)}</td>
+                    <td style="padding: 12px; color: #4338ca; font-size: 12px;">${formatTargets(item.targetAdmins)}</td>
+                </tr>
+            `}).join('');
+
+            // សរុបប្រាក់ (បង្ហាញតែនៅលើទំព័រចុងក្រោយប៉ុណ្ណោះ)
+            const isLastPage = pageIndex === chunks.length - 1;
+            const grandTotalHTML = isLastPage ? `
+                <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                    <div style="background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border: 1px solid #fecdd3; border-radius: 16px; padding: 25px; width: 400px;">
+                        <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #be123c; border-bottom: 1px dashed #fda4af; padding-bottom: 10px;">សរុបការចំណាយ (Grand Total)</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="color: #9f1239; font-weight: bold; font-size: 15px;">សរុប (USD):</span>
+                            <span style="font-size: 24px; font-weight: 900; color: #e11d48;">${totalUSD.toLocaleString(undefined, {minimumFractionDigits:2})} $</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #9f1239; font-weight: bold; font-size: 15px;">សរុប (KHR):</span>
+                            <span style="font-size: 24px; font-weight: 900; color: #ea580c;">${totalKHR.toLocaleString()} ៛</span>
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+
+            // តំណាងទំហំក្រដាស A4 (1000px គុណ 1414px)
+            printStaging.value.innerHTML = `
+                <div id="pdf-page-${pageIndex}" style="width: 1000px; height: 1414px; background: #ffffff; padding: 40px; box-sizing: border-box; font-family: 'Kantumruy Pro', 'Battambang', sans-serif; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px;">
+                        <div>
+                            <h1 style="margin: 0 0 10px 0; font-size: 28px; color: #0f172a; font-weight: 900;">របាយការណ៍ចំណាយ</h1>
+                            <div style="display: inline-block; background-color: #f1f5f9; padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 14px; color: #475569; font-weight: bold;">
+                                📅 ${getFilterLabelForExport()}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="margin: 0 0 5px 0; font-size: 14px; color: #1e293b;">ទាញយកដោយ: <b style="color: #4f46e5;">${defaultAdminName.value || 'Admin'}</b></p>
+                            <p style="margin: 0; font-size: 14px; color: #64748b;">ទំព័រទី ${pageIndex + 1} នៃ ${chunks.length}</p>
+                        </div>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0;">
+                        <thead>
+                            <tr style="background-color: #1e293b; color: white;">
+                                <th style="padding: 15px 12px; text-align: center; font-size: 13px;">ល.រ</th>
+                                <th style="padding: 15px 12px; text-align: left; font-size: 13px;">បរិយាយ / មូលហេតុ</th>
+                                <th style="padding: 15px 12px; text-align: center; font-size: 13px;">អ្នកស្នើប្រាក់</th>
+                                <th style="padding: 15px 12px; text-align: right; font-size: 13px;">ទឹកប្រាក់</th>
+                                <th style="padding: 15px 12px; text-align: center; font-size: 13px;">កាលបរិច្ឆេទ</th>
+                                <th style="padding: 15px 12px; text-align: left; font-size: 13px;">កាត់លើអ្នកគ្រប់គ្រង</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHTML}</tbody>
+                    </table>
+                    
+                    <div style="position: absolute; bottom: 40px; left: 40px; right: 40px;">
+                        ${grandTotalHTML}
+                        <div style="border-top: 1px solid #cbd5e1; margin-top: 20px; padding-top: 15px; font-size: 12px; color: #94a3b8; display: flex; justify-content: space-between; font-weight: bold;">
+                            <span>ដោយ: ${defaultAdminName.value}</span>
+                            <span>កាលបរិច្ឆេទព្រីន: ${new Date().toLocaleString('km-KH')}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            await nextTick(); 
+            await document.fonts.ready; 
+            await new Promise(r => setTimeout(r, 400)); 
+
+            const targetElement = document.getElementById(`pdf-page-${pageIndex}`);
+            const canvas = await html2canvas(targetElement, { 
+                scale: 2, 
+                useCORS: true, 
+                backgroundColor: "#ffffff"
+            });
+            
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+
+            if (pageIndex > 0) pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        }
+
         pdf.save(`Expense_Report_${new Date().getTime()}.pdf`);
-        
-        printStaging.value.innerHTML = '';
+
     } catch(e) { 
         console.error(e); 
         alert("មានបញ្ហាក្នុងការទាញយក PDF");
     } finally { 
+        printStaging.value.innerHTML = '';
         isExportingPDF.value = false; 
     }
 };
 
+// ==========================================
+// 🌟 RESTORED & SAFE EXCEL EXPORT 🌟
+// ==========================================
 const downloadExcel = () => {
     isExportingExcel.value = true;
     try {
-        const htmlContent = generateExcelData();
-        const blob = new Blob(['\ufeff', htmlContent], { type: 'application/vnd.ms-excel' });
+        const totalUSD = props.expensesList.filter(e => e.currency === 'USD').reduce((sum, e) => sum + (Number(e.amount)||0), 0);
+        const totalKHR = props.expensesList.filter(e => e.currency !== 'USD').reduce((sum, e) => sum + (Number(e.amount)||0), 0);
+
+        let rows = '';
+        props.expensesList.forEach((item, index) => {
+            const amountDisplay = `${Number(item.amount).toLocaleString()} ${item.currency === 'USD' ? '$' : '៛'}`;
+            rows += `
+                <tr>
+                    <td style="text-align: center; border: 1px solid #000000; vertical-align: middle;">${index + 1}</td>
+                    <td style="border: 1px solid #000000; vertical-align: middle;">${item.reason}</td>
+                    <td style="text-align: center; border: 1px solid #000000; vertical-align: middle;">${item.requester || 'មិនបញ្ជាក់'}</td>
+                    <td style="text-align: right; border: 1px solid #000000; vertical-align: middle; color: ${item.currency === 'USD' ? '#ff0000' : '#ff8800'}; font-weight: bold;">${amountDisplay}</td>
+                    <td style="text-align: center; border: 1px solid #000000; vertical-align: middle;">${formatDate(item.createdAt || item.date)}</td>
+                    <td style="border: 1px solid #000000; vertical-align: middle;">${formatTargets(item.targetAdmins)}</td>
+                </tr>
+            `;
+        });
+
+        const htmlContent = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    table { font-family: 'Battambang', 'Kantumruy Pro', sans-serif; border-collapse: collapse; }
+                    th { background-color: #1e293b; color: #ffffff; font-weight: bold; border: 1px solid #000000; padding: 10px; font-size: 12pt; }
+                    td { padding: 8px; font-size: 11pt; }
+                    .title { font-size: 18pt; font-weight: bold; text-align: center; background-color: #f1f5f9; height: 40px; vertical-align: middle;}
+                    .subtitle { font-size: 12pt; font-weight: bold; text-align: center; background-color: #f1f5f9; height: 30px; vertical-align: middle;}
+                    .total-label { font-weight: bold; text-align: right; background-color: #fff1f2; border: 1px solid #000000;}
+                    .total-val { font-weight: bold; font-size: 14pt; background-color: #fff1f2; border: 1px solid #000000;}
+                </style>
+            </head>
+            <body>
+                <table>
+                    <tr>
+                        <td colspan="6" class="title">របាយការណ៍ចំណាយ (Expense Report)</td>
+                    </tr>
+                    <tr>
+                        <td colspan="6" class="subtitle">កាលបរិច្ឆេទ: ${getFilterLabelForExport()} | ទាញយកនៅ: ${new Date().toLocaleString('km-KH')}</td>
+                    </tr>
+                    <tr><td colspan="6"></td></tr>
+                    <tr>
+                        <th width="50">ល.រ</th>
+                        <th width="300">បរិយាយ / មូលហេតុ</th>
+                        <th width="150">អ្នកស្នើប្រាក់</th>
+                        <th width="120">ទឹកប្រាក់</th>
+                        <th width="150">កាលបរិច្ឆេទ</th>
+                        <th width="250">កាត់លើអ្នកគ្រប់គ្រង</th>
+                    </tr>
+                    ${rows}
+                    <tr><td colspan="6"></td></tr>
+                    <tr>
+                        <td colspan="3" class="total-label">សរុបការចំណាយ (USD):</td>
+                        <td colspan="3" class="total-val" style="color: #e11d48;">${totalUSD.toLocaleString()} $</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="total-label">សរុបការចំណាយ (KHR):</td>
+                        <td colspan="3" class="total-val" style="color: #ea580c;">${totalKHR.toLocaleString()} ៛</td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+        `;
+
+        // Add UTF-8 BOM (\ufeff) to force Excel to read Khmer characters correctly
+        const blob = new Blob(['\ufeff', htmlContent], { type: 'application/vnd.ms-excel;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -622,18 +637,17 @@ const downloadExcel = () => {
         URL.revokeObjectURL(url);
     } catch (e) {
         console.error(e);
-        alert("មានបញ្ហាក្នុងការទាញយក Excel");
+        alert("មានបញ្ហាក្នុងការទាញយក Excel សូមពិនិត្យមើល Console!");
     } finally {
         isExportingExcel.value = false;
     }
 };
 
-
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700;900&display=swap');
-.font-khmer { font-family: 'Kantumruy Pro', sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700;900&family=Battambang:wght@400;700;900&display=swap');
+.font-khmer { font-family: 'Kantumruy Pro', 'Battambang', sans-serif; }
 .custom-scrollbar::-webkit-scrollbar { width: 5px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
