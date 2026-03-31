@@ -172,7 +172,7 @@
 
       <p class="text-center text-[9px] sm:text-[10px] mt-6 sm:mt-8 font-black uppercase tracking-widest transition-colors duration-500"
          :class="isSuperAdmin ? 'text-emerald-500/50' : 'text-neutral-600'">
-        &copy; Developer by pov daro | version 5.9.3
+        &copy; Developer by pov daro | version 5.9.4
       </p>
 
     </div>

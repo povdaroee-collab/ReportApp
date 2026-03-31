@@ -3,7 +3,7 @@
     <div class="font-khmer min-h-screen relative bg-[#F4F7FE] print:hidden pb-40">
       
       <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
-         <div v-if="showMobileFilters" class="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80]" @click="showMobileFilters = false"></div>
+          <div v-if="showMobileFilters" class="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80]" @click="showMobileFilters = false"></div>
       </transition>
 
       <div :class="[
@@ -42,18 +42,10 @@
               </div>
           </div>
 
-          <div v-if="showMobileFilters" class="md:hidden grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-slate-100 px-6">
-              <button @click="openPrintModal('print'); showMobileFilters = false" class="flex items-center justify-center gap-2 py-3.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-sm active:scale-95 transition-all shadow-md">
+          <div v-if="showMobileFilters" class="md:hidden grid grid-cols-1 gap-3 mt-6 pt-6 border-t border-slate-100 px-6">
+              <button @click="openReportConfig(); showMobileFilters = false" class="flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm active:scale-95 transition-all shadow-md shadow-indigo-500/30">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                  បោះពុម្ព
-              </button>
-              <button @click="openPrintModal('pdf'); showMobileFilters = false" class="flex items-center justify-center gap-2 py-3.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-sm active:scale-95 transition-all shadow-md shadow-rose-500/30">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                  ទាញយក PDF
-              </button>
-               <button @click="openPrintModal('excel'); showMobileFilters = false" class="col-span-2 flex items-center justify-center gap-2 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm active:scale-95 transition-all shadow-md shadow-emerald-500/30">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                  ទាញយក Excel
+                  កំណត់ & ទាញយករបាយការណ៍
               </button>
           </div>
       </div>
@@ -83,10 +75,10 @@
                     v-model:activityFilter="activityFilter"
                     :showMobileFilters="showMobileFilters"
                     @toggleMobileFilters="showMobileFilters = !showMobileFilters"
-                    @preview="showPreviewModal = true" 
-                    @print="openPrintModal('print')"
-                    @pdf="openPrintModal('pdf')"
-                    @excel="openPrintModal('excel')"
+                    @preview="openReportConfig" 
+                    @print="openReportConfig"
+                    @pdf="openReportConfig"
+                    @excel="openReportConfig"
                 />
             </div>
         </template>
@@ -111,49 +103,6 @@
 
     </div>
 
-    <transition enter-active-class="duration-200 ease-out" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100" leave-active-class="duration-150 ease-in" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
-        <div v-if="printModal.show" class="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm font-khmer">
-            <div class="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
-                <div class="flex items-center gap-3 mb-4 shrink-0">
-                    <div class="w-12 h-12 rounded-full flex items-center justify-center" :class="printModal.type === 'pdf' ? 'bg-rose-50 text-rose-500' : (printModal.type === 'excel' ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-100 text-slate-700')">
-                        <svg v-if="printModal.type === 'pdf'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        <svg v-else-if="printModal.type === 'excel'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="font-black text-slate-800 text-lg">កំណត់របាយការណ៍</h3>
-                        <p class="text-xs font-bold text-slate-500">ទាញយកជាទម្រង់ {{ printModal.type === 'pdf' ? 'ឯកសារ PDF' : (printModal.type === 'excel' ? 'ឯកសារ Excel' : 'បោះពុម្ព (Print)') }}</p>
-                    </div>
-                </div>
-
-                <div class="mb-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 flex-1 overflow-y-auto custom-scrollbar">
-                    <label class="block text-[11px] font-black text-slate-500 mb-3 uppercase tracking-wide border-b border-slate-200 pb-2">ជ្រើសរើសទិន្នន័យអ្នកគ្រប់គ្រង</label>
-                    <div class="space-y-1.5">
-                        <label class="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors" :class="printModal.selectAll ? 'bg-indigo-100 border-indigo-200 border text-indigo-800' : 'hover:bg-slate-100 border border-transparent'">
-                            <input type="checkbox" v-model="printModal.selectAll" @change="toggleSelectAllAdmins" class="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                            <span class="font-black text-[14px]">👉 ទាំងអស់ (All Admins)</span>
-                        </label>
-                        <div class="h-px bg-slate-200 my-2"></div>
-                        <label v-for="admin in displayedData" :key="admin.originalAdminId" class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200">
-                            <input type="checkbox" :value="admin.originalAdminId" v-model="printModal.selectedAdmins" @change="checkSelectAllStatus" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                            <div class="flex flex-col">
-                                <span class="font-bold text-[13px] text-slate-700">{{ admin.fullName }}</span>
-                                <span v-if="!admin.hasSales" class="text-[10px] text-slate-400 font-bold">គ្មានការលក់</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="flex gap-3 shrink-0 pt-2">
-                    <button @click="printModal.show = false" class="flex-1 py-3.5 rounded-xl font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 transition-colors shadow-sm">បោះបង់</button>
-                    <button @click="confirmPrintAction" :disabled="printModal.selectedAdmins.length === 0" class="flex-[1.5] py-3.5 rounded-xl font-black text-white shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" :class="printModal.type === 'pdf' ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-rose-500/30' : (printModal.type === 'excel' ? 'bg-gradient-to-r from-emerald-500 to-green-600 shadow-emerald-500/30' : 'bg-slate-800 hover:bg-slate-900 shadow-slate-900/20')">
-                        បន្តការទាញយក
-                    </button>
-                </div>
-            </div>
-        </div>
-    </transition>
-
     <OwnerExpenseSlide 
         v-if="showExpenseSlide" 
         :show="showExpenseSlide" 
@@ -172,28 +121,17 @@
 
     <PreviewReportModal 
         :show="showPreviewModal"
+        :activeAdmins="displayedData"
+        :selectedAdmins="selectedAdminsForExport"
         :stats="advancedPrintStats"
-        :dateLabel="reportDateLabel"
+        :allSales="allSales"  :dateLabel="reportDateLabel"
         :adminLabel="reportAdminLabel"
         :unitSettings="unitSettings"
+        :processingState="processing"
         @close="showPreviewModal = false"
-    />
-
-    <transition enter-active-class="duration-300 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
-        <div v-if="processing.active" class="fixed inset-0 z-[999999] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md font-khmer">
-            <div class="w-full max-w-sm bg-[#18181b] border border-white/10 rounded-3xl p-10 shadow-2xl relative flex flex-col items-center text-center animate-fade-in-up">
-                <div class="relative w-20 h-20 mb-8">
-                    <div class="absolute inset-0 rounded-full border-4 border-white/5"></div>
-                    <div class="absolute inset-0 rounded-full border-4 border-t-rose-500 border-r-rose-500 border-b-transparent border-l-transparent animate-spin"></div>
-                    <div class="absolute inset-0 flex items-center justify-center font-black text-white text-lg font-mono">{{ processing.progress }}%</div>
-                </div>
-                <h3 class="text-xl font-bold text-white mb-2">{{ processing.message }}</h3>
-                <div class="w-full h-1.5 bg-black/50 rounded-full overflow-hidden border border-white/5 mt-2">
-                    <div class="h-full bg-gradient-to-r from-red-500 to-rose-600 transition-all duration-300 ease-out" :style="{ width: `${processing.progress}%` }"></div>
-                </div>
-            </div>
-        </div>
-    </transition>
+        @update:selectedAdmins="val => selectedAdminsForExport = val"
+        @exportAction="executeExport"
+    />​
 
     <div ref="printStaging" class="fixed top-0 left-[-9999px] pointer-events-none z-[-1]"></div>
 
@@ -212,7 +150,6 @@ import { ref, onMounted, onUnmounted, computed, watch, nextTick, reactive } from
 import { db, auth } from '@/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 
-// 🌟 Import Components 🌟
 import OwnerReportHeader from './report/OwnerReportHeader.vue';
 import OwnerReportSummaryCards from './report/OwnerReportSummaryCards.vue';
 import OwnerReportAdminList from './report/OwnerReportAdminList.vue';
@@ -221,7 +158,6 @@ import CustomAlert from '@/components/shared/CustomAlert.vue';
 import OwnerExpenseSlide from './report/OwnerExpenseSlide.vue'; 
 import PreviewReportModal from './report/PreviewReportModal.vue'; 
 import { executeNativePrint, generatePDF, generateExcel } from './report/exportReportLogic.js';
-// 🌟 បន្ថែម getDocs សម្រាប់សន្សំ Reads 🌟
 import { doc, getDoc, collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 
 const isLoading = ref(true);
@@ -234,7 +170,6 @@ const unitSettings = ref([]);
 const allExpenses = ref([]); 
 const allStocks = ref([]);
 
-// 🌟 លុប Unsubscribe ចាស់ៗដែលមិនចាំបាច់ចេញ 🌟
 let unsubscribeSales = null;
 let unsubscribeExpenses = null;
 
@@ -243,12 +178,8 @@ const showSummaryCards = ref(false);
 const showExpenseSlide = ref(false); 
 const showPreviewModal = ref(false); 
 
-const printModal = reactive({ 
-    show: false, 
-    type: 'pdf', 
-    selectAll: true,
-    selectedAdmins: [] 
-});
+// 🌟 New Selection State for Export 🌟
+const selectedAdminsForExport = ref([]);
 
 const activeCategory = ref('all'); 
 const dateFilterType = ref('daily'); 
@@ -331,7 +262,6 @@ const getDateRangeISO = () => {
 let currentFetchId = 0; 
 let safetyTimer = null;
 
-// 🌟 HYBRID FETCH LOGIC (សន្សំសំចៃ Reads វៃឆ្លាតបំផុត) 🌟
 const fetchDynamicData = async () => {
     if (allSales.value.length === 0) isLoading.value = true;
     const { startStr, endStr } = getDateRangeISO();
@@ -345,10 +275,8 @@ const fetchDynamicData = async () => {
     currentFetchId++;
     const thisFetchId = currentFetchId;
 
-    // ពិនិត្យមើលថាតើ Admin កំពុងមើល "ថ្ងៃនេះ (Live)" ដែរឬទេ?
     const isTodayFilter = dateFilterType.value === 'daily' && selectedDate.value === todayStr;
 
-    // 🟢 លក្ខខណ្ឌទី ១៖ បើមើល "ថ្ងៃនេះ" -> ប្រើ Realtime ធម្មតា
     if (isTodayFilter) {
         let isSalesSynced = false;
         let isExpensesSynced = false;
@@ -384,9 +312,7 @@ const fetchDynamicData = async () => {
             if (thisFetchId === currentFetchId) { isSalesSynced = true; isExpensesSynced = true; checkCompletion(); }
         }, 30000); 
 
-    } 
-    // 🟡 លក្ខខណ្ឌទី ២៖ បើមើល "ប្រវត្តិ (ខែនេះ, ឆ្នាំនេះ...)" -> ប្រើ Static Fetch (getDocs) សន្សំ Reads
-    else {
+    } else {
         try {
             const [salesSnap, expensesSnap] = await Promise.all([getDocs(salesQ), getDocs(expensesQ)]);
             if (thisFetchId !== currentFetchId) return;
@@ -415,7 +341,6 @@ onMounted(() => {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) currentUserRole.value = userDoc.data().role;
 
-          // 🌟 ប្តូរ Reference Data ទាំងអស់ពី onSnapshot មក getDocs (សន្សំ Reads) 🌟
           const adminQ = query(collection(db, 'users'), where('role', '==', 'admin'));
           const adminSnap = await getDocs(adminQ);
           adminsList.value = adminSnap.docs
@@ -445,7 +370,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    // ទុកតែ Unsubscribe ដែលនៅមាន
     if (unsubscribeSales) unsubscribeSales();
     if (unsubscribeExpenses) unsubscribeExpenses();
     stopFetchTimer();
@@ -461,11 +385,6 @@ watch([dateFilterType, selectedDate, selectedMonth, selectedYear, customStart, c
         fetchDynamicData();
     }, 600); 
 }, { deep: true });
-
-// ============================================================================
-// ⚠️ រាល់ Computed Properties (baseCalculatedData, grandTotals, regionalReportSummary...) 
-// គឺត្រូវបានរក្សាទុកដូចដើម ១០០% ដើម្បីកុំឱ្យខូចការគណនាលុយ និងការ Export!
-// ============================================================================
 
 const baseCalculatedData = computed(() => {
    if (adminsList.value.length === 0) return [];
@@ -624,57 +543,25 @@ const calculateItemCostUSD = (saleItem, saleCurrency) => {
     return totalItemCost;
 };
 
-const openPrintModal = (type) => {
-    printModal.type = type;
-    printModal.selectAll = true;
-    printModal.selectedAdmins = displayedData.value.map(a => a.originalAdminId);
-    printModal.show = true;
-};
-
-const toggleSelectAllAdmins = () => {
-    if (printModal.selectAll) {
-        printModal.selectedAdmins = displayedData.value.map(a => a.originalAdminId);
-    } else {
-        printModal.selectedAdmins = [];
-    }
-};
-
-const checkSelectAllStatus = () => {
-    printModal.selectAll = printModal.selectedAdmins.length === displayedData.value.length;
-};
-
-// 🌟 Execute Export 🌟
-const confirmPrintAction = async () => {
-    printModal.show = false;
-    
-    try {
-        if (printModal.type === 'print') {
-            executeNativePrint(rowsToPrint.value, allSales.value, advancedPrintStats.value, reportDateLabel.value, reportAdminLabel.value, unitSettings.value);
-        } else if (printModal.type === 'excel') {
-            generateExcel(rowsToPrint.value, allSales.value, advancedPrintStats.value, reportDateLabel.value, reportAdminLabel.value, adminName.value, unitSettings.value, processing.value);
-            triggerAlert('success', 'ជោគជ័យ', 'ទាញយក Excel បានជោគជ័យ!');
-        } else {
-            await generatePDF(rowsToPrint.value, allSales.value, advancedPrintStats.value, reportDateLabel.value, reportAdminLabel.value, adminName.value, unitSettings.value, processing.value, printStaging.value);
-            triggerAlert('success', 'ជោគជ័យ', 'ទាញយក PDF បានជោគជ័យ!');
-        }
-    } catch (e) {
-        console.error(e);
-        triggerAlert('error', 'បរាជ័យ', 'មិនអាចបង្កើតរបាយការណ៍បានទេ');
-    }
+// 🌟 Open Wizard Modal (replaced old function) 🌟
+const openReportConfig = () => {
+    selectedAdminsForExport.value = displayedData.value.map(a => a.originalAdminId);
+    showPreviewModal.value = true;
 };
 
 const rowsToPrint = computed(() => {
     return displayedData.value
-        .filter(a => printModal.selectedAdmins.includes(a.originalAdminId))
+        .filter(a => selectedAdminsForExport.value.includes(a.originalAdminId))
         .map((item, idx) => ({ ...item, printIndex: idx + 1 }));
 });
 
 const filteredExpensesToPrint = computed(() => {
     return allExpenses.value.filter(exp => {
-        if (printModal.selectAll) return true;
+        const isAllSelected = selectedAdminsForExport.value.length === displayedData.value.length;
+        if (isAllSelected) return true;
         const targets = exp.targetAdmins || [];
         if (targets.includes('ALL')) return true;
-        return targets.some(targetId => printModal.selectedAdmins.includes(targetId));
+        return targets.some(targetId => selectedAdminsForExport.value.includes(targetId));
     });
 });
 
@@ -703,11 +590,12 @@ const advancedPrintStats = computed(() => {
     };
 
     let filteredValidSales = allSales.value.filter(s => s.paymentStatus !== 'CANCELED');
+    const isAllSelected = selectedAdminsForExport.value.length === displayedData.value.length;
 
-    if (!printModal.selectAll) {
-        const targetAdminSellersIds = allSellers.value.filter(s => printModal.selectedAdmins.includes(s.createdBy)).map(s => s.id);
+    if (!isAllSelected) {
+        const targetAdminSellersIds = allSellers.value.filter(s => selectedAdminsForExport.value.includes(s.createdBy)).map(s => s.id);
         filteredValidSales = filteredValidSales.filter(s => {
-            return printModal.selectedAdmins.includes(s.createdBy) || targetAdminSellersIds.includes(s.createdBy) || targetAdminSellersIds.includes(s.uid);
+            return selectedAdminsForExport.value.includes(s.createdBy) || targetAdminSellersIds.includes(s.createdBy) || targetAdminSellersIds.includes(s.uid);
         });
     }
 
@@ -852,14 +740,43 @@ const reportDateLabel = computed(() => {
 });
 
 const reportAdminLabel = computed(() => {
-    if (printModal.selectAll) return 'ទិន្នន័យរួមទាំងអស់ (All Admins)';
-    if (printModal.selectedAdmins.length === 1) {
-        const found = adminsList.value.find(a => a.id === printModal.selectedAdmins[0]);
+    const isAllSelected = selectedAdminsForExport.value.length === displayedData.value.length;
+    if (isAllSelected) return 'ទិន្នន័យរួមទាំងអស់ (All Admins)';
+    if (selectedAdminsForExport.value.length === 1) {
+        const found = adminsList.value.find(a => a.id === selectedAdminsForExport.value[0]);
         return found ? found.fullName : 'អ្នកគ្រប់គ្រង ១ នាក់';
     }
-    return `អ្នកគ្រប់គ្រង ${printModal.selectedAdmins.length} នាក់`;
+    return `អ្នកគ្រប់គ្រង ${selectedAdminsForExport.value.length} នាក់`;
 });
 
+// 🌟 Receive Event from Preview Modal & Execute Dynamic Export 🌟
+const executeExport = async ({ type, config }) => {
+    // ❌ កុំទាន់បិទ Modal នៅទីនេះ (ដើម្បីឱ្យវាបង្ហាញ Loading UI)
+    // showPreviewModal.value = false; 
+
+    try {
+        if (type === 'print') {
+            executeNativePrint(rowsToPrint.value, allSales.value, advancedPrintStats.value, reportDateLabel.value, reportAdminLabel.value, unitSettings.value, config);
+            // ទុកពេលបន្តិចសឹមបិទ Modal
+            setTimeout(() => { showPreviewModal.value = false; }, 1000);
+            
+        } else if (type === 'excel') {
+            // ត្រូវមាន await ដើម្បីរង់ចាំវាទាញយកចប់ ទើបបង្ហាញ Alert និងបិទ Modal
+            await generateExcel(rowsToPrint.value, allSales.value, advancedPrintStats.value, reportDateLabel.value, reportAdminLabel.value, adminName.value, unitSettings.value, processing.value, config);
+            triggerAlert('success', 'ជោគជ័យ', 'ទាញយក Excel បានជោគជ័យ!');
+            showPreviewModal.value = false; 
+            
+        } else {
+            await generatePDF(rowsToPrint.value, allSales.value, advancedPrintStats.value, reportDateLabel.value, reportAdminLabel.value, adminName.value, unitSettings.value, processing.value, printStaging.value, config);
+            triggerAlert('success', 'ជោគជ័យ', 'ទាញយក PDF បានជោគជ័យ!');
+            showPreviewModal.value = false; 
+        }
+    } catch (e) {
+        console.error(e);
+        triggerAlert('error', 'បរាជ័យ', 'មិនអាចបង្កើតរបាយការណ៍បានទេ');
+        processing.value.active = false;
+    }
+};
 </script>
 
 <style scoped>
