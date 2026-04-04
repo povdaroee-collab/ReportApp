@@ -25,6 +25,16 @@
                   </button>
 
                   <div class="h-px w-full bg-slate-100 my-1"></div>
+                  
+                  <button @click="selectMainTab('pending')" class="w-full text-left px-4 py-2 text-xs font-bold transition-colors flex items-center justify-between group" :class="mainTab === 'pending' ? 'bg-amber-50/50 text-amber-700' : 'text-slate-700 hover:bg-amber-50 hover:text-amber-600'">
+                      <span class="flex items-center gap-2">
+                          <svg class="w-4 h-4 opacity-70 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                          ទិន្នន័យជំពាក់ (Pending)
+                      </span>
+                      <svg v-if="mainTab === 'pending'" class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                  </button>
+
+                  <div class="h-px w-full bg-slate-100 my-1"></div>
 
                   <button @click="selectMainTab('finance')" class="w-full text-left px-4 py-2 text-xs font-bold transition-colors flex items-center justify-between group" :class="mainTab === 'finance' ? 'bg-rose-50/50 text-rose-700' : 'text-slate-700 hover:bg-rose-50 hover:text-rose-600'">
                     <span class="flex items-center gap-2">
@@ -46,23 +56,25 @@
                       <svg v-if="mainTab === 'today'" class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                   </button>
 
-                  
-
-                
-
               </div>
           </div>
           
       <div class="h-4 w-px bg-slate-300 mx-2"></div>
         <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-          / System / <span class="text-slate-600">{{ mainTab === 'analytics' ? 'Analytics' : (mainTab === 'finance' ? 'Short Report' : 'Today Sales POS') }}</span>
+          / System / <span class="text-slate-600">{{ mainTab === 'analytics' ? 'Analytics' : (mainTab === 'finance' ? 'Short Report' : (mainTab === 'pending' ? 'Pending Sales' : 'Today Sales POS')) }}</span>
        </span>    
       </div>
 
       <div v-if="mainTab === 'today'" class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
         <div class="max-w-[95rem] mx-auto w-full">
             <TodaySalesList @triggerAlert="triggerAlert" />
+        </div>
+      </div>
+
+      <div v-if="mainTab === 'pending'" class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 bg-[#F8FAFC]">
+        <div class="max-w-[95rem] mx-auto w-full h-full">
+            <PendingSalesList />
         </div>
       </div>
 
@@ -110,7 +122,7 @@
                     <div class="w-px h-6 bg-slate-200 mx-1 hidden sm:block"></div>
 
                     <button @click="handlePrint" :disabled="processing.active || filteredSellers.length === 0" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold text-xs shadow-sm disabled:opacity-50">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2v4h10z"></path></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                         <span class="hidden sm:block">Print</span>
                     </button>
                     
@@ -155,6 +167,7 @@
                      <div class="bg-slate-100/80 p-1 rounded-xl flex shadow-inner border border-slate-200">
                         <button @click="activityFilter = 'all'" class="px-4 py-2 rounded-lg text-[11px] font-black transition-all" :class="activityFilter === 'all' ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'">All</button>
                         <button @click="activityFilter = 'active'" class="px-4 py-2 rounded-lg text-[11px] font-black transition-all flex items-center gap-1.5" :class="activityFilter === 'active' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-emerald-200' : 'text-slate-500 hover:text-emerald-600'"><span class="w-1.5 h-1.5 rounded-full" :class="activityFilter === 'active' ? 'bg-emerald-500' : 'bg-slate-300'"></span> លក់បាន</button>
+                        <button @click="activityFilter = 'inactive'" class="px-4 py-2 rounded-lg text-[11px] font-black transition-all" :class="activityFilter === 'inactive' ? 'bg-white text-rose-600 shadow-sm ring-1 ring-rose-100' : 'text-slate-500 hover:text-rose-600'">គ្មានលក់</button>
                      </div>
 
                      <div class="bg-slate-100/80 p-1 rounded-xl flex shadow-inner border border-slate-200 hidden sm:flex">
@@ -244,15 +257,14 @@
   </div>
 </template>
 
-
 <script setup>
 import { ref, reactive, onMounted, computed, watch, onUnmounted } from 'vue';
 import { db, auth } from '@/firebaseConfig';
 // 🌟 បន្ថែម getDocs សម្រាប់ទាញទិន្នន័យប្រវត្តិ
+
 import { collection, query, where, getDocs, doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router'; 
-
 import CustomAlert from '@/components/shared/CustomAlert.vue';
 import SellerDataView from './reports/SellerDataView.vue'; 
 import ReportStatsCards from './reports/ReportStatsCards.vue'; 
@@ -260,6 +272,7 @@ import ReportBottomSummary from './reports/ReportBottomSummary.vue';
 import TodaySalesList from './reports/pos/POSTodaySales.vue'; 
 import ShortReport from './reports/pos/ShortReport.vue';
 import { executeNativePrint, generatePDF } from './printPdfLogic.js';
+import PendingSalesList from './reports/pos/PendingSalesList.vue'; // 👈 បន្ថែមជួរនេះ
 
 const router = useRouter(); 
 
@@ -320,7 +333,6 @@ watch([searchQuery, activeCategory, activityFilter, dateFilterType, specificDate
 
 let unsubscribeSales = null;
 
-// 🌟 DYNAMIC QUERY LOGIC (Server-Side Filtering) 🌟
 const getDateRangeISO = () => {
     let start, end;
     
@@ -350,12 +362,10 @@ const getDateRangeISO = () => {
     return { startStr: start.toISOString(), endStr: end.toISOString() };
 };
 
-// 🌟 HYBRID FETCH DATA LOGIC 🌟
 const fetchDynamicSalesData = async (userId) => {
     isLoading.value = true;
     const { startStr, endStr } = getDateRangeISO();
 
-    // ផ្តាច់ Listener ចាស់ជានិច្ច មុននឹងទាញទិន្នន័យថ្មី
     if (unsubscribeSales) {
         unsubscribeSales();
         unsubscribeSales = null;
@@ -368,7 +378,6 @@ const fetchDynamicSalesData = async (userId) => {
         where('createdAt', '<=', endStr)
     );
     
-    // Logic សម្រាប់រៀបចំ Data (រក្សាដដែល ១០០% មិនឱ្យបាត់មុខងារ)
     const processSnapshot = (docs) => {
         let flatSales = [];
         docs.forEach(doc => {
@@ -398,7 +407,6 @@ const fetchDynamicSalesData = async (userId) => {
         isLoading.value = false;
     };
 
-    // 🟢 ប្រសិនបើជា "ថ្ងៃនេះ" -> ប្រើ Realtime (onSnapshot) ឱ្យ Admin មើល Live
     if (dateFilterType.value === 'today') {
         unsubscribeSales = onSnapshot(salesQ, (salesSnap) => {
             processSnapshot(salesSnap.docs);
@@ -407,7 +415,6 @@ const fetchDynamicSalesData = async (userId) => {
             isLoading.value = false;
         });
     } 
-    // 🟡 ប្រសិនបើជា "ប្រវត្តិ (ខែនេះ, ល...)" -> ប្រើ Static Fetch (getDocs) ដើម្បីសន្សំ Reads ឱ្យកប់
     else {
         try {
             const salesSnap = await getDocs(salesQ);
@@ -433,7 +440,6 @@ onMounted(() => {
         ? query(collection(db, 'users'), where('role', 'in', ['seller', 'dealer']), where('createdBy', '==', user.uid))
         : query(collection(db, 'users'), where('role', 'in', ['seller', 'dealer']));
 
-     // 🌟 ប្តូរពី onSnapshot មក getDocs ដើម្បីសន្សំ Reads 🌟
      const sellerSnap = await getDocs(sellerQ);
      let fetchedSellers = sellerSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(s => s.isDeleted === false || !s.isDeleted);
      fetchedSellers.push({
@@ -441,10 +447,8 @@ onMounted(() => {
      });
      sellersList.value = fetchedSellers;
 
-     // ហៅទាញយកទិន្នន័យការលក់ពេល Mount
      fetchDynamicSalesData(user.uid);
 
-     // បង្កើត Watcher ដើម្បីទាញទិន្នន័យឡើងវិញនៅពេលប្តូរ Filter ថ្ងៃខែ
      watch([dateFilterType, specificDate, startDate, endDate], () => {
          fetchDynamicSalesData(user.uid);
      });
@@ -461,8 +465,6 @@ onUnmounted(() => {
     if (unsubscribeSales) unsubscribeSales();
 });
 
-// Since we are filtering at the database level, we don't strictly need isDateInScope anymore, 
-// but we keep it returning true to not break downstream logic, as the data in allSales is already scoped!
 const isDateInScope = (dateStr) => {
     return true; 
 };

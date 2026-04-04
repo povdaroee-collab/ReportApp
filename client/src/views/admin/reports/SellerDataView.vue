@@ -88,11 +88,11 @@
                 <span v-else class="text-xs font-bold text-slate-300">-</span>
               </td>
 
-              <td class="px-6 py-4 text-center border-l border-slate-100 group-hover:border-indigo-100 transition-colors">
+              <!-- <td class="px-6 py-4 text-center border-l border-slate-100 group-hover:border-indigo-100 transition-colors">
                 <button @click.stop="$emit('goToSellerDetail', item.originalSellerId || item.id)" class="inline-flex items-center justify-center p-2.5 text-indigo-500 bg-indigo-50 border border-indigo-100 rounded-xl hover:bg-indigo-600 hover:text-white hover:shadow-md transition-all active:scale-95" title="មើលព័ត៌មានលម្អិត">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                 </button>
-              </td>
+              </td> -->
 
             </tr>
           </tbody>
@@ -168,12 +168,12 @@
            <p class="text-xs font-black text-slate-500">មិនទាន់មានការលក់ទេ</p>
         </div>
 
-        <div class="mt-4 pt-4 border-t border-slate-100">
+        <!-- <div class="mt-4 pt-4 border-t border-slate-100">
             <button @click.stop="$emit('goToSellerDetail', item.originalSellerId || item.id)" class="w-full flex items-center justify-center gap-2 py-3 text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-xl hover:bg-indigo-600 hover:text-white transition-all active:scale-95 text-xs font-black shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                 <span>មើលរបាយការណ៍លម្អិត</span>
             </button>
-        </div>
+        </div> -->
 
       </div>
     </div>

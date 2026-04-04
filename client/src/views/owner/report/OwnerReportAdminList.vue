@@ -303,11 +303,11 @@ const filteredList = computed(() => {
     return props.displayedData.filter(item => item.fullName.toLowerCase().includes(q));
 });
 
-const goToAdminDetail = (admin) => {
-    if (admin && admin.originalAdminId) {
-        router.push({ name: 'OwnerAdminDetail', params: { id: admin.originalAdminId } });
-    }
-};
+// const goToAdminDetail = (admin) => {
+//     if (admin && admin.originalAdminId) {
+//         router.push({ name: 'OwnerAdminDetail', params: { id: admin.originalAdminId } });
+//     }
+// };
 
 const toggleRowExpand = (id) => {
     const newSet = new Set(expandedRowIds.value);

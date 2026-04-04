@@ -286,10 +286,30 @@ const fetchAllSalesForDateRange = async () => {
     isLoadingData.value = true;
     try {
         const { startStr, endStr } = getDateBounds();
-        
-        // 🌟 កែលម្អ Query 🌟
-        // បើមានការរើស Admin យើងប្រាប់ Firebase ឱ្យទាញយកតែវិក្កយបត្រ Admin នោះ
-        // បើអត់ទាន់រើស Admin ទេ យើងទាញយកវិក្កយបត្រទាំងអស់ក្នុងខែនោះ ដើម្បីយកទៅបង្ហាញបញ្ជីឈ្មោះ Admin សកម្ម
+
+        // 🌟 1. បង្កើត Cache Key ចំណាំទិន្នន័យ (តាមកាលបរិច្ឆេទ និង Admin)
+        const cacheKey = `sales_${startStr}_${endStr}_${selectedAdmin.value || 'ALL'}`;
+
+        // 🌟 2. បង្កើតកន្លែងផ្ទុក Local បើមិនទាន់មាន
+        if (!window.__PAYROLL_CACHE__) {
+            window.__PAYROLL_CACHE__ = new Map();
+        }
+
+        // 🌟 3. ពិនិត្យមើលទិន្នន័យក្នុង Local មុននឹងទាញពី Firebase
+        if (window.__PAYROLL_CACHE__.has(cacheKey)) {
+            const cachedData = window.__PAYROLL_CACHE__.get(cacheKey);
+            allSalesInRange.value = cachedData;
+            
+            if (selectedAdmin.value) {
+                const hasSales = cachedData.some(s => s.sellerName && s.sellerName !== 'undefined' && s.sellerName.trim() !== '');
+                if (!hasSales) selectedAdmin.value = '';
+            }
+            selectedSeller.value = 'ALL';
+            isLoadingData.value = false;
+            return; // 🛑 បញ្ឈប់កុំឱ្យទាញយកពី Firebase ទៀត
+        }
+
+        // បើគ្មានក្នុង Cache ទេ ទើបទាញពី Firebase ធម្មតា
         const constraints = [
             where('createdAt', '>=', startStr), 
             where('createdAt', '<=', endStr)
@@ -302,11 +322,16 @@ const fetchAllSalesForDateRange = async () => {
         const q = query(collection(db, 'sales_reports'), ...constraints);
         
         const snap = await getDocs(q);
+        
+        // យកតែវិក្កយបត្រណាដែលមានការទូទាត់រួច (PAID) ប៉ុណ្ណោះ
         const validSales = snap.docs
             .map(d => ({ id: d.id, ...d.data() }))
-            .filter(s => s.paymentStatus !== 'CANCELED'); 
+            .filter(s => s.paymentStatus === 'PAID'); 
             
         allSalesInRange.value = validSales;
+
+        // 🌟 4. ក្រោយពេលទាញយកបានពី Firebase ហើយ ត្រូវរក្សាទុកវាចូល Local Cache
+        window.__PAYROLL_CACHE__.set(cacheKey, validSales);
 
         if (selectedAdmin.value) {
             const hasSales = validSales.some(s => s.sellerName && s.sellerName !== 'undefined' && s.sellerName.trim() !== '');
@@ -321,17 +346,11 @@ const fetchAllSalesForDateRange = async () => {
     }
 };
 
-// 🌟 កែលម្អ Watcher បន្ថែម selectedAdmin 🌟
-// ដើម្បីឱ្យវាទាញទិន្នន័យសាជាថ្មី (เฉพาะរបស់ Admin នោះ) ពេលដូរឈ្មោះ Admin
 watch([dateFilterType, specificDate, selectedMonth, selectedYear, customStart, customEnd, selectedAdmin], () => {
     fetchAllSalesForDateRange();
 });
 
 onMounted(() => { fetchAllSalesForDateRange(); });
-
-watch([dateFilterType, specificDate, selectedMonth, selectedYear, customStart, customEnd], () => {
-    fetchAllSalesForDateRange();
-});
 
 const activeAdminsList = computed(() => {
     const activeIds = new Set();
@@ -504,7 +523,6 @@ const aggregatedDelivery = computed(() => {
         
         let isPP = inv.province === 'រាជធានីភ្នំពេញ' || (inv.location && inv.location.includes('ភ្នំពេញ'));
         
-        // 🌟 ប្រើ ភាគរយចំណែកលក់ សម្រាប់គុណថ្លៃដឹក 🌟
         const appliedPercent = (sellerSetting.profitShare || 0) / 100; 
         
         const appliedPrice = isPP ? Number(sellerSetting.deliveryPricePP || 0) 
