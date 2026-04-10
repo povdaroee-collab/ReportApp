@@ -12,7 +12,7 @@
                     <svg class="w-12 h-12 text-rose-600 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                 </div>
                 
-                <h2 class="text-[26px] font-black text-slate-800 mb-4 tracking-wide relative z-10">ប្រព័ន្ធត្រូវបានបិទ!</h2>
+                <h2 class="text-[26px] font-black text-slate-800 mb-4 tracking-wide relative z-10">ប្រព័ន្ធត្រូវបានបិទបណ្ដោះអាសន្ន!</h2>
                 
                 <div class="bg-rose-50/80 border border-rose-100/80 rounded-2xl p-5 mb-8 relative z-10 shadow-inner">
                     <p class="text-[15px] font-bold text-slate-700 leading-[1.8]">
