@@ -18,9 +18,6 @@
                     <p class="text-[15px] font-bold text-slate-700 leading-[1.8]">
                         សូមអធ្យាស្រ័យ! ប្រព័ន្ធគ្រប់គ្រងស្តុក <span class="text-rose-600 font-black">ហួសសុពលភាពប្រើប្រាស់ហើយ!</span> <br>
                         សូមលោកអ្នកបង់សេវាកម្ម និង server clound សម្រាប់ខែបន្ទាប់ ឥឡូវនេះ
-                        
-                        
-                        <!-- <span class="inline-block mt-1 font-black bg-rose-600 text-white px-3 py-1 rounded-lg shadow-sm text-sm tracking-wider">Upgrade ទៅ  Pro Version 💎</span>  -->
                         <br> ទើបអាចបន្តការប្រើប្រាស់បាន។ 
                     </p>
                 </div>
@@ -81,24 +78,23 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { db, auth } from '@/firebaseConfig';
-import { collection, onSnapshot, limit, query, getDocs } from 'firebase/firestore';
+import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
 // ==========================================
 // ⚙️ ការកំណត់ (CONFIGURATIONS) 
 // ==========================================
-// កំណត់ថ្ងៃផុតកំណត់ (Format: YYYY-MM-DDTHH:mm:ss) ត្រូវនឹង Rule: timestamp.date(2026, 3, 23)
+// កំណត់ថ្ងៃផុតកំណត់ (Format: YYYY-MM-DDTHH:mm:ss)
 const EXPIRY_DATE_STRING = '2026-03-23T00:00:00'; 
-// 🔗 Link ទំនាក់ទំនងទៅ Telegram Developer ថ្មី
 const developerContactLink = 'https://t.me/MMKDaro'; 
 
 const appState = ref('active'); // 'active', 'warning', 'expired'
 const showWarningModal = ref(true);
 const remainingDays = ref(0);
 
-let unsubscribeFirebasePing = null;
-let recoveryInterval = null; // សម្រាប់ឆែក Real-time ពេលកំពុងបិទ (Blocked)
 let authUnsubscribe = null;
+let activePollingInterval = null; // ឆែករាល់ ៥វិ ពេលកំពុងប្រើធម្មតា
+let recoveryPollingInterval = null; // ឆែករាល់ ៣វិ ពេលត្រូវបិទ
 
 const targetDate = new Date(EXPIRY_DATE_STRING).getTime();
 
@@ -117,7 +113,6 @@ const checkDateWarning = () => {
     if (diffTime <= 0) {
         appState.value = 'expired';
         remainingDays.value = 0;
-        startRecoveryPolling(); // ក្រែងលោគាត់ទិញហើយ យើងបើកឱ្យវិញ
     } else {
         const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         remainingDays.value = days;
@@ -129,81 +124,86 @@ const checkDateWarning = () => {
     }
 };
 
-// 🔄 ប្រព័ន្ធឆែកស្វ័យប្រវត្តិ (Polling) ពេលកុំព្យូទ័រត្រូវបិទ (Expired)
-// ជួយឱ្យពេលបងដូរ Rule ទៅ true វិញ វាដកផ្ទាំងចេញភ្លាម!
-const startRecoveryPolling = () => {
-    if (recoveryInterval) clearInterval(recoveryInterval);
-    
-    // ឆែករាល់ ៣ វិនាទីម្តង
-    recoveryInterval = setInterval(async () => {
-        try {
-            const q = query(collection(db, 'users'), limit(1));
-            await getDocs(q); // សាកល្បងអានទិន្នន័យ
-            
-            // បើអានបានមានន័យថា Rule = true វិញហើយ (Access Restored!)
-            clearInterval(recoveryInterval);
-            recoveryInterval = null;
-            appState.value = 'active'; // Reset ឱ្យដើរវិញ
-            checkDateWarning(); // គណនាថ្ងៃខែម្តងទៀត
-            listenToFirebaseRules(); // ភ្ជាប់ Real-time Listener ឡើងវិញ
-            
-        } catch (error) {
-            // នៅតែ false ដដែល -> ទុកផ្ទាំងក្រហមដដែល (អត់ទាន់បើកឱ្យ)
+// ✅ មុខងារចម្បង: ឆែកមើល Firebase Rules ផ្ទាល់រៀងរាល់ ៥ វិនាទី
+// វិធីនេះធានាថា បើបងដូរ Rule ទៅជា false ពេលគាត់ចុចអ្វីក៏ដោយ វាលោតបាំងភ្លាម!
+const pingFirebase = async () => {
+    try {
+        const q = query(collection(db, 'users'), limit(1));
+        await getDocs(q); 
+        
+        // ប្រសិនបើកូដធ្លាក់មកដល់ទីនេះ មានន័យថា Rule គឺ true អនុញ្ញាតឲ្យប្រើ
+        if (appState.value === 'expired') {
+            appState.value = 'active'; // Reset ឱ្យដើរវិញ ពេលបងបើកសិទ្ធិវិញ
+            checkDateWarning();
+            startActivePolling(); // ត្រលប់ទៅឆែករាល់ ៥វិ វិញ
         }
-    }, 3000); 
+    } catch (error) {
+        // 🔴 ប្រសិនបើ Firebase បោះ Error មក (permission-denied)
+        if (error.code === 'permission-denied') {
+            console.error("🔥 SYSTEM BLOCKED BY FIREBASE RULES!");
+            appState.value = 'expired';
+            startRecoveryPolling(); // ដូរទៅឆែករាល់ ៣វិ វិញ ក្រែងលោបងបើកឲ្យ
+        }
+    }
 };
 
-// 📡 ប្រព័ន្ធស្តាប់ Real-time ចាប់ការផ្លាស់ប្តូរ Rule ភ្លាមៗ
-const listenToFirebaseRules = () => {
-    if (unsubscribeFirebasePing) unsubscribeFirebasePing();
-
-    const pingQuery = query(collection(db, 'users'), limit(1));
+// ឆែករាល់ ៥ វិនាទី ពេលកំពុងប្រើធម្មតា
+const startActivePolling = () => {
+    if (activePollingInterval) clearInterval(activePollingInterval);
+    if (recoveryPollingInterval) clearInterval(recoveryPollingInterval);
     
-    unsubscribeFirebasePing = onSnapshot(pingQuery, 
-        (snapshot) => {
-            // អនុញ្ញាតឱ្យចូល (Rule = true)
-            if (recoveryInterval) {
-                clearInterval(recoveryInterval);
-                recoveryInterval = null;
-            }
-            checkDateWarning();
-        },
-        (error) => {
-            // 🔴 ពេលបងដូរ Rule ទៅជា allow read: false វានឹងលោតចូលទីនេះភ្លាមៗ
-            if (error.code === 'permission-denied') {
-                console.error("🔥 SYSTEM BLOCKED BY FIREBASE RULES!");
-                appState.value = 'expired';
-                startRecoveryPolling(); // ចាប់ផ្តើមឆែករាល់ ៣វិ ម្តងក្រែងលោបើកឱ្យវិញ
-            }
+    pingFirebase(); // ឆែកភ្លាមៗពេលហៅ
+    activePollingInterval = setInterval(pingFirebase, 5000); 
+};
+
+// ឆែករាល់ ៣ វិនាទី ពេលត្រូវបិទ (Expired) ក្រែងលោដូរ Rule វិញ
+const startRecoveryPolling = () => {
+    if (activePollingInterval) clearInterval(activePollingInterval);
+    if (recoveryPollingInterval) clearInterval(recoveryPollingInterval);
+    
+    recoveryPollingInterval = setInterval(pingFirebase, 3000); 
+};
+
+// បង្កើត Global Error Handler ដើម្បីចាប់ Error ពីគ្រប់កន្លែង (Component ផ្សេងៗ)
+const setupGlobalErrorHandler = () => {
+    // ករណី Vue មិនទាន់ចាប់យក ហើយវាធ្លាក់ទៅ Window
+    window.addEventListener('unhandledrejection', (event) => {
+        if (event.reason && event.reason.code === 'permission-denied') {
+            appState.value = 'expired';
+            startRecoveryPolling();
         }
-    );
+    });
 };
 
 onMounted(() => {
-    // រង់ចាំ Login សិន ទើបចាប់ផ្តើមឆែកសិទ្ធិ
+    setupGlobalErrorHandler();
+    
     authUnsubscribe = onAuthStateChanged(auth, (user) => {
         if (user) {
-            listenToFirebaseRules();
+            checkDateWarning();
+            startActivePolling(); // ចាប់ផ្តើម Ping ដរាបណាគាត់នៅ Login
+        } else {
+            // ពេល Logout បញ្ឈប់ការឆែកទាំងអស់
+            if (activePollingInterval) clearInterval(activePollingInterval);
+            if (recoveryPollingInterval) clearInterval(recoveryPollingInterval);
         }
     });
 });
 
 onUnmounted(() => {
-    if (unsubscribeFirebasePing) unsubscribeFirebasePing();
-    if (recoveryInterval) clearInterval(recoveryInterval);
+    if (activePollingInterval) clearInterval(activePollingInterval);
+    if (recoveryPollingInterval) clearInterval(recoveryPollingInterval);
     if (authUnsubscribe) authUnsubscribe();
 });
 </script>
 
 <style scoped>
-/* ប្រើហ្វុនថ្មី Kantumruy Pro ដែលមើលទៅ Premium ខ្លាំង */
 @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&family=Battambang:wght@400;700;900&display=swap');
 
 .font-khmer { 
     font-family: 'Kantumruy Pro', 'Battambang', sans-serif; 
 }
 
-/* Animations */
 .animate-scale-up { 
     animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
 }
