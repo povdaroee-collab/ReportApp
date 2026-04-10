@@ -172,7 +172,7 @@
 
       <p class="text-center text-[9px] sm:text-[10px] mt-6 sm:mt-8 font-black uppercase tracking-widest transition-colors duration-500"
          :class="isSuperAdmin ? 'text-emerald-500/50' : 'text-neutral-600'">
-        &copy; Developer by pov daro | version 5.9.5
+        &copy; Developer by pov daro | version 5.9.6
       </p>
 
     </div>
@@ -364,7 +364,7 @@ const handleLogin = async () => {
 
   } catch (error) {
     console.error("Login Error:", error.code);
-    let msg = "ពេលនេះអ្នកមិនអាច Login ចូល Sysyem បានទេ!ដោយសារ System Full, សូមទាក់ទងអ្នកអភិវឌ្ឃន៍កម្មវិធី ដើម្បីស្នើរ Upgrade System! ";
+    let msg = "ហួសសុពភាពប្រើប្រាស់ហើយ! system គាំង! សូមអ្នកបង់សេវា System ដើម្បីអាចបន្តការប្រើប្រាស់! ";
     let title = "បរាជ័យ";
 
     if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {

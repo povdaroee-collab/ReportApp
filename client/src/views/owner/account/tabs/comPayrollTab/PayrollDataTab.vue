@@ -562,7 +562,7 @@ const handleCopyText = () => {
     let adminName = props.usersMap[selectedAdmin.value] || selectedAdmin.value;
     let sellerName = selectedSeller.value === 'ALL' ? 'ទាំងអស់' : selectedSeller.value;
 
-    let text = `📊 របាយការណ៍ប្រាក់ចំណែក\n📅 ${getLabelForExport()}\n`;
+    let text = `📊 របាយការណ៍ ចែកភាគរយតំណាងលក់\n📅 ${getLabelForExport()}\n`;
     text += `👤 Admin: ${adminName} | តំណាងលក់: ${sellerName}\n`;
     if (displayCurrency.value === 'KHR') {
         text += `💱 អត្រាប្តូរប្រាក់: 1$ = ${exchangeRate.value.toLocaleString()} ៛\n`;
@@ -628,7 +628,7 @@ const getHTMLTemplate = () => {
             
             <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px;">
                 <div>
-                    <h1 style="margin: 0 0 10px 0; font-size: 28px; color: #0f172a; font-weight: 900; letter-spacing: 1px;">របាយការណ៍ប្រាក់ចំណែក</h1>
+                    <h1 style="margin: 0 0 10px 0; font-size: 28px; color: #0f172a; font-weight: 900; letter-spacing: 1px;">របាយការណ៍ ចែកភាគរយតំណាងលក់</h1>
                     <div style="display: inline-block; background-color: #f1f5f9; padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 14px; color: #475569; font-weight: bold;">
                         📅 ${getLabelForExport()}
                     </div>

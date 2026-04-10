@@ -71,20 +71,21 @@
                     <p class="text-sm font-bold text-slate-500">កំពុងទាញទិន្នន័យស្តុក...</p>
                 </div>
 
-                <table class="w-full text-left border-collapse min-w-[1000px]">
+                <table class="w-full text-left border-collapse min-w-[1050px]">
                     <thead class="bg-slate-100 text-slate-500 text-[11px] uppercase font-black tracking-widest border-b border-slate-200 sticky top-0 z-20">
                         <tr>
                             <th class="px-6 py-4 w-12 text-center">#</th>
                             <th class="px-6 py-4">ព័ត៌មានទំនិញ</th>
                             <th class="px-6 py-4 text-center">ក្នុង១កេះ</th>
                             <th class="px-6 py-4 text-center">ស្តុកនៅសល់</th>
-                            <th class="px-6 py-4 text-right text-rose-600">ដើមទុនសរុប (Cost)</th>
-                            <th class="px-6 py-4 text-right text-emerald-600">តម្លៃលក់សរុប (Rev)</th>
+                            <th class="px-6 py-4 text-right">តម្លៃរាយមធ្យម</th>
+                            <th class="px-6 py-4 text-right text-rose-600">ដើមទុនសរុប</th>
+                            <th class="px-6 py-4 text-right text-emerald-600">តម្លៃលក់សរុប</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-sm">
                         <tr v-if="paginatedStocks.length === 0 && !isLoading">
-                            <td colspan="6" class="py-20 text-center text-slate-400 font-bold">
+                            <td colspan="7" class="py-20 text-center text-slate-400 font-bold">
                                 <svg class="w-16 h-16 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                                 មិនមានទិន្នន័យទំនិញទេ
                             </td>
@@ -107,6 +108,9 @@
                                     <svg v-if="item.isLowStock" class="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                                     {{ item.retailQty > 0 ? item.stockText : 'អស់ស្តុក' }}
                                 </span>
+                            </td>
+                            <td class="px-6 py-5 text-right font-black text-slate-500 font-mono">
+                                {{ formatCurrency(item.unitCostRetail) }}
                             </td>
                             <td class="px-6 py-5 text-right font-black text-rose-600 bg-rose-50/30">
                                 {{ formatCurrency(item.totalCapital) }}
@@ -174,7 +178,7 @@ onUnmounted(() => {
     if(unsubscribe) unsubscribe();
 });
 
-const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " $";
+const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 3 }) + " $";
 const translateUnit = (u) => { const m = { bottle: 'ដប', case: 'កេះ', pack: 'កញ្ចប់', can: 'កំប៉ុង', kg: 'គីឡូ', set: 'ឈុត' }; return m[u] || u; };
 
 // រៀបចំទិន្នន័យ និងកំណត់ទំនិញជិតអស់ស្តុក (<= 40 កេះ)
@@ -188,6 +192,9 @@ const processedStocks = computed(() => {
         const totalCapital = qtyBase * costPerBase;
         const pricePerRetail = Number(item.retailPrice || item.price) || 0;
         
+        // 🌟 គណនាតម្លៃដើមរាយ (Unit Cost) 🌟
+        const unitCostRetail = ipc > 0 ? (costPerBase / ipc) : 0;
+
         let retailQty = 0;
         let cases = 0;
         let remainder = 0;
@@ -253,6 +260,7 @@ const processedStocks = computed(() => {
             isLowStock, 
             totalCapital, 
             totalEstRevenue, 
+            unitCostRetail, // 👈 បន្ថែមតម្លៃដើមរាយ
             stockText: stockText.trim() || '0',
             packingText
         };
@@ -319,6 +327,8 @@ const getExportHTML = (isExcel = false) => {
             <td style="padding: 12px 8px; text-align: center; font-size: 14px; font-weight: bold; border-right: 1px solid #e2e8f0; ${lowStockStyle}">
                 ${item.retailQty > 0 ? item.stockText : 'អស់ស្តុក'}
             </td>
+            <td style="padding: 12px 10px; text-align: right; color: #64748b; font-size: 14px; font-family: monospace; border-right: 1px solid #e2e8f0;">${formatCurrency(item.unitCostRetail)}</td>
+            
             <td style="padding: 12px 10px; text-align: right; color: #e11d48; font-size: 14px; font-weight: bold; border-right: 1px solid #e2e8f0;">${formatCurrency(item.totalCapital)}</td>
             <td style="padding: 12px 10px; text-align: right; color: #059669; font-size: 14px; font-weight: bold;">${formatCurrency(item.totalEstRevenue)}</td>
         </tr>
@@ -338,15 +348,17 @@ const getExportHTML = (isExcel = false) => {
             </head>
             <body>
                 <table>
-                    <tr><td colspan="6" style="background-color: #4f46e5; color: white; font-size: 20pt; font-weight: bold; text-align: center; height: 60px; vertical-align: middle;">របាយការណ៍ស្តុកទំនិញបច្ចុប្បន្ន</td></tr>
-                    <tr><td colspan="6" style="font-size: 11pt; text-align: center; font-style: italic; background-color: #e0e7ff; height: 30px; vertical-align: middle;">ទាញយកនៅថ្ងៃទី: ${new Date().toLocaleString('km-KH')}</td></tr>
-                    <tr><td colspan="6"></td></tr>
+                    <tr><td colspan="7" style="background-color: #4f46e5; color: white; font-size: 20pt; font-weight: bold; text-align: center; height: 60px; vertical-align: middle;">របាយការណ៍ស្តុកទំនិញបច្ចុប្បន្ន</td></tr>
+                    <tr><td colspan="7" style="font-size: 11pt; text-align: center; font-style: italic; background-color: #e0e7ff; height: 30px; vertical-align: middle;">ទាញយកនៅថ្ងៃទី: ${new Date().toLocaleString('km-KH')}</td></tr>
+                    <tr><td colspan="7"></td></tr>
                     <tr>
-                        <th style="width: 50px;">ល.រ</th><th style="width: 350px;">ព័ត៌មានទំនិញ</th><th style="width: 100px;">ក្នុង១កេះ</th><th style="width: 150px;">ស្តុកនៅសល់</th><th style="width: 150px;">ដើមទុនសរុប (USD)</th><th style="width: 150px;">តម្លៃលក់សរុប (USD)</th>
+                        <th style="width: 50px;">ល.រ</th><th style="width: 350px;">ព័ត៌មានទំនិញ</th><th style="width: 100px;">ក្នុង១កេះ</th><th style="width: 150px;">ស្តុកនៅសល់</th>
+                        <th style="width: 120px;">តម្លៃដើមរាយ (USD)</th>
+                        <th style="width: 150px;">ដើមទុនសរុប (USD)</th><th style="width: 150px;">តម្លៃលក់សរុប (USD)</th>
                     </tr>
                     ${rowsHTML}
                     <tr class="footer-row">
-                        <td colspan="3" style="text-align: right;">សរុបរួមទាំងអស់ (GRAND TOTAL):</td>
+                        <td colspan="4" style="text-align: right;">សរុបរួមទាំងអស់ (GRAND TOTAL):</td>
                         <td style="text-align: center; color: #4f46e5;">${summary.value.totalItems} មុខ</td>
                         <td style="text-align: right; color: #e11d48;">${formatCurrency(summary.value.totalCapital)}</td>
                         <td style="text-align: right; color: #059669;">${formatCurrency(summary.value.totalEstRevenue)}</td>
@@ -368,7 +380,7 @@ const getExportHTML = (isExcel = false) => {
             .stats-badge { display: inline-block; background: rgba(255,255,255,0.1); padding: 6px 16px; border-radius: 20px; font-size: 14px; margin-top: 10px; border: 1px solid rgba(255,255,255,0.2); }
             
             .stock-table { width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1; border-top: none; }
-            .stock-table th { background-color: #f8fafc; color: #334155; font-weight: bold; font-size: 14px; text-transform: uppercase; padding: 14px 10px; border-bottom: 2px solid #cbd5e1; border-right: 1px solid #e2e8f0; }
+            .stock-table th { background-color: #f8fafc; color: #334155; font-weight: bold; font-size: 13px; text-transform: uppercase; padding: 14px 10px; border-bottom: 2px solid #cbd5e1; border-right: 1px solid #e2e8f0; }
             .stock-table th:last-child { border-right: none; }
             
             .summary-row td { background-color: #f1f5f9; padding: 18px 10px; font-size: 15px; border-top: 2px solid #94a3b8; }
@@ -393,11 +405,12 @@ const getExportHTML = (isExcel = false) => {
                 <thead>
                     <tr>
                         <th style="width: 5%; text-align: center;">ល.រ</th>
-                        <th style="width: 35%; text-align: left;">ព័ត៌មានទំនិញ</th>
-                        <th style="width: 12%; text-align: center;">ក្នុង១កេះ</th>
+                        <th style="width: 32%; text-align: left;">ព័ត៌មានទំនិញ</th>
+                        <th style="width: 10%; text-align: center;">ក្នុង១កេះ</th>
                         <th style="width: 18%; text-align: center;">ស្តុកនៅសល់</th>
-                        <th style="width: 15%; text-align: right;">ដើមទុនសរុប</th>
-                        <th style="width: 15%; text-align: right;">តម្លៃលក់សរុប</th>
+                        <th style="width: 10%; text-align: right;">តម្លៃដើមរាយ</th>
+                        <th style="width: 12%; text-align: right;">ដើមទុនសរុប</th>
+                        <th style="width: 13%; text-align: right;">តម្លៃលក់សរុប</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -405,9 +418,9 @@ const getExportHTML = (isExcel = false) => {
                 </tbody>
                 <tfoot>
                     <tr class="summary-row">
-                        <td colspan="4" style="text-align: right; font-weight: bold; color: #1e293b;">សរុបរួម (GRAND TOTAL):</td>
-                        <td style="text-align: right; font-weight: bold; color: #e11d48; font-size: 18px;">${formatCurrency(summary.value.totalCapital)}</td>
-                        <td style="text-align: right; font-weight: bold; color: #059669; font-size: 18px;">${formatCurrency(summary.value.totalEstRevenue)}</td>
+                        <td colspan="5" style="text-align: right; font-weight: bold; color: #1e293b;">សរុបរួម (GRAND TOTAL):</td>
+                        <td style="text-align: right; font-weight: bold; color: #e11d48; font-size: 16px;">${formatCurrency(summary.value.totalCapital)}</td>
+                        <td style="text-align: right; font-weight: bold; color: #059669; font-size: 16px;">${formatCurrency(summary.value.totalEstRevenue)}</td>
                     </tr>
                 </tfoot>
             </table>
