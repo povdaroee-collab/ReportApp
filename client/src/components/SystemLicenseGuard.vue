@@ -84,8 +84,8 @@ import { onAuthStateChanged } from 'firebase/auth';
 // ==========================================
 // ⚙️ ការកំណត់ (CONFIGURATIONS) 
 // ==========================================
-// កំណត់ថ្ងៃផុតកំណត់ (Format: YYYY-MM-DDTHH:mm:ss)
-const EXPIRY_DATE_STRING = '2026-03-23T00:00:00'; 
+// 🌟 កែថ្ងៃទីកំណត់ឱ្យត្រូវនឹង Firebase Rules 🌟
+const EXPIRY_DATE_STRING = '2026-05-10T00:00:00'; 
 const developerContactLink = 'https://t.me/MMKDaro'; 
 
 const appState = ref('active'); // 'active', 'warning', 'expired'
@@ -93,8 +93,8 @@ const showWarningModal = ref(true);
 const remainingDays = ref(0);
 
 let authUnsubscribe = null;
-let activePollingInterval = null; // ឆែករាល់ ៥វិ ពេលកំពុងប្រើធម្មតា
-let recoveryPollingInterval = null; // ឆែករាល់ ៣វិ ពេលត្រូវបិទ
+let activePollingInterval = null; 
+let recoveryPollingInterval = null; 
 
 const targetDate = new Date(EXPIRY_DATE_STRING).getTime();
 
@@ -124,39 +124,37 @@ const checkDateWarning = () => {
     }
 };
 
-// ✅ មុខងារចម្បង: ឆែកមើល Firebase Rules ផ្ទាល់រៀងរាល់ ៥ វិនាទី
-// វិធីនេះធានាថា បើបងដូរ Rule ទៅជា false ពេលគាត់ចុចអ្វីក៏ដោយ វាលោតបាំងភ្លាម!
+// ឆែកមើល Firebase Rules ផ្ទាល់ (លុះត្រាតែមាន User Login)
 const pingFirebase = async () => {
+    // 🛑 ដំណោះស្រាយសំខាន់: កុំឲ្យវាឆែក Firebase បើគាត់មិនទាន់ Login (ជៀសវាង Error Block លើ Login Page)
+    if (!auth.currentUser) return;
+
     try {
         const q = query(collection(db, 'users'), limit(1));
         await getDocs(q); 
         
-        // ប្រសិនបើកូដធ្លាក់មកដល់ទីនេះ មានន័យថា Rule គឺ true អនុញ្ញាតឲ្យប្រើ
         if (appState.value === 'expired') {
-            appState.value = 'active'; // Reset ឱ្យដើរវិញ ពេលបងបើកសិទ្ធិវិញ
+            appState.value = 'active'; 
             checkDateWarning();
-            startActivePolling(); // ត្រលប់ទៅឆែករាល់ ៥វិ វិញ
+            startActivePolling(); 
         }
     } catch (error) {
-        // 🔴 ប្រសិនបើ Firebase បោះ Error មក (permission-denied)
         if (error.code === 'permission-denied') {
             console.error("🔥 SYSTEM BLOCKED BY FIREBASE RULES!");
             appState.value = 'expired';
-            startRecoveryPolling(); // ដូរទៅឆែករាល់ ៣វិ វិញ ក្រែងលោបងបើកឲ្យ
+            startRecoveryPolling(); 
         }
     }
 };
 
-// ឆែករាល់ ៥ វិនាទី ពេលកំពុងប្រើធម្មតា
 const startActivePolling = () => {
     if (activePollingInterval) clearInterval(activePollingInterval);
     if (recoveryPollingInterval) clearInterval(recoveryPollingInterval);
     
-    pingFirebase(); // ឆែកភ្លាមៗពេលហៅ
+    pingFirebase(); 
     activePollingInterval = setInterval(pingFirebase, 5000); 
 };
 
-// ឆែករាល់ ៣ វិនាទី ពេលត្រូវបិទ (Expired) ក្រែងលោដូរ Rule វិញ
 const startRecoveryPolling = () => {
     if (activePollingInterval) clearInterval(activePollingInterval);
     if (recoveryPollingInterval) clearInterval(recoveryPollingInterval);
@@ -164,13 +162,15 @@ const startRecoveryPolling = () => {
     recoveryPollingInterval = setInterval(pingFirebase, 3000); 
 };
 
-// បង្កើត Global Error Handler ដើម្បីចាប់ Error ពីគ្រប់កន្លែង (Component ផ្សេងៗ)
+// ចាប់ Error Permission Denied ជា Global (តែចាប់ពេល Login រួចប៉ុណ្ណោះ)
 const setupGlobalErrorHandler = () => {
-    // ករណី Vue មិនទាន់ចាប់យក ហើយវាធ្លាក់ទៅ Window
     window.addEventListener('unhandledrejection', (event) => {
         if (event.reason && event.reason.code === 'permission-denied') {
-            appState.value = 'expired';
-            startRecoveryPolling();
+            // 🛑 ប្លុកទាល់តែគាត់បាន Login ហើយទើបប្លុក 
+            if (auth.currentUser) {
+                appState.value = 'expired';
+                startRecoveryPolling();
+            }
         }
     });
 };
@@ -181,9 +181,10 @@ onMounted(() => {
     authUnsubscribe = onAuthStateChanged(auth, (user) => {
         if (user) {
             checkDateWarning();
-            startActivePolling(); // ចាប់ផ្តើម Ping ដរាបណាគាត់នៅ Login
+            startActivePolling(); 
         } else {
-            // ពេល Logout បញ្ឈប់ការឆែកទាំងអស់
+            // 🛑 ពេល Logout ឬនៅទំព័រ Login ត្រូវប្រាកដថាផ្ទាំង Block មិនលោតមកបាំង
+            appState.value = 'active';
             if (activePollingInterval) clearInterval(activePollingInterval);
             if (recoveryPollingInterval) clearInterval(recoveryPollingInterval);
         }
