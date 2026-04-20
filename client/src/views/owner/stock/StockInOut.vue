@@ -230,22 +230,31 @@
                   </button>
               </div>
               
-              <div class="flex items-center gap-3">
-                  <div v-if="mode === 'OUT'" class="bg-rose-500/10 border border-rose-500/30 px-4 py-2 rounded-xl text-rose-400 font-bold text-sm shadow-inner flex items-center gap-2">
-                      ការខាតបង់ (ពីទិន្នន័យកំពុងបង្ហាញ): 
-                      <span class="text-lg font-black">{{ formatPrice(totalLossUSD) }}$</span>
+              <div class="flex items-center gap-3 w-full sm:w-auto">
+                  <div class="relative flex-1 sm:w-64">
+                      <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                      <input v-model="historySearch" type="text" :placeholder="mode === 'IN' ? 'ស្វែងរកប្រវត្តិនាំចូល...' : 'ស្វែងរកប្រវត្តិដកចេញ...'" class="w-full bg-neutral-900/50 border border-neutral-700 rounded-xl pl-9 pr-4 py-2 text-xs font-bold text-white focus:border-amber-500 outline-none transition-all shadow-inner">
+                  </div>
+
+                  <div v-if="mode === 'OUT'" class="hidden md:flex bg-rose-500/10 border border-rose-500/30 px-4 py-2 rounded-xl text-rose-400 font-bold text-sm shadow-inner items-center gap-2 shrink-0">
+                      ការខាតបង់: <span class="text-lg font-black">{{ formatPrice(totalLossUSD) }}$</span>
                   </div>
                   
                   <button 
                       @click="fetchHistory" 
                       :disabled="!hasNewData || isLoadingHistory"
-                      class="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all shadow-sm border"
+                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all shadow-sm border shrink-0"
                       :class="hasNewData ? 'bg-blue-600 text-white hover:bg-blue-500 border-blue-500 animate-pulse' : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed'"
                   >
                       <svg class="w-4 h-4" :class="{'animate-spin': isLoadingHistory}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                      Refresh
+                      <span class="hidden sm:inline">Refresh</span>
                   </button>
               </div>
+          </div>
+          
+          <div v-if="mode === 'OUT'" class="md:hidden mb-4 bg-rose-500/10 border border-rose-500/30 px-4 py-3 rounded-xl text-rose-400 font-bold text-sm shadow-inner flex items-center justify-between">
+              <span>ការខាតបង់សរុប (ពីទិន្នន័យបង្ហាញ):</span>
+              <span class="text-xl font-black">{{ formatPrice(totalLossUSD) }}$</span>
           </div>
 
           <div class="overflow-x-auto custom-scrollbar rounded-t-xl border border-neutral-700 border-b-0">
@@ -268,7 +277,7 @@
                           <td colspan="9" class="py-12 text-center"><div class="animate-spin rounded-full h-8 w-8 border-2 border-amber-500 border-t-transparent mx-auto"></div></td>
                       </tr>
                       <tr v-else-if="displayHistory.length === 0">
-                          <td colspan="9" class="py-12 text-center text-neutral-500 font-bold">មិនទាន់មានប្រវត្តិប្រតិបត្តិការទេ</td>
+                          <td colspan="9" class="py-12 text-center text-neutral-500 font-bold">មិនទាន់មានប្រវត្តិប្រតិបត្តិការទេ ឬស្វែងរកមិនឃើញ</td>
                       </tr>
                       <tr v-else v-for="(h, idx) in displayHistory" :key="h.id" class="hover:bg-neutral-700/50 transition-colors">
                           <td class="px-5 py-3.5 text-xs text-center font-bold text-neutral-500">{{ idx + 1 }}</td>
@@ -301,7 +310,7 @@
               </table>
           </div>
 
-          <div v-if="hasMoreHistory && displayHistory.length > 0" class="bg-neutral-900 p-4 rounded-b-xl border border-neutral-700 flex justify-center">
+          <div v-if="hasMoreHistory && displayHistory.length > 0 && !historySearch" class="bg-neutral-900 p-4 rounded-b-xl border border-neutral-700 flex justify-center">
               <button @click="loadMoreHistory" :disabled="isFetchingMore" class="px-6 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold rounded-lg border border-neutral-600 transition-all flex items-center gap-2 disabled:opacity-50 active:scale-95 shadow-sm">
                   <svg v-if="isFetchingMore" class="animate-spin h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                   <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -309,7 +318,7 @@
               </button>
           </div>
           <div v-else-if="displayHistory.length > 0" class="bg-neutral-900 p-4 rounded-b-xl border border-neutral-700 text-center text-xs font-bold text-neutral-500">
-              អស់ទិន្នន័យប្រវត្តិហើយ
+              {{ historySearch ? 'ទិន្នន័យស្វែងរកបញ្ជប់ត្រឹមនេះ' : 'អស់ទិន្នន័យប្រវត្តិហើយ' }}
           </div>
 
       </div>
@@ -370,6 +379,7 @@ const getTodayDate = () => {
 // State
 const mode = ref('IN'); 
 const searchQuery = ref('');
+const historySearch = ref(''); // 🌟 បន្ថែម History Search
 const showDropdown = ref(false);
 const selectedProduct = ref(null);
 const isSubmitting = ref(false);
@@ -412,7 +422,6 @@ const filteredProducts = computed(() => {
   return props.products.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)));
 });
 
-// 🌟 SMART LOSS COMPUTATION (Updated for POL) 🌟
 const lossValue = computed(() => {
   if (!selectedProduct.value || !form.qty || mode.value !== 'OUT') return 0;
   const unitCostBulk = Number(selectedProduct.value.unitCost) || 0;
@@ -433,7 +442,7 @@ const lossValue = computed(() => {
 
 const totalLossUSD = computed(() => {
   const activeProductIds = new Set(props.products.map(p => p.id));
-  return history.value
+  return displayHistory.value // 🌟 ប្តូរមកគណនាពី displayHistory វិញ ដើម្បីស៊ីគ្នាជាមួយអ្វីដែលបង្ហាញ
       .filter(h => h.type === 'OUT' && activeProductIds.has(h.productId))
       .reduce((sum, h) => {
           let val = h.totalValue;
@@ -442,7 +451,6 @@ const totalLossUSD = computed(() => {
       }, 0);
 });
 
-// 🌟 SMART COST CALCULATIONS (Updated for POL) 🌟
 const calculateTotalCost = () => {
   const q = Number(form.qty) || 0;
   const c = Number(form.cost) || 0;
@@ -486,7 +494,6 @@ const displayUnitLabel = computed(() => {
     return translateUnit(selectedProduct.value.unit);
 });
 
-// 🌟 WATCHERS (Updated for POL) 🌟
 watch(() => form.transactionUnit, (newUnit) => {
   if (mode.value === 'IN' && selectedProduct.value) {
       const baseBulkCost = Number(selectedProduct.value.unitCost) || 0;
@@ -519,7 +526,6 @@ watch(mode, (newMode) => {
   fetchHistory(); 
 });
 
-// Actions
 const selectProduct = (prod) => {
   selectedProduct.value = prod;
   searchQuery.value = prod.name;
@@ -558,7 +564,6 @@ const submitTransaction = async () => {
   let qtyDeltaBulk = 0;
   let inputCostBulk = 0;
 
-  // 🌟 SMART QTY DELTA & COST CONVERSION (Updated for POL) 🌟
   if (selectedProduct.value.unit === 'case') {
       const perCase = Number(selectedProduct.value.itemsPerCase) || 1;
       const perBox = (selectedProduct.value.category === 'ម៉ាស់' || selectedProduct.value.category === 'POL') ? (Number(selectedProduct.value.itemsPerBox) || 1) : 1;
@@ -719,7 +724,6 @@ const confirmDeleteTransaction = async () => {
           let bulkQtyToReverse = Number(trx.qty) || 0;
           let transactionUnitCostBulk = Number(trx.unitCost) || 0;
 
-          // 🌟 SMART REVERSE COMPUTATION (Updated for POL) 🌟
           if (prodData.unit === 'case') {
               const perCase = Number(prodData.itemsPerCase) || 1;
               const perBox = (prodData.category === 'ម៉ាស់' || prodData.category === 'POL') ? (Number(prodData.itemsPerBox) || 1) : 1;
@@ -820,8 +824,28 @@ const fetchHistory = async () => {
   }
 };
 
+// 🌟 Search History in Database (ប្រសិនបើវាយបញ្ចូលឈ្មោះ នោះឈប់ Load More ហើយទាញទាំងអស់) 🌟
+watch(historySearch, async (newVal) => {
+    if (newVal.trim().length > 0) {
+        isLoadingHistory.value = true;
+        try {
+            // ដោយសារ Firestore មិនអាច Query text (LIKE) ដោយងាយ យើងទាញយកតាមប្រភេទ ហើយប្រើ JS filter បន្ថែម
+            const q = query(collection(db, 'stock_transactions'), where('type', '==', mode.value), orderBy('createdAt', 'desc'));
+            const snap = await getDocs(q);
+            history.value = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch (e) {
+            console.error(e);
+        } finally {
+            isLoadingHistory.value = false;
+        }
+    } else {
+        // បើលុបអក្សរអស់ នោះហៅទិន្នន័យធម្មតាវិញ
+        fetchHistory();
+    }
+});
+
 const loadMoreHistory = async () => {
-    if (!hasMoreHistory.value || isFetchingMore.value) return;
+    if (!hasMoreHistory.value || isFetchingMore.value || historySearch.value) return;
     isFetchingMore.value = true;
 
     try {
@@ -855,7 +879,7 @@ const setupHistoryListener = () => {
   historyUnsubscribe = onSnapshot(q, (snap) => {
       if (!snap.empty) {
           const newTopId = snap.docs[0].id;
-          if (latestDocId && newTopId !== latestDocId && !isLoadingHistory.value) {
+          if (latestDocId && newTopId !== latestDocId && !isLoadingHistory.value && !historySearch.value) {
               hasNewData.value = true;
           }
       }
@@ -872,7 +896,15 @@ onUnmounted(() => {
 
 const displayHistory = computed(() => {
   const activeProductIds = new Set(props.products.map(p => p.id));
-  return history.value.filter(h => activeProductIds.has(h.productId));
+  let result = history.value.filter(h => activeProductIds.has(h.productId));
+  
+  // 🌟 Filter តាមឈ្មោះ ឬ Barcode
+  if (historySearch.value.trim()) {
+      const qs = historySearch.value.toLowerCase().trim();
+      result = result.filter(h => h.productName.toLowerCase().includes(qs) || (h.reason && h.reason.toLowerCase().includes(qs)));
+  }
+  
+  return result;
 });
 
 // Utils
@@ -888,7 +920,6 @@ const translateUnit = (unit) => {
   return map[unit] || unit;
 };
 
-// 🌟 ធ្វើឱ្យស្គាល់ខ្នាតរាយចុងក្រោយ 🌟
 const translateRetailUnit = (prod) => {
   if (prod && prod.category === 'ម៉ាស់') return 'សន្លឹក';
   if (prod && prod.category === 'POL') return 'ដប';
