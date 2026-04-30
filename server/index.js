@@ -6,18 +6,28 @@ const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const verifyToken = require('./middleware/authMiddleware');
 const fs = require('fs');
-const axios = require('axios'); // <-- 🌟 បន្ថែមថ្មីសម្រាប់ផ្ញើសារ Telegram
+const axios = require('axios'); 
 
 const app = express();
+
+// 🌟 1. UPDATE CORS POLICY (IMPORTANT) 🌟
 app.use(cors({
-    origin: '*', // អនុញ្ញាតឱ្យគ្រប់ Website (localhost) អាចហៅបាន
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // អនុញ្ញាតឱ្យធ្វើការ PUT និងជំនះ Preflight (OPTIONS)
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    credentials: true
+    origin: function (origin, callback) {
+        // អនុញ្ញាតឱ្យរាល់ Origin (Dynamic)
+        callback(null, true);
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-admin-uid'],
+    credentials: true,
+    optionsSuccessStatus: 204
 }));
+
+// បញ្ជាក់ឱ្យចាប់យក Preflight OPTIONS requests ទាំងអស់
+app.options(/.*/, cors());
+
 app.use(express.json());
 
-// --- 1. FIREBASE CONNECTION ---
+// --- 2. FIREBASE CONNECTION ---
 try {
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
   if (serviceAccount.private_key) {
@@ -34,14 +44,14 @@ try {
 
 const db = admin.firestore();
 
-// --- 2. CLOUDINARY CONFIG ---
+// --- 3. CLOUDINARY CONFIG ---
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// --- 3. MULTER ---
+// --- 4. MULTER ---
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
@@ -145,17 +155,13 @@ app.delete('/api/delete-admin/:uid', verifyToken, async (req, res) => {
     try {
         const { uid } = req.params;
         
-        // 1. Delete user from Firebase Auth
         await admin.auth().deleteUser(uid);
 
-        // 2. Prepare Firestore Batch
         const batch = db.batch();
 
-        // 3. Queue Admin Document for deletion
         const adminDocRef = db.collection('users').doc(uid);
         batch.delete(adminDocRef);
 
-        // 4. Find and Queue ALL Sellers created by this Admin
         const sellersSnapshot = await db.collection('users')
             .where('role', '==', 'seller')
             .where('createdBy', '==', uid)
@@ -165,7 +171,6 @@ app.delete('/api/delete-admin/:uid', verifyToken, async (req, res) => {
             batch.delete(doc.ref);
         });
 
-        // 5. Find and Queue ALL Sales Reports created by this Admin
         const salesSnapshot = await db.collection('sales_reports')
             .where('createdBy', '==', uid)
             .get();
@@ -174,7 +179,6 @@ app.delete('/api/delete-admin/:uid', verifyToken, async (req, res) => {
             batch.delete(doc.ref);
         });
 
-        // 6. Commit the Batch (Execute all deletions at once)
         await batch.commit();
 
         res.json({ 
@@ -193,10 +197,11 @@ app.post('/api/create-seller', verifyToken, upload.fields([{ name: 'profileImage
   try {
     const { fullName, address, username, telegram, phoneNumber, idNumber, password, role } = req.body;
 
-    // Default to 'seller' if not provided or invalid
     const assignedRole = role === 'dealer' ? 'dealer' : 'seller';
+    
+    // 🌟 ការពារ Error ដោយប្រើ Optional Chaining សម្រាប់ req.user
+    const creatorUid = req.user?.uid || req.headers['x-admin-uid'] || 'Unknown_Admin'; 
 
-    // 🔴 1. CHECK IF ID NUMBER ALREADY EXISTS
     if (idNumber) {
         const idCheckQuery = await db.collection('users').where('idNumber', '==', idNumber).get();
         if (!idCheckQuery.empty) {
@@ -208,7 +213,6 @@ app.post('/api/create-seller', verifyToken, upload.fields([{ name: 'profileImage
         }
     }
 
-    // 2. Create Firebase Auth User (Using provided password)
     const userRecord = await admin.auth().createUser({
       email: username + "@seller.com",
       password: password, 
@@ -218,19 +222,16 @@ app.post('/api/create-seller', verifyToken, upload.fields([{ name: 'profileImage
     let photoUrl = "";
     let idCardUrl = "";
 
-    // 3. Upload Profile Image 
     if (req.files && req.files.profileImage) {
         const profileResult = await uploadToCloudinary(req.files.profileImage[0].buffer, "report_project/sellers");
         photoUrl = profileResult.secure_url;
     }
 
-    // 4. Upload ID Card Image 
     if (req.files && req.files.idCardImage) {
         const idResult = await uploadToCloudinary(req.files.idCardImage[0].buffer, "report_project/sellers_id");
         idCardUrl = idResult.secure_url;
     }
 
-    // 5. Save to Firestore (Store password as plain text as requested)
     await db.collection('users').doc(userRecord.uid).set({
       uid: userRecord.uid, 
       fullName,
@@ -239,11 +240,11 @@ app.post('/api/create-seller', verifyToken, upload.fields([{ name: 'profileImage
       telegram,
       phoneNumber,
       idNumber, 
-      password, // Save password to DB
-      role: assignedRole, // Save assigned role
+      password, 
+      role: assignedRole, 
       photoUrl,
       idCardUrl,
-      createdBy: req.user.uid,
+      createdBy: creatorUid, 
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
@@ -255,13 +256,12 @@ app.post('/api/create-seller', verifyToken, upload.fields([{ name: 'profileImage
   }
 });
 
-// 5. UPDATE SELLER (NEW ROUTE)
+// 5. UPDATE SELLER
 app.put('/api/update-seller/:uid', verifyToken, upload.fields([{ name: 'profileImage' }, { name: 'idCardImage' }]), async (req, res) => {
     try {
         const { uid } = req.params;
         const { fullName, username, address, telegram, phoneNumber, idNumber, password, role } = req.body;
         
-        // Securely handle role
         const assignedRole = role === 'dealer' ? 'dealer' : 'seller';
 
         const updateData = {
@@ -271,13 +271,12 @@ app.put('/api/update-seller/:uid', verifyToken, upload.fields([{ name: 'profileI
             telegram,
             phoneNumber,
             idNumber,
-            password, // Update password field in DB
-            role: assignedRole // Update role field in DB
+            password, 
+            role: assignedRole 
         };
 
         const authUpdates = {};
 
-        // Update Images
         if (req.files && req.files.profileImage) {
             const profileResult = await uploadToCloudinary(req.files.profileImage[0].buffer, "report_project/sellers");
             updateData.photoUrl = profileResult.secure_url;
@@ -288,21 +287,17 @@ app.put('/api/update-seller/:uid', verifyToken, upload.fields([{ name: 'profileI
             updateData.idCardUrl = idResult.secure_url;
         }
 
-        // Prepare Auth Updates
         if (fullName) authUpdates.displayName = fullName;
         if (username) authUpdates.email = `${username}@report-system.com`;
         
-        // ALWAYS update password in Firebase Auth if it was provided
         if (password && password.trim().length >= 6) {
             authUpdates.password = password.trim();
         }
 
-        // Apply Auth Updates
         if (Object.keys(authUpdates).length > 0) {
             await admin.auth().updateUser(uid, authUpdates);
         }
 
-        // Apply Firestore Updates
         await db.collection('users').doc(uid).update(updateData);
 
         res.json({ success: true, message: "Seller updated successfully" });
@@ -313,7 +308,7 @@ app.put('/api/update-seller/:uid', verifyToken, upload.fields([{ name: 'profileI
     }
 });
 
-// 6. DELETE SELLER (NEW ROUTE)
+// 6. DELETE SELLER 
 app.delete('/api/delete-seller/:uid', verifyToken, async (req, res) => {
     try {
         const { uid } = req.params;
@@ -334,7 +329,7 @@ app.post('/api/sales/create', verifyToken, async (req, res) => {
       sellerName, 
       sellerIdNumber,
       date, 
-      category, // <--- ADDED EXTRACTING CATEGORY
+      category, 
       totalClients, 
       totalSold, 
       unit, 
@@ -342,16 +337,14 @@ app.post('/api/sales/create', verifyToken, async (req, res) => {
       currency 
     } = req.body;
 
-    // Default category if old apps send data without one
     const safeCategory = category || 'លក់រាយ';
+    const creatorUid = req.user?.uid || req.headers['x-admin-uid'] || 'Unknown_Admin'; 
 
-    // 1. CHECK FOR DUPLICATES
-    // Query: Does a report exist for this Seller + This Date + This UNIT + This CATEGORY?
     const existingReport = await db.collection('sales_reports')
       .where('sellerId', '==', sellerId)
       .where('date', '==', date)
       .where('unit', '==', unit) 
-      .where('category', '==', safeCategory) // <--- CRITICAL FIX: Duplicate check now includes category
+      .where('category', '==', safeCategory) 
       .get();
 
     if (!existingReport.empty) {
@@ -362,19 +355,18 @@ app.post('/api/sales/create', verifyToken, async (req, res) => {
         });
     }
 
-    // 2. Add Data if no duplicate
     await db.collection('sales_reports').add({
       sellerId,
       sellerName,
       sellerIdNumber,
       date, 
-      category: safeCategory, // <--- ADDED TO FIRESTORE SAVE
+      category: safeCategory, 
       totalClients,
       totalSold,
       unit,
       totalPrice,
       currency,
-      createdBy: req.user.uid, 
+      createdBy: creatorUid, 
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
@@ -391,7 +383,6 @@ app.post('/api/request-finance-reset', verifyToken, async (req, res) => {
     try {
         const { name, email, uid } = req.body;
         
-        // 🌟 1. ទាញយក Password ចេញពី Database ដោយប្រើ UID
         const userDoc = await db.collection('users').doc(uid).get();
         let currentPassword = "មិនទាន់បានកំណត់ទេ";
         
@@ -399,10 +390,8 @@ app.post('/api/request-finance-reset', verifyToken, async (req, res) => {
             currentPassword = userDoc.data().financePassword;
         }
 
-        // 🌟 2. រៀបចំទម្រង់សារ (បញ្ចូលលេខសម្ងាត់ចូល)
         const message = `🚨 <b>សំណើសុំមើលលេខសម្ងាត់ហិរញ្ញវត្ថុ</b>\n\n👤 ឈ្មោះ: ${name}\n📧 អ៊ីមែល: ${email}\n🔑 UID: <code>${uid}</code>\n\n🔓 <b>លេខសម្ងាត់របស់អ្នកគឺ:</b> <code>${currentPassword}</code>`;
         
-        // ទាញយកអញ្ញាតពី .env
         const botToken = process.env.TELEGRAM_BOT_TOKEN;
         const devChatId = process.env.TELEGRAM_DEV_CHAT_ID;
 
@@ -410,7 +399,6 @@ app.post('/api/request-finance-reset', verifyToken, async (req, res) => {
             return res.status(500).json({ error: "Telegram Configuration Missing" });
         }
 
-        // បាញ់ទៅ Telegram
         await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
             chat_id: devChatId,
             text: message,
