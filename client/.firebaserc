@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "reportapp-93529"
+  },
+  "targets": {
+    "reportapp-93529": {
+      "hosting": {
+        "sellerorder": [
+          "sellerorder"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
