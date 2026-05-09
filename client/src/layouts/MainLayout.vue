@@ -24,7 +24,7 @@
         <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 relative overflow-hidden shrink-0">
           <div class="absolute inset-0 bg-white/20 blur-md rounded-full -top-2 -left-2 w-8 h-8"></div>
           <svg class="h-6 w-6 text-white relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
         </div>
         <div class="flex-1 min-w-0">
@@ -36,30 +36,108 @@
         </button>
       </div>
 
-      <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar relative z-10">
+      <nav class="flex-1 px-4 py-6 space-y-1 overflow-visible relative z-10">
         <div v-if="isAuthLoading" class="space-y-3">
            <div v-for="n in 3" :key="n" class="h-12 w-full bg-white/5 rounded-2xl animate-pulse border border-white/5"></div>
         </div>
 
         <div v-else>
+          <template v-for="item in menuItems" :key="item.key">
+            
             <router-link 
-              v-for="item in menuItems" 
-              :key="item.path"
+              v-if="!item.subItems"
               :to="item.path"
               @click="isSidebarOpen = false" 
               class="group relative flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-300 overflow-hidden mb-2"
-              active-class="bg-white/10 text-white shadow-lg backdrop-blur-md border border-white/10"
-              :class="$route.path.includes(item.path) ? 'bg-white/10 text-white shadow-lg backdrop-blur-md border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
+              :class="isItemActive(item, $route.path) ? 'bg-white/10 text-white shadow-lg backdrop-blur-md border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
             >
-              <div v-if="$route.path.includes(item.path)" class="absolute left-0 top-1/2 -translate-y-1/2 h-2/3 w-1 rounded-r-full" :class="item.glowClass"></div>
-              <div class="text-slate-400 group-hover:text-white transition-colors" :class="{'text-white': $route.path.includes(item.path)}" v-html="item.icon"></div>
+              <div v-if="isItemActive(item, $route.path)" class="absolute left-0 top-1/2 -translate-y-1/2 h-2/3 w-1 rounded-r-full" :class="item.glowClass"></div>
+              <div class="text-slate-400 group-hover:text-white transition-colors" :class="{'text-white': isItemActive(item, $route.path)}" v-html="item.icon"></div>
               <span class="font-bold text-sm relative z-10 mt-0.5">{{ item.label }}</span>
               <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
             </router-link>
+
+            <div v-else class="relative group mb-2">
+              <div 
+                class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-300 cursor-pointer"
+                :class="isItemActive(item, $route.path) ? 'bg-white/10 text-white shadow-lg backdrop-blur-md border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
+              >
+                 <div class="flex items-center gap-3.5 relative z-10">
+                    <div v-if="isItemActive(item, $route.path)" class="absolute -left-4 top-1/2 -translate-y-1/2 h-2/3 w-1 rounded-r-full" :class="item.glowClass"></div>
+                    <div class="text-slate-400 group-hover:text-white transition-colors" :class="{'text-white': isItemActive(item, $route.path)}" v-html="item.icon"></div>
+                    <span class="font-bold text-sm mt-0.5">{{ item.label }}</span>
+                 </div>
+                 <svg class="w-4 h-4 transition-transform duration-300 text-slate-400 group-hover:text-white group-hover:translate-x-1" :class="{'text-white': isItemActive(item, $route.path)}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                 <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 rounded-2xl"></div>
+              </div>
+              
+              <div class="hidden md:block absolute left-full top-0 ml-3 w-[340px] bg-[#0F172A]/95 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-[15px_0_40px_rgba(0,0,0,0.4)] opacity-0 invisible translate-x-4 group-hover:opacity-100 group-hover:visible group-hover:translate-x-0 transition-all duration-300 z-[100] p-3 before:content-[''] before:absolute before:-left-4 before:top-0 before:w-4 before:h-full">
+                <div class="mb-3 px-3 py-1">
+                   <p class="text-[10px] font-black tracking-widest text-indigo-400 uppercase">ជម្រើសរបាយការណ៍</p>
+                </div>
+                <div class="space-y-1.5">
+                  <router-link
+                    v-for="sub in item.subItems"
+                    :key="sub.path"
+                    :to="sub.path"
+                    @click="isSidebarOpen = false"
+                    class="flex flex-col gap-1 px-4 py-3 rounded-xl transition-all border border-transparent hover:bg-slate-800/50 hover:border-slate-700 group/sub"
+                    :class="$route.path === sub.path ? 'bg-indigo-600/10 border-indigo-500/20 shadow-sm' : ''"
+                  >
+                    <div class="flex items-center gap-3">
+                        <span class="w-1.5 h-1.5 rounded-full transition-colors" :class="$route.path === sub.path ? 'bg-indigo-400 shadow-[0_0_8px_#818cf8]' : 'bg-slate-600 group-hover/sub:bg-slate-400'"></span>
+                        <span class="text-sm font-bold transition-colors" :class="$route.path === sub.path ? 'text-white' : 'text-slate-300 group-hover/sub:text-white'">{{ sub.label }}</span>
+                    </div>
+                    
+                    <div v-if="sub.isWarning" class="ml-4 mt-1.5 bg-rose-500/10 border border-rose-500/20 rounded-lg p-2.5 flex items-start gap-2">
+                        <svg class="w-4 h-4 text-rose-500 shrink-0 mt-0.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        <p class="text-[10px] leading-[1.6] text-rose-400 font-bold">
+                           <span class="text-white">ការព្រមាន៖</span> {{ sub.warningText }}
+                        </p>
+                    </div>
+                  </router-link>
+                </div>
+              </div>
+
+              <div class="md:hidden space-y-1">
+                 <transition
+                    enter-active-class="transition-all duration-300 ease-out"
+                    enter-from="opacity-0 -translate-y-2 max-h-0"
+                    enter-to="opacity-100 translate-y-0 max-h-[500px]"
+                    leave-active-class="transition-all duration-200 ease-in"
+                    leave-from="opacity-100 translate-y-0 max-h-[500px]"
+                    leave-to="opacity-0 -translate-y-2 max-h-0"
+                 >
+                    <div v-show="openDropdown === item.key" class="mt-2 pl-12 pr-2 py-1 space-y-1.5 overflow-hidden">
+                       <router-link
+                         v-for="sub in item.subItems"
+                         :key="sub.path"
+                         :to="sub.path"
+                         @click="isSidebarOpen = false"
+                         class="flex flex-col p-3 rounded-xl transition-all border border-transparent hover:bg-slate-800/50 hover:border-slate-700"
+                         :class="$route.path === sub.path ? 'bg-indigo-600/10 border-indigo-500/20 shadow-sm' : ''"
+                       >
+                          <div class="flex items-center gap-3">
+                              <span class="w-1.5 h-1.5 rounded-full transition-colors" :class="$route.path === sub.path ? 'bg-indigo-400 shadow-[0_0_8px_#818cf8]' : 'bg-slate-600'"></span>
+                              <span class="text-sm font-bold transition-colors" :class="$route.path === sub.path ? 'text-white' : 'text-slate-300'">{{ sub.label }}</span>
+                          </div>
+                          
+                          <div v-if="sub.isWarning" class="ml-4 mt-1.5 bg-rose-500/10 border border-rose-500/20 rounded-lg p-2.5 flex items-start gap-2">
+                              <svg class="w-4 h-4 text-rose-500 shrink-0 mt-0.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                              <p class="text-[10px] leading-[1.6] text-rose-400 font-bold">
+                                 <span class="text-white">ការព្រមាន៖</span> {{ sub.warningText }}
+                              </p>
+                          </div>
+                       </router-link>
+                    </div>
+                 </transition>
+              </div>
+            </div>
+          </template>
         </div>
       </nav>
 
-      <div class="p-4 border-t border-white/5 bg-slate-900/50 backdrop-blur-xl z-10 m-4 rounded-2xl relative overflow-hidden">
+      <div class="p-4 border-t border-white/5 bg-slate-900/50 backdrop-blur-xl z-10 m-4 rounded-2xl relative overflow-hidden shrink-0">
         <div v-if="isAuthLoading" class="flex items-center gap-3 p-2 animate-pulse">
             <div class="w-10 h-10 rounded-full bg-white/10"></div>
             <div class="flex-1 space-y-2">
@@ -138,7 +216,7 @@
             leave-to="opacity-0 -translate-y-2 scale-[0.98]"
             mode="out-in"
           >
-            <div :key="route.fullPath" class="w-full h-full">
+            <div :key="route.fullPath" class="w-full h-full max-w-[100rem] mx-auto">
                 <component :is="Component" />
             </div>
           </transition>
@@ -181,21 +259,66 @@
               </div>
 
               <div class="overflow-y-auto custom-scrollbar p-6 space-y-2">
-                 <router-link 
-                    v-for="item in menuItems" 
-                    :key="item.path"
-                    :to="item.path"
-                    @click="showBottomMenu = false"
-                    class="flex items-center gap-4 p-4 rounded-2xl transition-colors border border-transparent"
-                    active-class="bg-indigo-600/20 border-indigo-500/30 text-white"
-                    :class="$route.path.includes(item.path) ? 'bg-indigo-600/20 border-indigo-500/30 text-white' : 'text-slate-400 hover:bg-slate-800/50'"
-                 >
-                    <div :class="{'text-indigo-400': $route.path.includes(item.path)}" v-html="item.icon"></div>
-                    <span class="font-bold text-sm">{{ item.label }}</span>
-                 </router-link>
+                 <template v-for="item in menuItems" :key="item.key">
+                   
+                   <router-link 
+                     v-if="!item.subItems"
+                     :to="item.path"
+                     @click="showBottomMenu = false"
+                     class="flex items-center gap-4 p-4 rounded-2xl transition-colors border border-transparent"
+                     :class="isItemActive(item, $route.path) ? 'bg-indigo-600/20 border-indigo-500/30 text-white' : 'text-slate-400 hover:bg-slate-800/50'"
+                   >
+                      <div :class="{'text-indigo-400': isItemActive(item, $route.path)}" v-html="item.icon"></div>
+                      <span class="font-bold text-sm">{{ item.label }}</span>
+                   </router-link>
+
+                   <div v-else class="space-y-1">
+                      <button 
+                        @click="toggleDropdown(item.key)"
+                        class="w-full flex items-center justify-between p-4 rounded-2xl transition-colors border border-transparent"
+                        :class="isItemActive(item, $route.path) || openDropdown === item.key ? 'bg-indigo-600/20 border-indigo-500/30 text-white' : 'text-slate-400 hover:bg-slate-800/50'"
+                      >
+                         <div class="flex items-center gap-4">
+                            <div :class="{'text-indigo-400': isItemActive(item, $route.path) || openDropdown === item.key}" v-html="item.icon"></div>
+                            <span class="font-bold text-sm">{{ item.label }}</span>
+                         </div>
+                         <svg class="w-4 h-4 transition-transform" :class="{'rotate-180': openDropdown === item.key}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </button>
+                      
+                      <transition
+                         enter-active-class="transition-all duration-300 ease-out"
+                         enter-from="opacity-0 -translate-y-2 max-h-0"
+                         enter-to="opacity-100 translate-y-0 max-h-[500px]"
+                         leave-active-class="transition-all duration-200 ease-in"
+                         leave-from="opacity-100 translate-y-0 max-h-[500px]"
+                         leave-to="opacity-0 -translate-y-2 max-h-0"
+                      >
+                         <div v-show="openDropdown === item.key" class="pl-14 pr-2 py-1 space-y-2 overflow-hidden">
+                            <router-link
+                              v-for="sub in item.subItems"
+                              :key="sub.path"
+                              :to="sub.path"
+                              @click="showBottomMenu = false"
+                              class="flex flex-col p-3 rounded-xl transition-all border border-transparent"
+                              :class="$route.path === sub.path ? 'bg-indigo-500/10 border-indigo-500/20 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'"
+                            >
+                               <div class="flex items-center gap-3">
+                                 <span class="w-1.5 h-1.5 rounded-full transition-colors" :class="$route.path === sub.path ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-slate-600'"></span>
+                                 <span class="text-sm font-bold">{{ sub.label }}</span>
+                               </div>
+                               <div v-if="sub.isWarning" class="mt-2 ml-4 p-2.5 bg-rose-500/10 rounded-xl border border-rose-500/20 flex items-start gap-2">
+                                  <svg class="w-4 h-4 text-rose-500 shrink-0 mt-0.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                  <p class="text-[10px] text-rose-400 font-bold leading-snug">ការព្រមាន៖ {{ sub.warningText }}</p>
+                               </div>
+                            </router-link>
+                         </div>
+                      </transition>
+                   </div>
+
+                 </template>
               </div>
 
-              <div class="p-6 border-t border-slate-800 flex gap-3">
+              <div class="p-6 border-t border-slate-800 flex gap-3 shrink-0">
                  <button @click="handleLogoutMobile" class="flex-1 py-4 rounded-2xl bg-rose-500/10 text-rose-500 font-black text-sm flex items-center justify-center gap-2 border border-rose-500/20 active:scale-95 transition-transform">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                     ចាកចេញ
@@ -230,7 +353,7 @@
                    <div class="flex justify-center">
                       <div class="relative group cursor-pointer" @click="$refs.fileInput.click()">
                          <div class="w-24 h-24 rounded-full overflow-hidden border-4 border-slate-100 shadow-md">
-                            <img :src="profilePreview || userPhoto || `https://ui-avatars.com/api/?name=${userName}`" class="w-full h-full object-cover">
+                            <img :src="profilePreview || userPhoto || `https://ui-avatars.com/api/?name=${userName}&background=random`" class="w-full h-full object-cover">
                          </div>
                          <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
@@ -278,7 +401,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue';
+import { ref, computed, onMounted, reactive, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { TransitionRoot, TransitionChild, Dialog, DialogPanel, DialogTitle } from '@headlessui/vue';
 import { auth, db } from '@/firebaseConfig'; 
@@ -297,6 +420,19 @@ const isSidebarOpen = ref(false);
 const isAuthLoading = ref(true);
 
 const showBottomMenu = ref(false);
+const openDropdown = ref(''); // 🌟 សម្រាប់ Mobile
+const hoverDropdown = ref(''); // 🌟 សម្រាប់ Desktop Hover Flyout
+
+const toggleDropdown = (key) => {
+    openDropdown.value = openDropdown.value === key ? '' : key;
+};
+
+const isItemActive = (item, currentPath) => {
+   if (item.subItems) {
+       return item.subItems.some(sub => currentPath === sub.path || currentPath.includes(sub.path));
+   }
+   return currentPath.includes(item.path);
+};
 
 const confirmDialogRef = ref(null);
 const notification = useNotificationStore();
@@ -332,17 +468,11 @@ const icons = {
 };
 
 const isMobileBottomMenu = computed(() => {
-    return rawRole.value === 'superadmin' || rawRole.value === 'owner';
+  return rawRole.value === 'superadmin' || rawRole.value === 'owner';
 });
 
 const menuItems = computed(() => {
   if (isAuthLoading.value) return [];
-
-  const commonItems = [
-    { label: 'បញ្ចូលទិន្នន័យលក់', path: '/app/admin/sales', key: 'sales', icon: icons.sales, glowClass: 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.6)]' }, 
-    { label: 'តំណាងលក់', path: '/app/admin/sellers', key: 'sellers', icon: icons.users, glowClass: 'bg-teal-500 shadow-[0_0_15px_rgba(20,184,166,0.6)]' },
-    { label: 'របាយការណ៍លក់', path: '/app/admin/seller-reports', key: 'seller-reports', icon: icons.chart, glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
-  ];
 
   if (rawRole.value === 'superadmin') {
     return [
@@ -359,20 +489,45 @@ const menuItems = computed(() => {
     return [
       { label: 'ផ្ទាំងគ្រប់គ្រង', path: '/app/owner/dashboard', key: 'dashboard', icon: icons.dashboard, glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
       { label: 'គ្រប់គ្រង Admin', path: '/app/owner/admins', key: 'admins', icon: icons.shield, glowClass: 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.6)]' },
-      //{ label: 'គ្រប់គ្រងស្តុក', path: '/app/owner/stock-management', key: 'stock', icon: icons.box, glowClass: 'bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.6)]' },
       { label: 'គណនី និងហិរញ្ញវត្ថុ', path: '/app/owner/account', key: 'account', icon: icons.wallet, glowClass: 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]' },
       { label: 'របាយការណ៍', path: '/app/owner/reports', key: 'reports', icon: icons.chart, glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' },
       { label: 'ធុងសម្រាម', path: '/app/owner/trash', key: 'trash', icon: icons.trash, glowClass: 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.6)]' },
-      
     ];
   } 
   else {
+    // 🌟 ADMIN MENU WITH 3 OPTIONS (FLYOUT MENU on Desktop) 🌟
     return [
       { label: 'ផ្ទាំងគ្រប់គ្រង', path: '/app/admin/dashboard', key: 'dashboard', icon: icons.dashboard, glowClass: 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
-      ...commonItems
+      { label: 'បញ្ចូលទិន្នន័យលក់', path: '/app/admin/sales', key: 'sales', icon: icons.sales, glowClass: 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.6)]' }, 
+      { label: 'តំណាងលក់', path: '/app/admin/sellers', key: 'sellers', icon: icons.users, glowClass: 'bg-teal-500 shadow-[0_0_15px_rgba(20,184,166,0.6)]' },
+      { 
+        label: 'របាយការណ៍លក់', 
+        path: '/app/admin/reports-menu',
+        key: 'seller-reports', 
+        icon: icons.chart, 
+        glowClass: 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]',
+        subItems: [
+           { 
+              label: 'របាយការណ៍លក់ Admin', 
+              path: '/app/admin/seller-reports',
+              isWarning: true,
+              warningText: 'No update!'
+           },
+           { label: 'គណនី និងហិរញ្ញវត្ថុ', path: '/app/owner/account' },
+           { label: 'របាយការណ៍លក់រួម', path: '/app/owner/reports' }
+        ]
+      },
     ];
   }
 });
+
+watch(() => route.path, (newPath) => {
+    menuItems.value.forEach(item => {
+        if (item.subItems && item.subItems.some(sub => newPath === sub.path)) {
+            openDropdown.value = item.key;
+        }
+    });
+}, { immediate: true });
 
 const currentDate = computed(() => {
   const date = new Date();
@@ -521,7 +676,6 @@ const handleLogoutMobile = () => {
 @import url('https://fonts.googleapis.com/css2?family=Battambong:wght@400;700;900&family=Kantumruy+Pro:wght@400;700&display=swap');
 .font-khmer { font-family: 'Kantumruy Pro', 'Battambong', sans-serif; }
 
-/* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 10px; }

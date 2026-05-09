@@ -56,7 +56,7 @@ const router = createRouter({
           path: "owner/reports",
           name: "owner-reports",
           component: OwnerReports,
-          meta: { roles: ["superadmin", "owner"] }
+          meta: { roles: ["superadmin", "owner","admin"] }
         },
         {
           path: "owner/stock-management", // Route នេះដូចជាជាន់គ្នាជាមួយខាងក្រោម សូមពិនិត្យមើលផង
@@ -88,7 +88,7 @@ const router = createRouter({
           path: "owner/account", 
           name: "OwnerAccount",
           component: AccountMain,
-          meta: { roles: ["superadmin", "owner"] }
+          meta: { roles: ["superadmin", "owner","admin"] }
         },
 
         // ===========================
