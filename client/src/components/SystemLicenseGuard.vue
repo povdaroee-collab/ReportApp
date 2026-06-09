@@ -84,8 +84,8 @@ import { onAuthStateChanged } from 'firebase/auth';
 // ==========================================
 // ⚙️ ការកំណត់ (CONFIGURATIONS) 
 // ==========================================
-// 🌟 កែថ្ងៃទីកំណត់ឱ្យត្រូវនឹង Firebase Rules 🌟
-const EXPIRY_DATE_STRING = '2026-05-10T00:00:00'; 
+// 🌟 កែថ្ងៃទីកំណត់ឱ្យត្រូវនឹង Firebase Rules (ថ្ងៃទី១០ ខែ០៦ ឆ្នាំ២០២៦) 🌟
+const EXPIRY_DATE_STRING = '2026-07-10T00:00:00';
 const developerContactLink = 'https://t.me/MMKDaro'; 
 
 const appState = ref('active'); // 'active', 'warning', 'expired'
